@@ -27,17 +27,18 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      # ③ 의존성 설치
-      #    apify-client : Apify Actor 호출 공식 라이브러리
+      # ③ 의존성 설치 (googletrans 포함 전체 설치)
       - name: 📦 의존성 설치
-        run: pip install apify-client
+        run: |
+          python -m pip install --upgrade pip
+          pip install apify-client googletrans==4.0.0-rc1
 
       # ④ 스크래퍼 실행
-      #    APIFY_TOKEN : GitHub → Settings → Secrets → Actions 에 등록
-      #    이름: APIFY_TOKEN  /  값: apify_api_xxxx...
       - name: 🔍 캘린더 데이터 수집
         env:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          IG_COOKIE: ${{ secrets.IG_COOKIE }}
+          TW_COOKIE: ${{ secrets.TW_COOKIE }}
         run: python update_calendar.py
 
       # ⑤ 변경된 calendar_data.json 커밋 & 푸시
