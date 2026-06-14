@@ -5,7 +5,7 @@ on:
   schedule:
     - cron: "0 15 * * *"
 
-  # ─── GitHub Actions 탭에서 수동 실행 버튼 ───
+  # ─── GitHub Actions 탭에서 수동 실행 가능 ───
   workflow_dispatch:
 
 jobs:
@@ -20,34 +20,32 @@ jobs:
       - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      # ② Python 환경 설정
-      - name: 🐍 Python 3.11 세팅
+      # ② Python 3.11 세팅
+      - name: 🐍 Python 세팅
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
       # ③ 의존성 설치
-      #    instaloader : Instagram 크롤링 (무료, 로그인 불필요)
-      #    requests    : Nitter RSS / Apify HTTP 요청
+      #    apify-client : Apify Actor 호출 공식 라이브러리
       - name: 📦 의존성 설치
-        run: pip install instaloader requests
+        run: pip install apify-client
 
       # ④ 스크래퍼 실행
-      #    APIFY_TOKEN : Apify 무료 플랜 토큰 (선택)
-      #                  GitHub → Settings → Secrets → Actions → New secret
-      #                  이름: APIFY_TOKEN, 값: apify_api_xxx...
+      #    APIFY_TOKEN : GitHub → Settings → Secrets → Actions 에 등록
+      #    이름: APIFY_TOKEN  /  값: apify_api_xxxx...
       - name: 🔍 캘린더 데이터 수집
         env:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
         run: python update_calendar.py
 
-      # ⑤ 변경된 JSON만 커밋하고 푸시
-      - name: 💾 calendar_data.json 커밋 & 푸시
+      # ⑤ 변경된 calendar_data.json 커밋 & 푸시
+      - name: 💾 JSON 커밋 & 푸시
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add calendar_data.json
-          # 변경이 없으면 커밋 건너뜀 (에러 방지)
           git diff --staged --quiet \
             || git commit -m "chore: 캘린더 자동 업데이트 $(date +'%Y-%m-%d %H:%M KST')"
           git push
