@@ -3,16 +3,23 @@ import os
 import re
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from apify_client import ApifyClient
 
+# 1. 환경 설정
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
 
 APIFY_TOKEN = os.environ.get("APIFY_TOKEN", "")
+IG_COOKIE = os.environ.get("IG_COOKIE", "")
+TW_COOKIE = os.environ.get("TW_COOKIE", "")
 OUT_PATH = Path(__file__).parent / "calendar_data.json"
 
+ACTOR_IG = "apify/instagram-scraper"
+ACTOR_TW = "katerinahronik/twitter-scraper"
+
+# 2. 브랜드 로테이션 그룹 (3일 텀)
 BRANDS_GROUPS = {
     0: [
         {"name": "ROJITA", "ig": "rojita__official", "tw": "ROJITA__jp", "color": "#C41055", "emoji": "🖤"},
@@ -32,33 +39,55 @@ BRANDS_GROUPS = {
     ]
 }
 
-def get_today_group():
-    return datetime.now().day % 3
+# 3. 유틸리티 함수
+def parse_date(text: str) -> str:
+    today = datetime.now()
+    text = text.replace("今日", today.strftime("%m/%d")).replace("明日", (today + timedelta(days=1)).strftime("%m/%d"))
+    # 영어 날짜 패턴 추가
+    patterns = [
+        (r'(\d{4})[./\-](\d{1,2})[./\-](\d{1,2})', "ymd"),
+        (r'(\d{1,2})月(\d{1,2})日', "md_jp"),
+        (r'(June|July|May)\s+(\d{1,2})', "en_month")
+    ]
+    for pat, fmt in patterns:
+        m = re.search(pat, text, re.IGNORECASE)
+        if m:
+            g = m.groups()
+            if fmt == "en_month":
+                month_map = {"May": 5, "June": 6, "July": 7}
+                mo, d = month_map[g[0].capitalize()], int(g[1])
+            else:
+                mo, d = int(g[1]), int(g[2])
+            y = today.year if datetime(today.year, mo, d) >= today.replace(hour=0, minute=0, second=0, microsecond=0) else today.year + 1
+            return datetime(y, mo, d).strftime("%Y-%m-%d")
+    return (today + timedelta(days=7)).strftime("%Y-%m-%d")
 
 def apify_instagram(client, ig_handle):
     try:
-        run = client.actor("apify/instagram-scraper").call(run_input={
-            "directUrls": [f"https://www.instagram.com/{ig_handle}/"], "resultsLimit": 5
+        run = client.actor(ACTOR_IG).call(run_input={
+            "directUrls": [f"https://www.instagram.com/{ig_handle}/"], 
+            "resultsLimit": 5,
+            "cookies": [{"name": "sessionid", "value": IG_COOKIE}] if IG_COOKIE else []
         })
-        # .get() 뒤에 or ""를 추가하여 None인 경우 빈 문자열로 처리
         return [item.get("caption") or item.get("text") or "" for item in client.dataset(run.default_dataset_id).iterate_items()]
     except: return []
 
 def apify_twitter(client, x_handle):
     try:
-        run = client.actor("katerinahronik/twitter-scraper").call(run_input={
-            "handles": [x_handle.lstrip("@")], "tweetsDesired": 5
+        run = client.actor(ACTOR_TW).call(run_input={
+            "handles": [x_handle.lstrip("@")], 
+            "tweetsDesired": 5,
+            "cookies": [{"name": "auth_token", "value": TW_COOKIE}] if TW_COOKIE else []
         })
-        # 여기도 빈 문자열 체크 추가
         return [item.get("text") or "" for item in client.dataset(run.default_dataset_id).iterate_items() if not (item.get("text") or "").startswith("RT ")]
     except: return []
 
+# 4. 메인 실행
 def main():
     client = ApifyClient(APIFY_TOKEN) if APIFY_TOKEN else None
-    today_group_idx = get_today_group()
-    target_brands = BRANDS_GROUPS.get(today_group_idx, [])
+    group_idx = datetime.now().day % 3
+    target_brands = BRANDS_GROUPS.get(group_idx, [])
     
-    print(f"📅 오늘은 그룹 {today_group_idx} 수집일입니다.")
     all_events = json.loads(OUT_PATH.read_text(encoding="utf-8")) if OUT_PATH.exists() else []
     
     for brand in target_brands:
@@ -71,16 +100,14 @@ def main():
         all_events = [e for e in all_events if e["br"] != brand["name"]]
         
         for text in texts:
-            # 방어 코드: text가 None이거나 비어있으면 루프를 돌지 않음
-            if text and isinstance(text, str):
-                if any(trig in text for trig in ["発売", "新作", "drop", "예약", "팝업"]):
-                    all_events.append({
-                        "dt": datetime.now().strftime("%Y-%m-%d"), "br": brand["name"], "d": text[:50]
-                    })
+            if text and isinstance(text, str) and any(trig in text for trig in ["発売", "新作", "drop", "예약", "팝업"]):
+                all_events.append({
+                    "dt": parse_date(text), "br": brand["name"], "d": text[:50], "c": brand["color"], "e": brand["emoji"]
+                })
         time.sleep(15)
 
     OUT_PATH.write_text(json.dumps(all_events, ensure_ascii=False, indent=2), encoding="utf-8")
-    print("✅ 완료.")
+    print(f"✅ 그룹 {group_idx} 수집 완료.")
 
 if __name__ == "__main__":
     main()
