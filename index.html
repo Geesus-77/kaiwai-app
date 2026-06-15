@@ -885,8 +885,8 @@ function drawCal(){
   if (!CAL.length) {
     el.innerHTML = `<div style="text-align:center;padding:64px 20px">
       <div style="font-size:44px;margin-bottom:12px;animation:fadeUp .5s ease both">🗓️</div>
-      <p style="font-size:14px;font-weight:700;color:#8D7B80;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">일정을 불러오는 중이에요</p>
-      <p style="font-size:12px;color:#C4A8B0;line-height:1.8">GitHub Pages에서 열면<br>자동으로 최신 일정이 표시돼요 🎀</p>
+      <p style="font-size:14px;font-weight:700;color:#8D7B80;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">등록된 일정이 없어요</p>
+      <p style="font-size:12px;color:#C4A8B0;line-height:1.8">브랜드 SNS에 발매·팝업 공지가 올라오면<br>자동으로 여기에 표시돼요 🎀</p>
     </div>`;
     return;
   }
@@ -895,12 +895,14 @@ function drawCal(){
     "신상":{bg:"#FFE0EE",c:"#C41055"},
     "수주":{bg:"#FFF5DC",c:"#AA7020"},
     "예약":{bg:"#FFF5DC",c:"#AA7020"},
-    "팝업":{bg:"#F0E0FF",c:"#7733BB"}
+    "팝업":{bg:"#F0E0FF",c:"#7733BB"},
+    "이벤트":{bg:"#FFF0F5",c:"#8D7B80"}
   };
   const sorted=[...CAL].sort((a,b)=>a.dt.localeCompare(b.dt));
   document.getElementById("calList").innerHTML=sorted.map((it,i)=>{
     const d=new Date(it.dt+"T00:00:00"), mm=d.getMonth()+1, dd=d.getDate(), dw=DOW[d.getDay()];
-    const tc=TC[it.tp]||{bg:"#FFF0F5",c:"#8D7B80"};
+    const tp=it.tp||"이벤트";
+    const tc=TC[tp]||{bg:"#FFF0F5",c:"#8D7B80"};
     return `<div class="fu" style="animation-delay:${i*.04}s;display:flex;gap:10px;align-items:stretch">
       <div style="width:50px;flex-shrink:0;background:#fff;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;gap:1px;box-shadow:0 3px 12px rgba(255,150,180,.12)">
         <span style="font-size:9px;color:#C4A8B0;font-weight:500">${mm}월</span>
@@ -913,7 +915,7 @@ function drawCal(){
           <p style="font-weight:700;color:#4A373A;font-size:13px;margin:0 0 8px;line-height:1.4">${it.e} ${it.d}</p>
           <div style="display:flex;gap:5px;flex-wrap:wrap">
             <span style="background:${it.c}18;color:${it.c};font-size:10px;font-weight:700;padding:2px 9px;border-radius:100px;border:1px solid ${it.c}33">${it.br}</span>
-            <span style="background:${tc.bg};color:${tc.c};font-size:10px;font-weight:600;padding:2px 9px;border-radius:100px">${it.tp}</span>
+            <span style="background:${tc.bg};color:${tc.c};font-size:10px;font-weight:600;padding:2px 9px;border-radius:100px">${tp}</span>
           </div>
         </div>
       </div>
