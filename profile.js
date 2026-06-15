@@ -12,12 +12,16 @@
 
   const sb = window.sb; // auth.js 가 생성·전역 노출한 클라이언트
 
-  /* 최고 관리자 화이트리스트
-     ⚠️ 앱에 실제로 로그인하는 이메일(소셜 제공자가 주는 session.user.email)과 일치해야 함.
-        다른 계정으로 로그인하면 이 값을 그 이메일로 바꿔주세요. */
-  const ADMIN_EMAILS = ["rmfjwlak114@gmail.com"];
+  /* 최고 관리자 화이트리스트 — 계정 UUID 기준
+     (소셜 로그인은 이메일이 제공자마다 다르거나 비어있을 수 있어 id 로 식별).
+     새 관리자 추가 시 해당 Supabase 계정 id 를 배열에 넣으면 됨. */
+  const ADMIN_IDS = [
+    '4a612066-9a5d-4da1-905f-fe276fb73908',   // jisulee83@naver.com
+    '82feb4b1-5365-4ff9-b68b-ce1b0805a2b2',   // noitaloiv@gmail.com
+    '6b2482ab-ddde-46a2-bb71-f26880619fd2',   // rmfjwlak114@gmail.com (운영자)
+  ];
   function isAdminUser(user) {
-    return !!user && ADMIN_EMAILS.includes((user.email || "").toLowerCase());
+    return !!user && ADMIN_IDS.includes(user.id);
   }
 
   /* ── DOM 참조 ───────────────────────────────────────── */
