@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://developers.kakaocdn.net/js/kakao.js"></script>
-<script src="https://static.nid.naver.com/js/naveridlogin_js_sdk_2.0.2.js" charset="utf-8"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- 소셜 로그인 전부 Supabase Auth 로 통일 (카카오/구글/네이버 SDK 모두 제거) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 <style>
   body { font-family:'Noto Sans KR',sans-serif; background:#FFF0F5; color:#4A373A; }
   .logo-font { font-family:'M PLUS Rounded 1c',sans-serif; font-weight:800; }
@@ -984,131 +984,21 @@ function closeModal(){ document.getElementById("overlay").style.display="none"; 
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeModal(); closeAuth(); } });
 
 /* ═══════════════════════════════════
-   네이버 OAuth 설정
-   1. https://developers.naver.com/apps 에서 앱 등록
-   2. 사용 API → 네이버 로그인 추가
-   3. 로그인 오픈 API 서비스 환경 → PC웹 추가
-   4. 서비스 URL, Callback URL 등록 (예: http://localhost:5500)
-   5. Client ID 복사 후 아래 NAVER_CLIENT_ID 에 붙여넣기
+   네이버 OAuth
+   → Supabase Auth + Edge Function(verify-naver) 리다이렉트 방식으로 이전됨.
+     · 로그인 시작 함수 startNaverLogin()  : auth.js
+     · 콜백 처리 handleNaverCallback()      : auth.js (auth/callback.html 에서 호출)
+     · 세션 → authUser 브리지              : 하단 initSupabaseAuth()
+   NAVER_CLIENT_ID 등 설정값은 auth.js 에 위치.
 ═══════════════════════════════════ */
-const NAVER_CLIENT_ID = "여기에_네이버_클라이언트_ID_입력";
-
-let _naverLogin = null;
-
-function _initNaver(){
-  if(_naverLogin) return true;
-  if(typeof naver==="undefined"||!naver.LoginWithNaverIdOAuth) return false;
-  if(!NAVER_CLIENT_ID||NAVER_CLIENT_ID.includes("여기에")) return false;
-  _naverLogin = new naver.LoginWithNaverIdOAuth({
-    clientId: NAVER_CLIENT_ID,
-    callbackUrl: location.origin + location.pathname,
-    isPopup: false
-  });
-  _naverLogin.init();
-  return true;
-}
-
-function naverLoginBtn(){
-  if(!_initNaver()){
-    showToast(!NAVER_CLIENT_ID||NAVER_CLIENT_ID.includes("여기에")
-      ? "네이버 클라이언트 ID를 먼저 설정해주세요."
-      : "네이버 SDK 로드 실패. 인터넷 연결을 확인해주세요.");
-    return;
-  }
-  _naverLogin.authorize();
-}
-
-function checkNaverCallback(){
-  if(!location.hash.includes("access_token")) return;
-  if(!_initNaver()) return;
-  _naverLogin.getLoginStatus(function(status){
-    if(!status) return;
-    const naverId  = "naver_" + (_naverLogin.user.getId()||Date.now());
-    const nickname = _naverLogin.user.getNickName()||_naverLogin.user.getName()||"네이버 사용자";
-    const email    = _naverLogin.user.getEmail()||naverId+"@naver";
-    const profileImg = _naverLogin.user.getProfileImage()||"";
-    history.replaceState(null,"",location.pathname+location.search);
-    const users=_getUsers();
-    let user=users.find(u=>u.id===naverId);
-    if(!user){ user={id:naverId,email,pw:"",nickname,profileImg,provider:"naver"}; users.push(user); }
-    else{ user.nickname=nickname; user.profileImg=profileImg; }
-    _saveUsers(users);
-    authUser={id:naverId,email,nickname,profileImg,provider:"naver"};
-    localStorage.setItem("kaiwai_user",JSON.stringify(authUser));
-    updateAuthBtn();
-    showToast(`${nickname}님, 네이버로 로그인됐어요! 🎀`);
-  });
-}
 
 /* ═══════════════════════════════════
-   구글 OAuth 설정
-   1. https://console.cloud.google.com 접속
-   2. 새 프로젝트 생성 → API 및 서비스 → 사용자 인증 정보
-   3. OAuth 2.0 클라이언트 ID 만들기 (웹 애플리케이션)
-   4. 승인된 JavaScript 원본: http://localhost:5500
-   5. 승인된 리디렉션 URI: http://localhost:5500/index.html
-   6. 클라이언트 ID 복사 후 아래에 붙여넣기
+   카카오 / 구글 OAuth
+   → Supabase Auth(signInWithOAuth) 로 이전됨.
+     · startKakaoLogin()  / startGoogleLogin()  : auth.js
+     · 콜백 처리 handleAuthCallback()            : auth.js (auth/callback.html)
+   Client ID/Secret 은 Supabase 대시보드 Authentication > Providers 에서 설정.
 ═══════════════════════════════════ */
-const GOOGLE_CLIENT_ID = "여기에_구글_클라이언트_ID_입력.apps.googleusercontent.com";
-
-let _googleTokenClient = null;
-
-function googleLoginBtn(){
-  if(!GOOGLE_CLIENT_ID||GOOGLE_CLIENT_ID.includes("여기에")){
-    showToast("구글 클라이언트 ID를 먼저 설정해주세요."); return;
-  }
-  if(typeof google==="undefined"||!google.accounts){
-    showToast("구글 SDK 로드 실패. 인터넷 연결을 확인해주세요."); return;
-  }
-  _googleTokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: GOOGLE_CLIENT_ID,
-    scope: "email profile",
-    callback(tokenResponse){
-      if(tokenResponse.error){
-        if(tokenResponse.error!=="access_denied")
-          showToast("구글 로그인 실패: "+tokenResponse.error);
-        return;
-      }
-      fetch("https://www.googleapis.com/oauth2/v3/userinfo",{
-        headers:{Authorization:"Bearer "+tokenResponse.access_token}
-      })
-      .then(r=>r.json())
-      .then(info=>{
-        const googleId="google_"+info.sub;
-        const nickname=info.name||"구글 사용자";
-        const email=info.email||googleId+"@google";
-        const profileImg=info.picture||"";
-        const users=_getUsers();
-        let user=users.find(u=>u.id===googleId);
-        if(!user){ user={id:googleId,email,pw:"",nickname,profileImg,provider:"google"}; users.push(user); }
-        else{ user.nickname=nickname; user.profileImg=profileImg; }
-        _saveUsers(users);
-        authUser={id:googleId,email,nickname,profileImg,provider:"google"};
-        localStorage.setItem("kaiwai_user",JSON.stringify(authUser));
-        updateAuthBtn(); closeAuth();
-        showToast(`${nickname}님, Google로 로그인됐어요! 🎀`);
-      })
-      .catch(()=>showToast("구글 사용자 정보를 가져오지 못했어요."));
-    }
-  });
-  _googleTokenClient.requestAccessToken({prompt:"select_account"});
-}
-
-/* ═══════════════════════════════════
-   카카오 OAuth 설정
-   1. https://developers.kakao.com 에서 앱 생성
-   2. 앱 키 > JavaScript 키 복사
-   3. 아래 KAKAO_JS_KEY 에 붙여넣기
-   4. 플랫폼 > Web > 사이트 도메인 등록 (예: http://localhost:5500)
-   5. 카카오 로그인 > 활성화 ON
-   6. Redirect URI 등록 (현재 파일 URL)
-═══════════════════════════════════ */
-const KAKAO_JS_KEY = "여기에_JavaScript_키_붙여넣기";
-
-(function(){
-  if(typeof Kakao==="undefined"||!KAKAO_JS_KEY||KAKAO_JS_KEY.includes("여기에")) return;
-  if(!Kakao.isInitialized()) Kakao.init(KAKAO_JS_KEY);
-})();
 
 /* ═══════════════════════════════════
    인증 시스템
@@ -1203,66 +1093,16 @@ function doRegister(){
 }
 
 function socialLogin(provider){
-  if(provider==="kakao"){ kakaoLogin(); return; }
-  if(provider==="naver"){ naverLoginBtn(); return; }
-  if(provider==="google"){ googleLoginBtn(); return; }
-}
-
-function kakaoLogin(){
-  if(typeof Kakao==="undefined"){
-    showToast("카카오 SDK 로드 실패. 인터넷 연결을 확인해주세요."); return;
-  }
-  if(!KAKAO_JS_KEY||KAKAO_JS_KEY.includes("여기에")){
-    showToast("카카오 JavaScript 키를 먼저 설정해주세요."); return;
-  }
-  if(!Kakao.isInitialized()) Kakao.init(KAKAO_JS_KEY);
-
-  Kakao.Auth.login({
-    success(authObj){
-      Kakao.API.request({
-        url:"/v2/user/me",
-        success(res){
-          const kakaoId="kakao_"+res.id;
-          const nickname=res.kakao_account?.profile?.nickname||"카카오 사용자";
-          const profileImg=res.kakao_account?.profile?.thumbnail_image_url||"";
-          const email=res.kakao_account?.email||kakaoId+"@kakao";
-          const users=_getUsers();
-          let user=users.find(u=>u.id===kakaoId);
-          if(!user){
-            user={id:kakaoId,email,pw:"",nickname,profileImg,provider:"kakao"};
-            users.push(user);
-          } else {
-            user.nickname=nickname; user.profileImg=profileImg;
-          }
-          _saveUsers(users);
-          authUser={id:kakaoId,email,nickname,profileImg,provider:"kakao"};
-          localStorage.setItem("kaiwai_user",JSON.stringify(authUser));
-          updateAuthBtn(); closeAuth();
-          showToast(`${nickname}님, 카카오로 로그인됐어요! 🎀`);
-        },
-        fail(err){
-          console.error("Kakao API:",err);
-          showToast("카카오 사용자 정보를 가져오지 못했어요.");
-        }
-      });
-    },
-    fail(err){
-      console.error("Kakao login:",err);
-      if(err.error==="access_denied") showToast("카카오 로그인을 취소했어요.");
-      else showToast("카카오 로그인 실패: "+(err.error_description||err.error||""));
-    }
-  });
+  // 카카오/구글/네이버 모두 Supabase Auth 로 통일 (auth.js)
+  if(provider==="kakao"){ startKakaoLogin(); return; }
+  if(provider==="naver"){ startNaverLogin(); return; }
+  if(provider==="google"){ startGoogleLogin(); return; }
 }
 
 function doLogout(){
-  if(authUser?.provider==="kakao" && typeof Kakao!=="undefined" && Kakao.isInitialized()){
-    try{ Kakao.Auth.logout(()=>{}); }catch(e){}
-  }
-  if(authUser?.provider==="naver" && _naverLogin){
-    try{ _naverLogin.logout(); }catch(e){}
-  }
-  if(authUser?.provider==="google" && typeof google!=="undefined" && google.accounts){
-    try{ google.accounts.id.disableAutoSelect(); }catch(e){}
+  // 소셜 로그인(카카오/구글/네이버)은 Supabase 세션 종료
+  if(["kakao","google","naver"].includes(authUser?.provider) && window.sb){
+    try{ window.sb.auth.signOut(); }catch(e){}
   }
   authUser=null; localStorage.removeItem("kaiwai_user");
   updateAuthBtn(); closeAuth();
@@ -1328,7 +1168,41 @@ function updMFav(id){
    초기화
 ═══════════════════════════════════ */
 drawFilter(); drawBanner(); drawBrands(); go("home"); updateAuthBtn();
-_initNaver(); checkNaverCallback();
+
+/* ═══════════════════════════════════
+   Supabase 세션 → authUser 브리지
+   네이버(리다이렉트) 로그인으로 확립된 Supabase 세션을 기존 UI에 반영.
+   카카오/구글/이메일(localStorage mock)은 기존 그대로 동작.
+═══════════════════════════════════ */
+async function initSupabaseAuth(){
+  if(!window.sb) return;  // auth.js 미로드 시 무시
+  try{
+    const { data:{ user } } = await window.sb.auth.getUser();
+    if(user){
+      const m = user.user_metadata || {};
+      // provider: 네이버(커스텀)는 user_metadata.provider, 카카오/구글은 app_metadata.provider
+      const provider = m.provider || user.app_metadata?.provider || "email";
+      authUser = {
+        id: user.id,
+        email: user.email,
+        nickname: m.full_name || m.name || m.user_name || m.nickname
+                  || (user.email||"").split("@")[0] || "사용자",
+        profileImg: m.avatar_url || m.picture || m.profile_image || "",
+        provider,
+      };
+      localStorage.setItem("kaiwai_user", JSON.stringify(authUser));
+      updateAuthBtn();
+    }
+    // 다른 탭/콜백에서의 로그인·로그아웃 동기화 (소셜 전체)
+    window.sb.auth.onAuthStateChange((event)=>{
+      if(event==="SIGNED_OUT" && ["kakao","google","naver"].includes(authUser?.provider)){
+        authUser=null; localStorage.removeItem("kaiwai_user"); updateAuthBtn();
+      }
+    });
+  }catch(e){ /* 세션 없음 — 무시 */ }
+}
+initSupabaseAuth();
+
 loadCal();
 </script>
 </body>

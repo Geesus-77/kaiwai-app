@@ -1,0 +1,27 @@
+# ============================================================
+# Supabase 프로젝트 설정
+#   supabase link 후 supabase db push / functions deploy 시 사용
+# ============================================================
+project_id = "kaiwai-app"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[auth]
+enabled = true
+# 클라이언트 verifyOtp 리다이렉트가 도착할 사이트 URL (배포 도메인으로 교체)
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback.html"]
+
+# ── Edge Functions ──────────────────────────────────────────
+# verify-naver 는 로그인 "전"(pre-auth)에 호출되므로 JWT 검증 비활성화 필수.
+[functions.verify-naver]
+verify_jwt = false

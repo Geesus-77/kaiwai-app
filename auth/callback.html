@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>로그인 처리 중… — KAIWAI 🎀</title>
+<style>
+  body{font-family:'Noto Sans KR',sans-serif;background:#FFF0F5;color:#4A373A;
+       display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0}
+  .box{text-align:center}
+  .spin{width:38px;height:38px;border:4px solid #FFD6E8;border-top-color:#FF6FA8;
+        border-radius:50%;animation:r .8s linear infinite;margin:0 auto 16px}
+  @keyframes r{to{transform:rotate(360deg)}}
+  .err{color:#C41055;font-size:13px;line-height:1.6;max-width:300px;margin:10px auto 0}
+  a{color:#FF6FA8;font-weight:700;text-decoration:none}
+</style>
+<!-- Supabase JS → auth.js 순서로 로드 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- callback.html 은 /auth/ 하위이므로 상위 경로의 auth.js 참조 -->
+<script src="../auth.js"></script>
+</head>
+<body>
+<div class="box">
+  <div class="spin" id="spin"></div>
+  <p id="msg">소셜 로그인 처리 중…</p>
+  <p class="err" id="err" style="display:none"></p>
+</div>
+
+<script>
+(async () => {
+  const msg  = document.getElementById("msg");
+  const err  = document.getElementById("err");
+  const spin = document.getElementById("spin");
+  try {
+    await window.handleAuthCallback();   // 네이버/카카오/구글 통합 처리
+    msg.textContent = "로그인 완료! 이동 중…";
+    // 홈으로 복귀 (index.html 위치에 맞게 조정)
+    window.location.replace("../index.html");
+  } catch (e) {
+    spin.style.display = "none";
+    msg.textContent = "로그인에 실패했어요 😢";
+    err.style.display = "block";
+    err.innerHTML = String(e.message || e) +
+      '<br><br><a href="../index.html">← 홈으로 돌아가기</a>';
+  }
+})();
+</script>
+</body>
+</html>
