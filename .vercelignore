@@ -1,0 +1,18 @@
+# 정적 배포에 불필요한 파일 (Vercel 업로드/배포 대상에서 제외)
+# ⚠️ 런타임에 필요한 calendar_data.json, auth/, *.html, *.js, *.css 는 제외하지 않음
+
+# Python 스크립트 & 의존성 (서버에서 실행 안 됨 + Python 프로젝트 오인 방지)
+*.py
+requirements.txt
+
+# 개발/문서/CI/워크스페이스
+docs/
+.github/
+*.code-workspace
+
+# Supabase Edge Functions (별도 supabase functions deploy 로 관리)
+supabase/
+
+# 로컬 원본 이미지 (실제 에셋은 Supabase Storage 에서 서빙)
+backgrounds/
+logos/
