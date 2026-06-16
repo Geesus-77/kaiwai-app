@@ -105,7 +105,7 @@
 <div id="tHome" class="flex flex-col flex-1">
   <div class="sticky top-0 z-10 px-4 pt-7 pb-3" style="background:linear-gradient(to bottom,#FFF0F5 85%,rgba(255,240,245,0));backdrop-filter:blur(10px)">
     <div class="flex items-end justify-between mb-4">
-      <span class="logo-font text-[32px] leading-none" style="color:#4A4A4A">KAIWAI <span style="color:#FF6FA8">🎀</span></span>
+      <span class="logo-font text-[32px] leading-none pop" onclick="goHome()" title="홈으로" role="button" style="color:#4A4A4A;cursor:pointer;display:inline-block">KAIWAI <span style="color:#FF6FA8">🎀</span></span>
       <button id="authBtn" onclick="openAuth('login')" style="background:#FFF0F5;border:1.5px solid #FFD6E8;border-radius:100px;padding:7px 16px;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:12px;font-weight:700;color:#FF6FA8;transition:all .2s" onmouseover="this.style.background='#FFE0EE'" onmouseout="this.style.background='#FFF0F5'">로그인</button>
     </div>
     <div id="filterRow" class="flex gap-2 overflow-x-auto noscroll pb-1 drag"></div>
@@ -701,6 +701,25 @@ function go(t) {
   if(t==="cal")  drawCal();
 }
 
+/* KAIWAI 로고 클릭 → 앱 초기 상태(홈)로 리셋 */
+function goHome() {
+  // 열려있는 모든 팝업/모달 닫기
+  ["overlay","uploadOverlay","postDetailOverlay","menuOverlay","authOverlay"].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.style.display = "none";
+  });
+  // 카테고리 필터 · 검색 초기화
+  filt = "전체보기";
+  srch = "";
+  const sb = document.getElementById("searchBox"); if(sb) sb.value = "";
+  const clr = document.getElementById("searchClear"); if(clr) clr.style.display = "none";
+  // 홈 탭으로 전환 + 목록 다시 그리기
+  go("home");
+  drawFilter(); drawBanner(); drawBrands();
+  // 스크롤 맨 위로
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 /* ═══════════════════════════════════
    드래그 스크롤
 ═══════════════════════════════════ */
@@ -759,8 +778,8 @@ function logoEl(b, size, radius, shadow) {
 function mHeader(b, fv){
   if(isImg(b.bgImg)){
     return `
-<div style="position:relative;height:220px;overflow:hidden;background:${b.c}18">
-  <img src="${b.bgImg}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top"/>
+<div style="position:relative;height:280px;overflow:hidden;background:${b.c}18">
+  <img src="${b.bgImg}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center"/>
   <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(255,255,255,1) 0%,rgba(255,255,255,.55) 50%,rgba(255,255,255,.1) 100%)"></div>
   <div style="position:absolute;bottom:0;left:0;right:0;padding:16px 20px 18px">
     <div style="display:flex;align-items:flex-end;gap:13px">
