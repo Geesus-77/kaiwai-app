@@ -692,7 +692,8 @@ function logoEl(b, size, radius, shadow) {
   const fs = Math.floor(size * 0.28);
   const pad = Math.floor(size * 0.12);
   const src = b.logo || (domain ? `https://logo.clearbit.com/${domain}` : '');
-  return `<div style="width:${size}px;height:${size}px;border-radius:${radius}px;flex-shrink:0;position:relative;overflow:hidden;background:${b.c};${sh}display:flex;align-items:center;justify-content:center"><span style="font-weight:700;font-size:${fs}px;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif">${b.i}</span>${src?`<img src="${src}" alt="" onload="this.style.opacity=1" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:${pad}px;background:#fff;opacity:0;transition:opacity .25s"/>`:''}</div>`;
+  const logoBg = b.logoBgColor || '#fff';
+  return `<div style="width:${size}px;height:${size}px;border-radius:${radius}px;flex-shrink:0;position:relative;overflow:hidden;background:${b.c};${sh}display:flex;align-items:center;justify-content:center"><span style="font-weight:700;font-size:${fs}px;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif">${b.i}</span>${src?`<img src="${src}" alt="" onload="this.style.opacity=1" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:${pad}px;background:${logoBg};opacity:0;transition:opacity .25s"/>`:''}</div>`;
 }
 
 function mHeader(b, fv){
