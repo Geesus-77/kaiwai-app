@@ -30,7 +30,9 @@ TW_COOKIE = os.environ.get("TW_COOKIE", "")
 OUT_PATH = Path(__file__).parent / "calendar_data.json"
 
 ACTOR_IG = "apify/instagram-scraper"
-ACTOR_TW = "apify/twitter-scraper"
+# 구 apify/twitter-scraper 는 폐기되어 "Actor not found" 발생 → 현행 액터로 교체.
+# ⚠️ apidojo/tweet-scraper 는 유료(rental) 액터 — 첫 실행 전 Apify 계정에서 사용 가능 여부/요금 확인 권장.
+ACTOR_TW = "apidojo/tweet-scraper"
 
 BRANDS_GROUPS = {
     0: [
@@ -70,8 +72,12 @@ SYSTEM_PROMPT = """당신은 일본 서브컬처 패션 브랜드의 SNS 게시�
 응답 형식: JSON 한 줄 또는 null (다른 텍스트 없이)"""
 
 
-def analyze_post(client: genai.Client, brand_name: str, text: str, today: datetime) -> dict | None:
-    """Gemini로 SNS 게시물에서 이벤트를 추출. 이벤트 없으면 None 반환."""
+def analyze_post(client: genai.Client, brand_name: str, text: str, today: datetime) -> tuple[dict | None, bool]:
+    """Gemini로 SNS 게시물에서 이벤트를 추출.
+    반환 (event, ok):
+      - (dict, True)  : 이벤트 추출 성공
+      - (None, True)  : 정상 응답인데 이벤트 없음
+      - (None, False) : API 오류(429 할당량 등) → 호출자는 키워드 폴백으로 전환"""
     prompt = f"""{SYSTEM_PROMPT}
 
 오늘: {today.strftime("%Y년 %m월 %d일")}
@@ -97,7 +103,7 @@ SNS 게시물:
         raw = resp.text.strip()
 
         if raw.lower() == "null" or not raw:
-            return None
+            return None, True
 
         # ```json ... ``` 마크다운 블록 처리
         if raw.startswith("```"):
@@ -106,12 +112,12 @@ SNS 게시물:
 
         data = json.loads(raw)
         if not isinstance(data, dict) or not data.get("date") or not data.get("description"):
-            return None
-        return data
+            return None, True
+        return data, True
 
     except Exception as e:
         print(f"    LLM 오류: {e}")
-        return None
+        return None, False
 
 
 def fetch_instagram(apify: ApifyClient, handle: str) -> list[str]:
@@ -131,11 +137,13 @@ def fetch_instagram(apify: ApifyClient, handle: str) -> list[str]:
 
 
 def fetch_twitter(apify: ApifyClient, handle: str) -> list[str]:
+    # apidojo/tweet-scraper 입력 스키마: twitterHandles(@ 없는 핸들 배열) / maxItems / sort.
+    # (이 액터는 자체 프록시·인증을 써서 TW_COOKIE 불필요)
     try:
         run = apify.actor(ACTOR_TW).call(run_input={
-            "startUrls": [{"url": f"https://x.com/{handle.lstrip('@')}"}],
+            "twitterHandles": [handle.lstrip("@")],
             "maxItems": 5,
-            "cookies": [{"name": "auth_token", "value": TW_COOKIE}] if TW_COOKIE else [],
+            "sort": "Latest",
         })
         return [
             item.get("text") or item.get("full_text") or ""
@@ -204,6 +212,10 @@ def main():
     # 시드(데모) 이벤트는 실제 수집 시 제거, 현재 그룹 외 실제 이벤트는 유지
     events = [e for e in existing if not e.get("seed") and e.get("br") not in processing_names]
 
+    # Gemini 가 한 번 API 오류(429 할당량 등)를 내면 이후 게시물은 LLM 호출을 건너뛰고
+    # 키워드 폴백으로 전환한다(런 단위). 할당량 0인 키여도 인스타+키워드로 실데이터가 채워지도록.
+    gemini_failed = False
+
     for brand in brands:
         print(f"\n▶ {brand['name']}")
         texts: list[str] = []
@@ -226,24 +238,29 @@ def main():
             if not text or not text.strip():
                 continue
 
-            if gemini:
-                result = analyze_post(gemini, brand["name"], text, today)
-                if result:
-                    print(f"  ✅ [{result['date']}] {result['description']}")
-                    events.append({
-                        "dt": result["date"],
-                        "br": brand["name"],
-                        "d":  result["description"],
-                        "c":  brand["color"],
-                        "e":  brand["emoji"],
-                    })
-                else:
-                    print(f"  ⏭ 게시물 {i+1}: 이벤트 없음")
+            result = None
+            if gemini and not gemini_failed:
+                result, ok = analyze_post(gemini, brand["name"], text, today)
+                if not ok:
+                    # 429 등 API 오류 → 이번 런 동안 LLM 비활성화, 키워드 폴백으로 전환
+                    print("    ⚠️ Gemini 사용 불가 → 이후 키워드 폴백 사용")
+                    gemini_failed = True
                 time.sleep(0.3)
-            else:
-                # LLM 없을 때 폴백: 키워드 필터
-                triggers = ["発売", "新作", "ドロップ", "drop", "예약", "팝업", "수주", "발매"]
-                if any(t in text for t in triggers):
+
+            if result:
+                print(f"  ✅ [{result['date']}] {result['description']}")
+                events.append({
+                    "dt": result["date"],
+                    "br": brand["name"],
+                    "d":  result["description"],
+                    "c":  brand["color"],
+                    "e":  brand["emoji"],
+                })
+            elif not gemini or gemini_failed:
+                # LLM 없음/실패 폴백: 키워드 필터 (일본어·한국어 이벤트 키워드)
+                triggers = ["発売", "新作", "ドロップ", "drop", "예약", "팝업", "수주", "발매",
+                            "セール", "sale", "限定", "予約", "popup", "pop up", "コラボ", "입고"]
+                if any(t.lower() in text.lower() for t in triggers):
                     events.append({
                         "dt": (today + timedelta(days=7)).strftime("%Y-%m-%d"),
                         "br": brand["name"],
@@ -251,6 +268,8 @@ def main():
                         "c":  brand["color"],
                         "e":  brand["emoji"],
                     })
+            else:
+                print(f"  ⏭ 게시물 {i+1}: 이벤트 없음")
 
         time.sleep(10)
 
