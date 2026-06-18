@@ -983,38 +983,39 @@ function _applyBgStyle(el, css){
   css.split(";").forEach(d=>{ const i = d.indexOf(":"); if(i>0) el.style.setProperty(d.slice(0,i).trim(), d.slice(i+1).trim()); });
 }
 
-/* 카테고리별 '일러스트 액자 프레임' — 직접 그린 SVG 를 Data URI 로 border-image 에 주입.
-   border-width 가 안쪽 여백을 만들어 사진이 프레임 안에 들어가는 "액자 속 사진" 효과.
-   상단 edge 모티프 하나만 그리고 4방향 회전 복제(rotate)해 사방 프레임 구성, repeat:round 로 균일 반복. */
-/* 카테고리별 '일러스트 액자 프레임' — 오버레이 div 의 배경 타일로 사방 테두리를 그림.
-   border-image 의 슬라이스 스케일 뭉갬을 피하려 모티프를 px 고정 타일로 깔아 또렷하게 보이게 함.
-   카드는 padding(밴드 두께)으로 사진을 안쪽으로 밀고, 오버레이가 그 여백 위에 프레임을 그린다. */
-const FRAME_BAND = 26;   // 프레임 밴드(=카드 padding) 두께 px
+/* 카테고리별 '일러스트 액자 프레임' — 오버레이 div 의 4면 배경 타일(상·하·좌·우, 각 회전)로 테두리.
+   얇은 라인아트 + 작은 크기 + 반투명 + background-repeat:space 로 은은·고급스럽게(겹침/찌그러짐 없음).
+   카드 padding(밴드)으로 사진을 안쪽으로 밀어 '액자 속 사진'. */
+const FRAME_BAND = 15;   // 프레임 밴드(=카드 padding) 두께 px — 얇고 섬세하게
 const CARD_FRAME = (function(){
   const F = {};
-  // ⚠️ url 따옴표는 &quot; 엔티티로 — 인라인 style="..." 속성 안에서 큰따옴표가 속성을 조기종료시키는 문제 방지
-  const tile = (inner, w, h) => `url(&quot;data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'>${inner}</svg>`)}&quot;)`;
-  // 같은 타일을 상·하(가로반복)·좌·우(세로반복) 4겹으로 깔아 액자 테두리 구성
-  const frame = (t, extra) =>
-    `background-image:${t},${t},${t},${t};` +
-    `background-position:top center,bottom center,left center,right center;` +
-    `background-repeat:repeat-x,repeat-x,repeat-y,repeat-y;` +
-    `background-size:auto ${FRAME_BAND}px,auto ${FRAME_BAND}px,${FRAME_BAND}px auto,${FRAME_BAND}px auto${extra||""}`;
-
-  // 🎀 양산형 — 프릴(스캘럽), 진한 핑크 굵은 선 (1x 가독성 위해 굵고 진하게)
-  F["양산형"] = frame(tile("<path d='M0 22 q7.5 -19 15 0' fill='none' stroke='#EC4899' stroke-width='3.4'/><circle cx='7.5' cy='23' r='1.6' fill='#EC4899'/>", 15, 26));
-  // 🖤 지뢰계 — 미니 해골, 진한 차콜
-  F["지뢰계"] = frame(tile("<circle cx='13' cy='10.5' r='8.5' fill='#27272A'/><rect x='7.5' y='17' width='11' height='7' rx='2.5' fill='#27272A'/><circle cx='9.8' cy='9.8' r='2' fill='#F4F4F5'/><circle cx='16.2' cy='9.8' r='2' fill='#F4F4F5'/>", 28, 26));
-  // 🩵 서브컬쳐 — 반짝이 스파클, 진한 스카이 + 글로우
-  F["서브컬쳐"] = frame(tile("<path d='M13 1 Q14.4 11.6 25 13 Q14.4 14.4 13 25 Q11.6 14.4 1 13 Q11.6 11.6 13 1Z' fill='#0EA5E9'/>", 26, 26), ";filter:drop-shadow(0 0 5px rgba(56,189,248,.9))");
-  // ⛓️ 비쥬얼계 — 쇠사슬, 진한 퍼플 × 실버 굵은 선
-  F["비쥬얼계 고스·펑크"] = frame(tile("<ellipse cx='9' cy='13' rx='7' ry='4.4' fill='none' stroke='#7C3AED' stroke-width='3'/><ellipse cx='18' cy='13' rx='4.4' ry='7' fill='none' stroke='#6B7280' stroke-width='3'/>", 27, 26));
-  // 🥂 스나계 — 진주, 진한 골드
-  F["스나계"] = frame(tile("<circle cx='7' cy='13' r='5.2' fill='#C99A3A'/><circle cx='5.4' cy='11.4' r='1.7' fill='#FBF0CE'/>", 15, 26));
-  // 👗 로리타 — 장미 넝쿨, 진한 자홍
-  F["로리타"] = frame(tile("<path d='M0 16 q6 -9 12 0 t12 0' fill='none' stroke='#9D174D' stroke-width='2.6'/><circle cx='12' cy='10' r='5' fill='#D6209A'/><circle cx='12' cy='10' r='2' fill='#831843'/>", 24, 26));
-  // 👜 잡화 — 지그재그 스티치, 진한 브라운 굵은 선
-  F["잡화(가방,신발,악세)"] = frame(tile("<path d='M0 5 L9 21 L18 5' fill='none' stroke='#8B5E3C' stroke-width='3.2' stroke-linejoin='round'/>", 18, 26));
+  const S = 12;   // 문양(타일) 크기 px — 마스킹테이프/레이스처럼 작게
+  // ⚠️ url 따옴표는 &quot; 엔티티로 (인라인 style="..." 속성 조기종료 방지)
+  const enc = (content) => `url(&quot;data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${S}' height='${S}' viewBox='0 0 ${S} ${S}'>${content}</svg>`)}&quot;)`;
+  const rot = (m, d) => d ? `<g transform='rotate(${d} 6 6)'>${m}</g>` : m;
+  // motif = '위' 방향 얇은 라인아트 → 4면 회전(상0·하180·좌90·우270)해 진짜 액자처럼.
+  // background-repeat:space → 문양이 잘리거나 겹치지 않고 균일 간격 배치.
+  const frame = (m, extra) => {
+    const T = enc(rot(m,0)), B = enc(rot(m,180)), L = enc(rot(m,90)), R = enc(rot(m,270));
+    return `background-image:${T},${B},${L},${R};` +
+      `background-position:top center,bottom center,left center,right center;` +
+      `background-repeat:space no-repeat,space no-repeat,no-repeat space,no-repeat space;` +
+      `background-size:${S}px ${S}px${extra||""}`;
+  };
+  // 🎀 양산형 — 프릴(가는 스캘럽 라인), 옅은 핑크
+  F["양산형"] = frame("<path d='M1 8.4 q5 -5.4 10 0' fill='none' stroke='rgba(236,72,153,.42)' stroke-width='1' stroke-linecap='round'/>");
+  // 🖤 지뢰계 — 라인아트 미니 해골, 옅은 차콜
+  F["지뢰계"] = frame("<circle cx='6' cy='5' r='3.1' fill='none' stroke='rgba(63,63,70,.5)' stroke-width='.9'/><circle cx='4.8' cy='4.7' r='.55' fill='rgba(63,63,70,.5)'/><circle cx='7.2' cy='4.7' r='.55' fill='rgba(63,63,70,.5)'/><path d='M4.6 8.1v1.5M6 8.3v1.7M7.4 8.1v1.5' stroke='rgba(63,63,70,.5)' stroke-width='.75' stroke-linecap='round'/>");
+  // 🩵 서브컬쳐 — 반짝이 스파클(라인), 옅은 스카이 + 미세 글로우
+  F["서브컬쳐"] = frame("<path d='M6 1.2 L6.9 5.1 L10.8 6 L6.9 6.9 L6 10.8 L5.1 6.9 L1.2 6 L5.1 5.1Z' fill='none' stroke='rgba(14,165,233,.45)' stroke-width='.8' stroke-linejoin='round'/>", ";filter:drop-shadow(0 0 1.5px rgba(56,189,248,.5))");
+  // ⛓️ 비쥬얼계 — 쇠사슬(라인 링), 옅은 퍼플
+  F["비쥬얼계 고스·펑크"] = frame("<ellipse cx='4.4' cy='6' rx='2.6' ry='1.5' fill='none' stroke='rgba(124,58,237,.45)' stroke-width='.9'/><ellipse cx='7.6' cy='6' rx='1.5' ry='2.6' fill='none' stroke='rgba(124,58,237,.45)' stroke-width='.9'/>");
+  // 🥂 스나계 — 진주(가는 원형 링), 옅은 골드
+  F["스나계"] = frame("<circle cx='6' cy='6' r='2.4' fill='none' stroke='rgba(176,135,55,.5)' stroke-width='1'/>");
+  // 👗 로리타 — 장미 넝쿨(라인 스월 + 잎), 옅은 와인
+  F["로리타"] = frame("<path d='M6 4.2 a1.9 1.9 0 1 1 -1.7 1.1' fill='none' stroke='rgba(157,23,77,.45)' stroke-width='.9'/><path d='M6.4 8 q1.5 -.6 2.3 .8' fill='none' stroke='rgba(157,23,77,.4)' stroke-width='.8' stroke-linecap='round'/>");
+  // 👜 잡화 — 크로스 스티치(X), 옅은 브라운
+  F["잡화(가방,신발,악세)"] = frame("<path d='M3 3.2 L9 8.8 M9 3.2 L3 8.8' fill='none' stroke='rgba(139,94,60,.45)' stroke-width='.9' stroke-linecap='round'/>");
   return F;
 })();
 function cardFrame(cat){ return CARD_FRAME[cat] || ""; }
@@ -1028,10 +1029,10 @@ function card(b, delay){
     ? `<img src="${b.bgImg}" alt="${b.n}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.display='none'"/>`
     : `<div style="position:absolute;inset:0;background:linear-gradient(135deg,${b.c},${b.c}AA);display:flex;align-items:center;justify-content:center;font-size:42px;opacity:.55">🎀</div>`;
   return `<div class="fu kw-bcard overflow-hidden" style="animation-delay:${delay}s;overflow:hidden;cursor:pointer;position:relative;padding:${FRAME_BAND}px" onclick="openM(${b.id})">
-    <!-- 일러스트 액자 프레임 (여백 위에 모티프 타일) -->
-    <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;z-index:5;${cardFrame(b.s)}"></div>
+    <!-- 일러스트 액자 프레임 (여백에 얇은 라인아트, 콘텐츠 아래·배경 위) -->
+    <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;z-index:1;${cardFrame(b.s)}"></div>
     <!-- 사진 영역 -->
-    <div style="position:relative;height:158px;background:${b.c}14">
+    <div style="position:relative;z-index:2;height:158px;background:${b.c}14">
       ${imgArea}
       <!-- 은은한 그라데이션: 사진 하단을 흰 텍스트 영역으로 부드럽게 연결 -->
       <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(255,255,255,.6) 0%,rgba(255,255,255,0) 38%)"></div>
@@ -1042,7 +1043,7 @@ function card(b, delay){
       </div>
     </div>
     <!-- 텍스트 영역 (흰 배경, 진한 글씨) -->
-    <div style="padding:11px 14px 13px">
+    <div style="position:relative;z-index:2;padding:14px 17px 15px">
       <div style="display:flex;align-items:center;gap:9px;margin-bottom:7px">
         ${logoEl(b,34,11,'')}
         <span style="font-weight:800;color:#3A2B30;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'M PLUS Rounded 1c',sans-serif">${b.n}</span>
