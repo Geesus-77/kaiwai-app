@@ -917,6 +917,33 @@ const CARD_THEME = {
 };
 function cardTheme(cat){ return CARD_THEME[cat] || { bg:"#FFFFFF", dark:false }; }
 
+/* 카테고리별 반투명 반복 문양 (가벼운 인라인 SVG/CSS 타일).
+   카드 위에 z-index:0 오버레이로 깔리고 콘텐츠는 z-index:1 로 그 위에 옴. */
+function _svgPat(inner, color, vb, sizeCss){
+  const p = vb.split(" "); const w = p[2], h = p[3];
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='${vb}'>${inner.replace(/COLOR/g, color)}</svg>`;
+  return `background-image:url("data:image/svg+xml,${encodeURIComponent(svg)}");background-repeat:repeat;background-size:${sizeCss}`;
+}
+const CAT_PATTERN = (function(){
+  const P = {};
+  // 양산형 A — 클래식 리본
+  P["양산형"] = _svgPat("<path fill='COLOR' d='M12 12c-2.2-2.6-7-2.6-7 .3 0 2.7 4.8 2.6 7-.3z'/><path fill='COLOR' d='M12 12c2.2-2.6 7-2.6 7 .3 0 2.7-4.8 2.6-7-.3z'/><circle cx='12' cy='12' r='1.7' fill='COLOR'/>", "#E5468A", "0 0 24 24", "30px 30px") + ";opacity:.14";
+  // 지뢰계 A — 고딕 십자가
+  P["지뢰계"] = _svgPat("<path fill='COLOR' d='M11 2h2v6h4v2h-4v12h-2V10H7V8h4z'/>", "#FFFFFF", "0 0 24 24", "26px 26px") + ";opacity:.18";
+  // 서브컬쳐(천사계) A — 천사 날개
+  P["서브컬쳐"] = _svgPat("<path fill='COLOR' d='M12 14c-1.6-3.5-5.5-5-9-3.5 1.8.7 2.6 2.2 2.4 3.8 1.8-.8 4.2-.7 6.6-.3z'/><path fill='COLOR' d='M12 14c1.6-3.5 5.5-5 9-3.5-1.8.7-2.6 2.2-2.4 3.8-1.8-.8-4.2-.7-6.6-.3z'/>", "#38BDF8", "0 0 24 24", "36px 36px") + ";opacity:.2";
+  // 비쥬얼계 고스·펑크 B — 해골
+  P["비쥬얼계 고스·펑크"] = _svgPat("<path fill='COLOR' d='M12 4a6 6 0 00-6 6c0 2.1 1.1 3.9 2.7 5V17h1.6v-1.4h3.4V17H15v-2c1.6-1.1 2.7-2.9 2.7-5a6 6 0 00-6-6zM9.4 11.2a1.4 1.4 0 110-2.8 1.4 1.4 0 010 2.8zm5.2 0a1.4 1.4 0 110-2.8 1.4 1.4 0 010 2.8z'/>", "#7C3AED", "0 0 24 24", "32px 32px") + ";opacity:.15";
+  // 스나계 A — 다이아몬드 퀼팅 (CSS 크로스해치)
+  P["스나계"] = "background-image:repeating-linear-gradient(45deg,#B08D57 0 1px,transparent 1px 20px),repeating-linear-gradient(-45deg,#B08D57 0 1px,transparent 1px 20px);opacity:.28";
+  // 로리타 C — 레이스 테두리 (위·아래 가장자리만 스캘럽)
+  P["로리타"] = "background-image:radial-gradient(circle at 7px 0,#C026D3 0 4px,transparent 5px),radial-gradient(circle at 7px 100%,#C026D3 0 4px,transparent 5px);background-repeat:repeat-x;background-size:14px 14px;background-position:top,bottom;opacity:.22";
+  // 잡화 C — 물결 라인
+  P["잡화(가방,신발,악세)"] = _svgPat("<path fill='none' stroke='COLOR' stroke-width='1.6' d='M0 6q6-6 12 0t12 0'/>", "#B45309", "0 0 24 12", "24px 12px") + ";opacity:.18";
+  return P;
+})();
+function catPattern(cat){ return CAT_PATTERN[cat] || ""; }
+
 function card(b, delay){
   const fv = favs.includes(b.id);
   const t = cardTheme(b.s);
@@ -927,10 +954,12 @@ function card(b, delay){
   const catChip = t.dark
     ? `background:rgba(255,255,255,.14);color:#EBD7FF;border:1px solid rgba(255,255,255,.22)`
     : `background:${b.c}18;color:${b.c};border:1px solid ${b.c}33`;
-  return `<div class="fu kawaii-card" style="animation-delay:${delay}s;overflow:hidden;cursor:pointer;background:${t.bg} !important"
+  const pat = catPattern(b.s);
+  return `<div class="fu kawaii-card" style="animation-delay:${delay}s;overflow:hidden;cursor:pointer;background:${t.bg} !important;position:relative"
     onclick="openM(${b.id})">
-    <div style="height:4px;background:${b.c}"></div>
-    <div style="padding:13px 14px;display:flex;align-items:center;gap:11px">
+    ${pat?`<div aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;${pat}"></div>`:""}
+    <div style="height:4px;background:${b.c};position:relative;z-index:1"></div>
+    <div style="padding:13px 14px;display:flex;align-items:center;gap:11px;position:relative;z-index:1">
       ${logoEl(b,50,16,'')}
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px">
