@@ -315,7 +315,7 @@
         <div style="flex:1;height:1px;background:#FFE8F0"></div>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
-        <input class="auth-input" id="loginId" type="text" placeholder="아이디 또는 이메일" autocomplete="username"/>
+        <input class="auth-input" id="loginId" type="email" placeholder="이메일" autocomplete="email"/>
         <input class="auth-input" id="loginPw" type="password" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
       </div>
       <p id="loginErr" style="font-size:12px;color:#C41055;margin:0 0 12px;display:none;line-height:1.5"></p>
@@ -1538,7 +1538,7 @@ const RESULTS = {
     desc:"패션은 곧 예술! 남들의 시선 따위 가볍게 무시하고 자신만의 확고한 미학을 밀고 나가는 자존감 만렙. 정교한 레이스와 파니에로 무장한 당신은 이 구역의 주인공입니다.",
     bg:"#FAE8FF", fg:"#3A2B38", sub:"#86708A" },
   punk:{ emoji:"⛓️🎸☠️", cat:"비쥬얼계 고스·펑크", name:"반항심 100% ⛓️ 거칠고 자유로운 록스타",
-    desc:"세상의 규칙? 가볍게 무시! 체인과 피어싱, 올블랙 코디로 세상에 반항하는 마이웨이 끝판왕. 겉은 까칠해 보여도 자기가 좋아하는 것엔 엄청난 열정을 쏟는 타입.",
+    desc:"세상의 규칙? 좆까라고 해! 체인과 피어싱, 올블랙 코디로 세상에 반항하는 마이웨이 끝판왕. 겉은 까칠해 보여도 자기가 좋아하는 것엔 엄청난 열정을 쏟는 타입.",
     bg:"#F3E8FF", fg:"#332B3A", sub:"#7C6E86" },
 };
 
@@ -1863,20 +1863,33 @@ function _showErr(id,msg){
 }
 function _hideErr(id){ document.getElementById(id).style.display="none"; }
 
-function doLogin(){
-  const id=document.getElementById("loginId").value.trim();
+/* 자체 로그인 — Supabase Auth(이메일+비번)로 세션 생성 */
+async function doLogin(){
+  const email=document.getElementById("loginId").value.trim();
   const pw=document.getElementById("loginPw").value;
   _hideErr("loginErr");
-  if(!id||!pw) return _showErr("loginErr","아이디와 비밀번호를 입력해주세요.");
-  const user=_getUsers().find(u=>(u.id===id||u.email===id) && u.pw===_enc(pw));
-  if(!user) return _showErr("loginErr","아이디 또는 비밀번호가 일치하지 않아요.");
-  authUser={id:user.id,email:user.email,nickname:user.nickname};
-  localStorage.setItem("kaiwai_user",JSON.stringify(authUser));
-  updateAuthBtn(); closeAuth();
-  showToast(`${authUser.nickname}님, 환영해요! 🎀`);
+  if(!email||!pw) return _showErr("loginErr","이메일과 비밀번호를 입력해주세요.");
+  if(!window.sb){ alert("로그인 서버에 연결할 수 없어요. 잠시 후 다시 시도해 주세요."); return; }
+  const btn=event&&event.target&&event.target.tagName==="BUTTON"?event.target:null;
+  if(btn){ btn.disabled=true; btn.textContent="로그인 중…"; }
+  try{
+    const { data, error } = await window.sb.auth.signInWithPassword({ email, password:pw });
+    if(error){
+      const msg = "이메일 또는 비밀번호가 일치하지 않아요.";
+      alert(msg); _showErr("loginErr", msg); return;
+    }
+    await applySupabaseUser(data.user);
+    closeAuth();
+    showToast(`${authUser?.nickname||"회원"}님, 환영해요! 🎀`);
+  } catch(e){
+    alert("로그인 중 오류가 발생했어요: " + (e?.message||e));
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent="로그인"; }
+  }
 }
 
-function doRegister(){
+/* 자체 회원가입 — Supabase Auth signUp (Confirm email OFF → 즉시 세션) */
+async function doRegister(){
   const nick=document.getElementById("regNick").value.trim();
   const id=document.getElementById("regId").value.trim();
   const email=document.getElementById("regEmail").value.trim();
@@ -1894,15 +1907,32 @@ function doRegister(){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return _showErr("regErr","올바른 이메일 주소를 입력해주세요.");
   if(pw.length<8) return _showErr("regErr","비밀번호는 8자 이상이어야 해요.");
   if(pw!==pw2) return _showErr("regErr","비밀번호가 일치하지 않아요.");
-  const users=_getUsers();
-  if(users.find(u=>u.id===id)) return _showErr("regErr","이미 사용 중인 아이디예요.");
-  if(users.find(u=>u.email===email)) return _showErr("regErr","이미 사용 중인 이메일이에요.");
-  const newUser={id,email,pw:_enc(pw),nickname:nick};
-  users.push(newUser); _saveUsers(users);
-  authUser={id,email,nickname:nick};
-  localStorage.setItem("kaiwai_user",JSON.stringify(authUser));
-  updateAuthBtn(); closeAuth();
-  showToast(`${nick}님, 가입을 축하해요! 🎀`);
+  if(!window.sb){ alert("회원가입 서버에 연결할 수 없어요. 잠시 후 다시 시도해 주세요."); return; }
+  const btn=event&&event.target&&event.target.tagName==="BUTTON"?event.target:null;
+  if(btn){ btn.disabled=true; btn.textContent="가입 중…"; }
+  try{
+    const { data, error } = await window.sb.auth.signUp({
+      email, password:pw,
+      options:{ data:{ nickname:nick, username:id } },   // user_metadata 에 닉네임/아이디 저장
+    });
+    if(error){
+      const dup = /already|registered|exists/i.test(error.message||"");
+      const msg = dup ? "이미 가입된 이메일이에요. 로그인해 주세요." : ("회원가입 실패: " + error.message);
+      alert(msg); _showErr("regErr", msg); return;
+    }
+    // Confirm email OFF → 세션 즉시 발급. (혹시 ON이면 session 이 없을 수 있음)
+    if(!data.session){
+      alert("가입이 접수됐어요. 이메일 인증 후 로그인해 주세요.");
+      switchAuth("login"); return;
+    }
+    await applySupabaseUser(data.user);
+    closeAuth();
+    showToast(`${nick}님, 가입을 축하해요! 🎀`);
+  } catch(e){
+    alert("회원가입 중 오류가 발생했어요: " + (e?.message||e));
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent="회원가입"; }
+  }
 }
 
 function socialLogin(provider){
@@ -2154,46 +2184,60 @@ function kawaiiAvatar(seed){
   return `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${encodeURIComponent(seed)}&backgroundColor=ffd6e8,ffc0cb,ffe0ee,fbb1d3&radius=50`;
 }
 
+/* Supabase user → authUser 동기화 (소셜·자체 이메일 로그인 공통) */
+async function applySupabaseUser(user){
+  if(!user) return;
+  const m = user.user_metadata || {};
+  const provider = detectLoginProvider(user);
+  // profiles 에서 카이와이 닉네임/아바타 조회 (마이페이지와 동일 소스)
+  let displayName = "", avatarUrl = "";
+  try {
+    const { data: prof } = await window.sb
+      .from("profiles").select("display_name, avatar_url").eq("id", user.id).maybeSingle();
+    displayName = prof?.display_name?.trim() || "";
+    avatarUrl   = prof?.avatar_url?.trim() || "";
+  } catch(_){ /* 조회 실패 시 메타데이터/디폴트로 폴백 */ }
+  authUser = {
+    id: user.id,
+    email: user.email,
+    nickname: displayName
+              || m.nickname || m.full_name || m.name || m.user_name
+              || (user.email||"").split("@")[0] || "사용자",
+    profileImg: avatarUrl || kawaiiAvatar(user.id),
+    provider,
+  };
+  localStorage.setItem("kaiwai_user", JSON.stringify(authUser));
+  updateAuthBtn();
+  currentUserId = user.id;
+  fetchUserFavorites();                  // 로그인 → DB 즐겨찾기 동기화
+}
+
+/* 세션 만료/없음 → 유령 로그인 상태 제거 (localStorage 잔재 정리) */
+function _clearAuthLocal(){
+  authUser = null;
+  currentUserId = null;
+  localStorage.removeItem("kaiwai_user");
+  favs = []; localStorage.setItem("zp_fav","[]");
+  updateAuthBtn();
+  drawBrands(); if(tab==="fav") drawFav();
+}
+
 async function initSupabaseAuth(){
   if(!window.sb) return;  // auth.js 미로드 시 무시
   try{
-    const { data:{ user } } = await window.sb.auth.getUser();
-    if(user){
-      const m = user.user_metadata || {};
-      // provider: 가장 최근 로그인한 identity 기준 (계정 병합돼도 정확)
-      const provider = detectLoginProvider(user);
-      // profiles 에서 카이와이 닉네임/아바타 조회 (마이페이지와 동일 소스)
-      let displayName = "", avatarUrl = "";
-      try {
-        const { data: prof } = await window.sb
-          .from("profiles").select("display_name, avatar_url").eq("id", user.id).maybeSingle();
-        displayName = prof?.display_name?.trim() || "";
-        avatarUrl   = prof?.avatar_url?.trim() || "";
-      } catch(_){ /* 조회 실패 시 메타데이터/디폴트로 폴백 */ }
-      authUser = {
-        id: user.id,
-        email: user.email,
-        nickname: displayName
-                  || m.full_name || m.name || m.user_name || m.nickname
-                  || (user.email||"").split("@")[0] || "사용자",
-        // 아바타: DB avatar_url 우선 → 없으면 마이페이지와 같은 DiceBear
-        profileImg: avatarUrl || kawaiiAvatar(user.id),
-        provider,
-      };
-      localStorage.setItem("kaiwai_user", JSON.stringify(authUser));
-      updateAuthBtn();
-      currentUserId = user.id;              // realtime 자기 액션 구분용
-      fetchUserFavorites();                 // 로그인 상태 → DB 즐겨찾기 동기화
+    const { data:{ session } } = await window.sb.auth.getSession();
+    if(session?.user){ await applySupabaseUser(session.user); }
+    else { if(authUser) _clearAuthLocal(); }   // (B) 세션 없는데 localStorage 잔재 → 정리
+  }catch(e){ /* 네트워크 오류 등: 기존 상태 유지(오판 방지) */ }
+
+  // 로그인/로그아웃/세션복원 동기화 (자체 이메일 + 소셜 전부)
+  window.sb.auth.onAuthStateChange((event, session)=>{
+    if((event==="SIGNED_IN" || event==="TOKEN_REFRESHED") && session?.user){
+      applySupabaseUser(session.user);
+    } else if(event==="SIGNED_OUT"){
+      _clearAuthLocal();
     }
-    // 다른 탭/콜백에서의 로그인·로그아웃 동기화 (소셜 전체)
-    window.sb.auth.onAuthStateChange((event)=>{
-      if(event==="SIGNED_OUT" && ["kakao","google","naver"].includes(authUser?.provider)){
-        authUser=null; localStorage.removeItem("kaiwai_user"); updateAuthBtn();
-        favs=[]; localStorage.setItem("zp_fav","[]");   // 로그아웃 시 즐겨찾기 비우기
-        drawBrands(); if(tab==="fav") drawFav();
-      }
-    });
-  }catch(e){ /* 세션 없음 — 무시 */ }
+  });
 }
 initSupabaseAuth();
 subscribePostLikes();   // 실시간 좋아요 구독
