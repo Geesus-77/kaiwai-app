@@ -36,22 +36,24 @@ ACTOR_IG = "apify/instagram-scraper"
 # ⚠️ apidojo/tweet-scraper 는 유료(rental) 액터 — 첫 실행 전 Apify 계정에서 사용 가능 여부/요금 확인 권장.
 ACTOR_TW = "apidojo/tweet-scraper"
 
+# "id" = index.html 의 브랜드 고유 id(B 배열). 캘린더 이벤트에 bid 로 기록되어
+# 앱에서 클릭 시 openM(bid) 로 해당 브랜드 상세 모달을 띄우는 데 쓰인다.
 BRANDS_GROUPS = {
     0: [
-        {"name": "ROJITA",      "ig": "rojita__official",       "tw": "ROJITA__jp",      "color": "#C41055", "emoji": "🖤"},
-        {"name": "Ank Rouge",   "ig": "ankrouge_official",      "tw": "AnkRouge",         "color": "#C41055", "emoji": "🎀"},
-        {"name": "LIZ LISA",    "ig": "lizlisa_official_japan", "tw": "lizlisaofficial",  "color": "#C41055", "emoji": "🌸"},
+        {"name": "ROJITA",      "id": 8,  "ig": "rojita__official",       "tw": "ROJITA__jp",      "color": "#C41055", "emoji": "🖤"},
+        {"name": "Ank Rouge",   "id": 2,  "ig": "ankrouge_official",      "tw": "AnkRouge",         "color": "#C41055", "emoji": "🎀"},
+        {"name": "LIZ LISA",    "id": 1,  "ig": "lizlisa_official_japan", "tw": "lizlisaofficial",  "color": "#C41055", "emoji": "🌸"},
     ],
     1: [
-        {"name": "Secret Honey",    "ig": "secrethoney_official", "tw": "SecretHoney_HB", "color": "#C41055", "emoji": "🐰"},
-        {"name": "pium",            "ig": "",                     "tw": "pium__official",  "color": "#AA7020", "emoji": "🌸"},
-        {"name": "Honey Cinnamon",  "ig": "",                     "tw": "honeyc0214",      "color": "#C41055", "emoji": "🍯"},
+        {"name": "Secret Honey",    "id": 4,  "ig": "secrethoney_official", "tw": "SecretHoney_HB", "color": "#C41055", "emoji": "🐰"},
+        {"name": "pium",            "id": 14, "ig": "",                     "tw": "pium__official",  "color": "#AA7020", "emoji": "🌸"},
+        {"name": "Honey Cinnamon",  "id": 3,  "ig": "",                     "tw": "honeyc0214",      "color": "#C41055", "emoji": "🍯"},
     ],
     2: [
-        {"name": "NOEMIE",      "ig": "noemie_official_",    "tw": "Noemie_shop",       "color": "#C41055", "emoji": "🩷"},
-        {"name": "MA*RS",       "ig": "marsofficialjapan",   "tw": "mars_amoebamars",   "color": "#C41055", "emoji": "♦️"},
-        {"name": "DearMyLove",  "ig": "dearmylove_official", "tw": "dearmylove_yume",   "color": "#C41055", "emoji": "💕"},
-        {"name": "DimMoire",    "ig": "",                    "tw": "_DimMoire_",         "color": "#7733BB", "emoji": "🌑"},
+        {"name": "NOEMIE",      "id": 9,  "ig": "noemie_official_",    "tw": "Noemie_shop",       "color": "#C41055", "emoji": "🩷"},
+        {"name": "MA*RS",       "id": 11, "ig": "marsofficialjapan",   "tw": "mars_amoebamars",   "color": "#C41055", "emoji": "♦️"},
+        {"name": "DearMyLove",  "id": 13, "ig": "dearmylove_official", "tw": "dearmylove_yume",   "color": "#C41055", "emoji": "💕"},
+        {"name": "DimMoire",    "id": 19, "ig": "",                    "tw": "_DimMoire_",         "color": "#7733BB", "emoji": "🌑"},
     ],
 }
 
@@ -246,13 +248,14 @@ def build_seed_schedule(today: datetime, days: int = 14) -> list[dict]:
             b = roster[k % len(roster)]
             tp, tmpl = SEED_TEMPLATES[k % len(SEED_TEMPLATES)]
             out.append({
-                "dt": date,
-                "tm": tm,
-                "br": b["name"],
-                "d":  tmpl.format(e=b["emoji"]),
-                "c":  b["color"],
-                "e":  b["emoji"],
-                "tp": tp,
+                "dt":  date,
+                "tm":  tm,
+                "bid": b["id"],
+                "br":  b["name"],
+                "d":   tmpl.format(e=b["emoji"]),
+                "c":   b["color"],
+                "e":   b["emoji"],
+                "tp":  tp,
                 "seed": True,                        # 실제 수집 시 교체될 데모 데이터 표시
             })
             k += 1
@@ -321,11 +324,12 @@ def main():
             if result:
                 print(f"  ✅ [{result['date']}] {result['description']}")
                 events.append({
-                    "dt": result["date"],
-                    "br": brand["name"],
-                    "d":  result["description"],
-                    "c":  brand["color"],
-                    "e":  brand["emoji"],
+                    "dt":  result["date"],
+                    "bid": brand["id"],
+                    "br":  brand["name"],
+                    "d":   result["description"],
+                    "c":   brand["color"],
+                    "e":   brand["emoji"],
                 })
             elif analyzer is None or analyzer.disabled:
                 # LLM 없음/실패 폴백: 키워드 필터 (일본어·한국어 이벤트 키워드)
@@ -333,11 +337,12 @@ def main():
                             "セール", "sale", "限定", "予約", "popup", "pop up", "コラボ", "입고"]
                 if any(t.lower() in text.lower() for t in triggers):
                     events.append({
-                        "dt": (today + timedelta(days=7)).strftime("%Y-%m-%d"),
-                        "br": brand["name"],
-                        "d":  text[:50].strip(),
-                        "c":  brand["color"],
-                        "e":  brand["emoji"],
+                        "dt":  (today + timedelta(days=7)).strftime("%Y-%m-%d"),
+                        "bid": brand["id"],
+                        "br":  brand["name"],
+                        "d":   text[:50].strip(),
+                        "c":   brand["color"],
+                        "e":   brand["emoji"],
                     })
             else:
                 print(f"  ⏭ 게시물 {i+1}: 이벤트 없음")

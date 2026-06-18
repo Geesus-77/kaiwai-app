@@ -1233,15 +1233,19 @@ function drawCal(){
     const d=new Date(it.dt+"T00:00:00"), mm=d.getMonth()+1, dd=d.getDate(), dw=DOW[d.getDay()];
     const tp=it.tp||"이벤트";
     const tc=TC[tp]||{bg:"#FFF0F5",c:"#8D7B80"};
-    return `<div class="fu" style="animation-delay:${i*.04}s;display:flex;gap:10px;align-items:stretch">
+    // 이벤트 → 브랜드 id 매핑: 수집 시 박은 it.bid 우선, 없으면(구 데이터) 이름으로 폴백 매칭.
+    // id 가 잡히면 클릭 시 openM(bid) 로 디렉토리 상세 모달을 앱 내에서 바로 띄운다.
+    const bid = (it.bid!=null) ? it.bid : (B.find(x=>x.n===it.br)||{}).id;
+    const clickable = bid!=null;
+    return `<div class="fu" ${clickable?`onclick="openM(${bid})" role="button" tabindex="0" aria-label="${it.br} 브랜드 상세 보기"`:""} style="animation-delay:${i*.04}s;display:flex;gap:10px;align-items:stretch;${clickable?"cursor:pointer":""}">
       <div style="width:50px;flex-shrink:0;background:#fff;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;gap:1px;box-shadow:0 3px 12px rgba(255,150,180,.12)">
         <span style="font-size:9px;color:#C4A8B0;font-weight:500">${mm}월</span>
         <span style="font-size:22px;font-weight:800;color:#4A4A4A;line-height:1;font-family:'M PLUS Rounded 1c',sans-serif">${dd}</span>
         <span style="font-size:10px;font-weight:700;color:${it.c}">${dw}</span>
       </div>
-      <div style="flex:1;background:#fff;border-radius:18px;overflow:hidden;display:flex;box-shadow:0 3px 12px rgba(255,150,180,.12)">
+      <div style="flex:1;background:#fff;border-radius:18px;overflow:hidden;display:flex;box-shadow:0 3px 12px rgba(255,150,180,.12)${clickable?";transition:box-shadow .15s,transform .15s":""}" ${clickable?`onmouseover="this.style.boxShadow='0 6px 18px rgba(255,120,160,.28)';this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='0 3px 12px rgba(255,150,180,.12)';this.style.transform='translateY(0)'"`:""}>
         <div style="width:4px;flex-shrink:0;background:${it.c}"></div>
-        <div style="flex:1;padding:11px 13px">
+        <div style="flex:1;padding:11px 13px;min-width:0">
           <p style="font-weight:700;color:#4A4A4A;font-size:13px;margin:0 0 8px;line-height:1.4">${it.e} ${it.d}</p>
           <div style="display:flex;gap:5px;flex-wrap:wrap">
             <span style="background:${it.c}18;color:${it.c};font-size:10px;font-weight:700;padding:2px 9px;border-radius:100px;border:1px solid ${it.c}33">${it.br}</span>
@@ -1249,6 +1253,7 @@ function drawCal(){
             ${it.tm?`<span style="background:#EEEAFB;color:#8B7BC0;font-size:10px;font-weight:600;padding:2px 9px;border-radius:100px">🕒 ${it.tm}</span>`:""}
           </div>
         </div>
+        ${clickable?`<div style="display:flex;align-items:center;padding-right:11px;color:${it.c};font-size:18px;flex-shrink:0;opacity:.65">›</div>`:""}
       </div>
     </div>`;
   }).join("");
