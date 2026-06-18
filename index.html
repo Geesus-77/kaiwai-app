@@ -380,12 +380,12 @@
 ═══════════════════════════════════ */
 const CM = {
   "전체보기":             { c:"#D63070", e:"✦",  g:"linear-gradient(135deg,#FFF0F5,#F5E0EE)", bgImg:"여기에_사진_링크_넣기", d:"일본 서브컬쳐 패션의 모든 세계를 탐색해보세요." },
-  "양산형·지뢰계":        { c:"#C41055", e:"🎀", g:"linear-gradient(135deg,#FFE0EC,#FFB3CC)", bgImg:"여기에_사진_링크_넣기", d:"달콤하고 아련한 다크 페미닌 — 레이스, 리본, 퍼프 소매의 세계" },
-  "다크지뢰계·멘헤라":    { c:"#7733BB", e:"🖤", g:"linear-gradient(135deg,#F0E0FF,#D8B3FF)", bgImg:"여기에_사진_링크_넣기", d:"달콤함 속의 어둠 — 멘헤라 미학과 서브컬처가 만나는 지점" },
-  "스나계":               { c:"#AA7020", e:"🌿", g:"linear-gradient(135deg,#FFF5E0,#FFE0A0)", bgImg:"여기에_사진_링크_넣기", d:"자연스럽고 세련된 내추럴 페미닌 — 루미네·루쿠아가 사랑하는 무드" },
+  "양산형":               { c:"#E5468A", e:"🎀", g:"linear-gradient(135deg,#FFE0EC,#FFC2D6)", bgImg:"여기에_사진_링크_넣기", d:"달콤하고 사랑스러운 데일리 페미닌 — 레이스·리본·핑크 톤의 정석" },
+  "지뢰계":               { c:"#7E3AA8", e:"🖤", g:"linear-gradient(135deg,#EFE0FF,#CBA8EE)", bgImg:"여기에_사진_링크_넣기", d:"달콤함 속의 어둠 — 블랙×핑크 레이스와 멘헤라 미학의 다크 페미닌" },
   "서브컬쳐":             { c:"#E05C00", e:"⚡", g:"linear-gradient(135deg,#FFF3E0,#FFD0A8)", bgImg:"여기에_사진_링크_넣기", d:"하라주쿠 원조 스트리트 — 데코라, 팝, 아방가르드 패션" },
-  "로리타":               { c:"#BB22CC", e:"🌸", g:"linear-gradient(135deg,#F8E0FF,#EEB3FF)", bgImg:"여기에_사진_링크_넣기", d:"빅토리안 드림 — 화려한 프릴과 레이스 파라솔, 하라주쿠의 살아있는 전설" },
   "비쥬얼계 고스·펑크":   { c:"#4A0080", e:"🌹", g:"linear-gradient(135deg,#F5E5FF,#E0C0FF)", bgImg:"여기에_사진_링크_넣기", d:"비주얼계의 화려함과 고딕 펑크의 어둠이 교차하는 세계" },
+  "스나계":               { c:"#AA7020", e:"🌿", g:"linear-gradient(135deg,#FFF5E0,#FFE0A0)", bgImg:"여기에_사진_링크_넣기", d:"자연스럽고 세련된 내추럴 페미닌 — 루미네·루쿠아가 사랑하는 무드" },
+  "로리타":               { c:"#BB22CC", e:"🌸", g:"linear-gradient(135deg,#F8E0FF,#EEB3FF)", bgImg:"여기에_사진_링크_넣기", d:"빅토리안 드림 — 화려한 프릴과 레이스 파라솔, 하라주쿠의 살아있는 전설" },
   "잡화(가방,신발,악세)": { c:"#009966", e:"👜", g:"linear-gradient(135deg,#E0FFF5,#B3FFE0)", bgImg:"여기에_사진_링크_넣기", d:"통굽 로퍼부터 이타백까지 — 서브컬쳐 룩을 완성하는 오리지널 아이템" },
 };
 const FILTERS = Object.keys(CM);
@@ -394,72 +394,72 @@ const FILTERS = Object.keys(CM);
    브랜드 데이터 (60개 — CSV 마스터 기준)
 ═══════════════════════════════════ */
 const B = [
-  /* ── 양산형·지뢰계 ── */
-  {id:1,  n:"LIZ LISA",                      s:"양산형·지뢰계", i:"LL", c:"#C41055", tax:true,
+  /* ── 양산형 / 지뢰계 ── */
+  {id:1,  n:"LIZ LISA",                      s:"양산형", i:"LL", c:"#E5468A", tax:true,
    desc:"양산형의 교과서. 히메 카지×양산형을 대표하는 플라워 레이스와 핑크 톤의 아이코닉 브랜드.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/1.png", logoBgColor:"#FFFFFF", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/1.webp?v=1781615820", japanUrl:"https://tokyokawaiilife.jp", globalUrl:"https://tokyokawaiilife.com", xId:"@lizlisaofficial", instaId:"@lizlisa_official_japan",
    st:[{city:"도쿄",mall:"시부야 109",fl:"6F",map:"https://maps.google.com/?q=Shibuya+109+Tokyo"},
        {city:"도쿄",mall:"라포레 하라주쿠",fl:"5F",map:"https://maps.google.com/?q=Laforet+Harajuku"},
        {city:"오사카",mall:"우메다 EST",fl:"B1F",map:"https://maps.google.com/?q=Umeda+EST+Osaka"}]},
-  {id:2,  n:"Ank Rouge",                     s:"양산형·지뢰계", i:"AR", c:"#C41055", tax:true,
+  {id:2,  n:"Ank Rouge",                     s:"양산형", i:"AR", c:"#E5468A", tax:true,
    desc:"달콤한 레이스와 빈티지 디테일. 지뢰계와 양산형 사이의 완벽한 밸런스.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/2.jpg", logoBgColor:"#7B4E3B", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/2.webp", japanUrl:"https://ailand-store.jp/ankrouge/", globalUrl:"", xId:"@AnkRouge", instaId:"@ankrouge_official",
    st:[{city:"도쿄",mall:"시부야 109",fl:"6F",map:"https://maps.google.com/?q=Shibuya+109+Tokyo"},
        {city:"도쿄",mall:"라포레 하라주쿠",fl:"4F",map:"https://maps.google.com/?q=Laforet+Harajuku"},
        {city:"오사카",mall:"우메다 HEP FIVE",fl:"3F",map:"https://maps.google.com/?q=HEP+FIVE+Umeda+Osaka"}]},
-  {id:3,  n:"Honey Cinnamon",                s:"양산형·지뢰계", i:"HC", c:"#C41055", tax:true,
+  {id:3,  n:"Honey Cinnamon",                s:"양산형", i:"HC", c:"#E5468A", tax:true,
    desc:"따뜻하고 달콤한 양산형. 이케부쿠로와 시부야109를 거점으로 하는 자연스러운 페미닌 브랜드.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/3.jpg", logoBgColor:"#FFFFFF", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/3.webp", japanUrl:"http://honeycinnamon.jp/", globalUrl:"https://bunnyapartment.com/honeycinnamon/", xId:"@honeyc0214", instaId:"",
    st:[{city:"도쿄",mall:"시부야 109",fl:"6F",map:"https://maps.google.com/?q=Shibuya+109+Tokyo"},
        {city:"도쿄",mall:"이케부쿠로 선샤인 파르코",fl:"B1F",map:"https://maps.google.com/?q=Sunshine+City+Ikebukuro"}]},
-  {id:4,  n:"Secret Honey",                  s:"양산형·지뢰계", i:"SH", c:"#C41055", tax:true,
+  {id:4,  n:"Secret Honey",                  s:"양산형", i:"SH", c:"#E5468A", tax:true,
    desc:"디즈니·산리오 콜라보로 매 시즌 완판 행진. 달콤하고 일상적인 양산형의 최정상.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/4.jpg", logoBgColor:"#FFFFFF", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/4.webp", japanUrl:"https://www.rakuten.ne.jp/gold/secrethoney/", globalUrl:"", xId:"@SecretHoney_HB", instaId:"",
    st:[{city:"도쿄",mall:"시부야 109",fl:"3F",map:"https://maps.google.com/?q=Shibuya+109+Tokyo"},
        {city:"도쿄",mall:"라포레 하라주쿠",fl:"5F",map:"https://maps.google.com/?q=Laforet+Harajuku"},
        {city:"도쿄",mall:"이케부쿠로 선샤인 파르코",fl:"B1F",map:"https://maps.google.com/?q=Sunshine+City+Ikebukuro"},
        {city:"오사카",mall:"우메다 HEP FIVE",fl:"4F",map:"https://maps.google.com/?q=HEP+FIVE+Umeda+Osaka"}]},
-  {id:5,  n:"evelyn",                        s:"양산형·지뢰계", i:"EV", c:"#C41055", tax:true,
+  {id:5,  n:"evelyn",                        s:"양산형", i:"EV", c:"#E5468A", tax:true,
    desc:"시부야109·라포레·우메다 거점의 정통 양산형 브랜드. 봄마다 완판되는 플라워 원피스 유명.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/5.jpg", logoBgColor:"#E4ECF9",
    bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/5.webp", japanUrl:"https://evelyn.tokyo.jp/", globalUrl:"", xId:"@evelyn_tokyo", instaId:"@evelyn.official",
    st:[{city:"도쿄",mall:"시부야 109",fl:"3F",map:"https://maps.google.com/?q=Shibuya+109+Tokyo"},
        {city:"도쿄",mall:"라포레 하라주쿠",fl:"5F",map:"https://maps.google.com/?q=Laforet+Harajuku"},
        {city:"오사카",mall:"우메다 HEP FIVE",fl:"1F",map:"https://maps.google.com/?q=HEP+FIVE+Umeda+Osaka"}]},
-  {id:6,  n:"Swankiss",                      s:"양산형·지뢰계", i:"SW", c:"#C41055", tax:true,
+  {id:6,  n:"Swankiss",                      s:"양산형", i:"SW", c:"#E5468A", tax:true,
    desc:"빈티지하고 로맨틱한 양산형. 동화 속 공주님 무드와 레이스·리본의 조화가 특징인 달콤한 브랜드.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/6.jpg", logoBgColor:"#E5C9C6", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/6.webp", japanUrl:"https://swankiss.net/", globalUrl:"", xId:"@Swankiss", instaId:"",
    st:[{city:"도쿄",mall:"시부야 109",fl:"5F",map:"https://maps.google.com/?q=Shibuya+109+Tokyo"},
        {city:"도쿄",mall:"라포레 하라주쿠",fl:"4F",map:"https://maps.google.com/?q=Laforet+Harajuku"}]},
-  {id:7,  n:"meltie",                        s:"양산형·지뢰계", i:"ML", c:"#C41055", tax:false,
+  {id:7,  n:"meltie",                        s:"양산형", i:"ML", c:"#E5468A", tax:false,
    desc:"프렌치 가리 감성이 섞인 부드러운 양산형. 달콤하고 여성스러운 일상 코디를 제안하는 온라인 브랜드.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/7.jpg", logoBgColor:"#FFFFFF", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/7.webp", japanUrl:"https://meltie.jp/", globalUrl:"", xId:"", instaId:"",
    st:[]},
-  {id:8,  n:"ROJITA",                        s:"양산형·지뢰계", i:"RJ", c:"#C41055", tax:true,
+  {id:8,  n:"ROJITA",                        s:"지뢰계", i:"RJ", c:"#7E3AA8", tax:true,
    desc:"지뢰계 패션의 대표 주자. 블랙×핑크 레이스 원피스와 리본 머리핀이 아이콘.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/8.jpg", logoBgColor:"#D1BACA", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/8.webp", japanUrl:"https://rlab-store.jp", globalUrl:"", xId:"@ROJITA__jp", instaId:"@rojita__official",
    st:[{city:"도쿄",mall:"시부야 109",fl:"7F",map:"https://maps.google.com/?q=Shibuya+109+Tokyo"},
        {city:"도쿄",mall:"라포레 하라주쿠",fl:"4F",map:"https://maps.google.com/?q=Laforet+Harajuku"},
        {city:"도쿄",mall:"이케부쿠로 파르코",fl:"B2F",map:"https://maps.google.com/?q=Ikebukuro+Parco+Tokyo"},
        {city:"오사카",mall:"우메다 EST",fl:"B1F",map:"https://maps.google.com/?q=Umeda+EST+Osaka"}]},
-  {id:9,  n:"NOEMIE",                        s:"양산형·지뢰계", i:"NM", c:"#C41055", tax:false,
+  {id:9,  n:"NOEMIE",                        s:"지뢰계", i:"NM", c:"#7E3AA8", tax:false,
    desc:"오사카 우메다 HEP FIVE에서만 만날 수 있는 지뢰계 신흥 브랜드. 프렌치×지뢰 무드.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/9.jpg", logoBgColor:"#E3C6C8", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/9.webp", japanUrl:"https://palemoba.com/noemie/", globalUrl:"", xId:"@Noemie_shop", instaId:"@noemie_official_",
    st:[{city:"오사카",mall:"우메다 HEP FIVE",fl:"3F",map:"https://maps.google.com/?q=HEP+FIVE+Umeda+Osaka"}]},
-  {id:10, n:"Jamie エーエヌケー",              s:"양산형·지뢰계", i:"JK", c:"#C41055", tax:true,
+  {id:10, n:"Jamie エーエヌケー",              s:"지뢰계", i:"JK", c:"#7E3AA8", tax:true,
    desc:"Ank Rouge의 자매 브랜드. 달콤하고 청순한 무드의 지뢰계 코디를 제안.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/10.jpg", logoBgColor:"#B7054F", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/10.webp", japanUrl:"https://ailand-store.jp/jamieank/", globalUrl:"", xId:"@Jamie_ank", instaId:"@jamieank_official",
    st:[{city:"도쿄",mall:"라포레 하라주쿠",fl:"4F",map:"https://maps.google.com/?q=Laforet+Harajuku"},
        {city:"오사카",mall:"우메다 EST",fl:"2F",map:"https://maps.google.com/?q=Umeda+EST+Osaka"}]},
-  {id:11, n:"MA*RS",                         s:"양산형·지뢰계", i:"MA", c:"#C41055", tax:true,
+  {id:11, n:"MA*RS",                         s:"지뢰계", i:"MA", c:"#7E3AA8", tax:true,
    desc:"시부야109의 레전드 지뢰계 브랜드. 2000년대부터 이어온 달콤 다크 페미닌의 선구자.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/11.png", logoBgColor:"#F9E5F1", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/11.webp", japanUrl:"https://lilimpark.jp/", globalUrl:"", xId:"@mars_amoebamars", instaId:"@marsofficialjapan",
    st:[{city:"도쿄",mall:"시부야 109",fl:"6F",map:"https://maps.google.com/?q=Shibuya+109+Tokyo"}]},
-  {id:12, n:"EATME",                         s:"양산형·지뢰계", i:"EM", c:"#C41055", tax:true,
+  {id:12, n:"EATME",                         s:"지뢰계", i:"EM", c:"#7E3AA8", tax:true,
    desc:"아방가르드한 감성의 지뢰×스트리트 퓨전 브랜드. 우메다 EST 입점.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/12.jpg", logoBgColor:"#FFFFFF", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/12.webp", japanUrl:"https://runway-webstore.com/eatme/", globalUrl:"", xId:"@EATME_tweet", instaId:"@eatme_japan",
    st:[{city:"오사카",mall:"우메다 EST",fl:"3F",map:"https://maps.google.com/?q=Umeda+EST+Osaka"}]},
-  {id:13, n:"DearMyLove",                    s:"양산형·지뢰계", i:"DL", c:"#C41055", tax:false,
+  {id:13, n:"DearMyLove",                    s:"지뢰계", i:"DL", c:"#7E3AA8", tax:false,
    desc:"유메텐보 산하 지뢰계 브랜드. 두꺼운 굽 구두와 셋업으로 유명한 지뢰계 코디의 핵심.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/13.png", logoBgColor:"#EFE4E9", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/13.webp", japanUrl:"https://dreamvs.jp/collections/dearmylove", globalUrl:"", xId:"@dearmylove_yume", instaId:"@dearmylove_official",
    st:[]},
@@ -485,26 +485,26 @@ const B = [
    desc:"압도적인 가성비의 스나계 패스트 패션. SNS 인플루언서 중심의 온라인 전용 브랜드.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/18.jpg", logoBgColor:"#C195AC", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/18.webp", japanUrl:"https://www.grail.bz/", globalUrl:"", xId:"@GRL_official", instaId:"@grl_official",
    st:[]},
-  /* ── 다크지뢰계·멘헤라 ── */
-  {id:19, n:"DimMoire",                      s:"다크지뢰계·멘헤라", i:"DM", c:"#7733BB", tax:false,
+  /* ── 지뢰계 (구 다크지뢰계·멘헤라 통합) ── */
+  {id:19, n:"DimMoire",                      s:"지뢰계", i:"DM", c:"#7E3AA8", tax:false,
    desc:"라포레 하라주쿠 아크로도쿄에서 만나는 다크 지뢰계 편집샵. 팝업과 온라인 위주 전개.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/19.png", logoBgColor:"#131313", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/19.webp", japanUrl:"https://www.dimmoire.jp", globalUrl:"https://acrotokyo-global.com", xId:"@_DimMoire_", instaId:"",
    st:[{city:"도쿄",mall:"라포레 하라주쿠",fl:"B1F (아크로도쿄)",map:"https://maps.google.com/?q=Laforet+Harajuku"}]},
-  {id:20, n:"Amilige",                       s:"다크지뢰계·멘헤라", i:"AM", c:"#7733BB", tax:true,
+  {id:20, n:"Amilige",                       s:"지뢰계", i:"AM", c:"#7E3AA8", tax:true,
    desc:"라포레와 우메다 EST 입점. 풍성한 레이스와 리본이 특징인 감성 지뢰계 브랜드.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/20.jpg", logoBgColor:"#FFFFFF", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/20.webp", japanUrl:"", globalUrl:"", xId:"@OfficialAmilige", instaId:"@amilige_official",
    st:[{city:"도쿄",mall:"라포레 하라주쿠",fl:"B1F",map:"https://maps.google.com/?q=Laforet+Harajuku"},
        {city:"오사카",mall:"우메다 EST",fl:"2F",map:"https://maps.google.com/?q=Umeda+EST+Osaka"}]},
-  {id:21, n:"KRY clothing",                  s:"다크지뢰계·멘헤라", i:"KY", c:"#7733BB", tax:false,
+  {id:21, n:"KRY clothing",                  s:"지뢰계", i:"KY", c:"#7E3AA8", tax:false,
    desc:"흑백 중심의 다크 스트릿 서브컬처. 모노톤 그래픽과 날카로운 실루엣의 온라인 브랜드.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/21.jpeg", logoBgColor:"#FFFFFF", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/21.webp", japanUrl:"https://www.kry.tokyo/", globalUrl:"", xId:"@KRY_official_", instaId:"@kry231",
    st:[]},
-  {id:22, n:"REFLEM",                        s:"다크지뢰계·멘헤라", i:"RF", c:"#7733BB", tax:true,
+  {id:22, n:"REFLEM",                        s:"지뢰계", i:"RF", c:"#7E3AA8", tax:true,
    desc:"라포레 하라주쿠 아크로도쿄의 다크 미즈이로 계열 브랜드. 서브컬처 감성의 독보적인 아이덴티티.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/22.jpg", logoBgColor:"#000000", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/22.webp", japanUrl:"", globalUrl:"https://acrotokyo-global.com", xId:"@_REFLEM", instaId:"",
    st:[{city:"도쿄",mall:"라포레 하라주쿠",fl:"B1F (아크로도쿄)",map:"https://maps.google.com/?q=Laforet+Harajuku"},
        {city:"오사카",mall:"우메다 HEP FIVE",fl:"6F",map:"https://maps.google.com/?q=HEP+FIVE+Umeda+Osaka"}]},
-  {id:23, n:"TRAVAS TOKYO",                  s:"다크지뢰계·멘헤라", i:"TV", c:"#7733BB", tax:true,
+  {id:23, n:"TRAVAS TOKYO",                  s:"지뢰계", i:"TV", c:"#7E3AA8", tax:true,
    desc:"게임·애니 감성의 서브컬처 브랜드. REFLEM과 함께 라포레 아크로도쿄의 양대 산맥.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/23.ico", logoBgColor:"#FFFFFF", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/23.webp", japanUrl:"https://www.acrotokyo.com/c/travas", globalUrl:"https://acrotokyo-global.com", xId:"@travas_tokyo", instaId:"@travas_tokyo",
    st:[{city:"도쿄",mall:"라포레 하라주쿠",fl:"B1F (아크로도쿄)",map:"https://maps.google.com/?q=Laforet+Harajuku"}]},
@@ -672,7 +672,7 @@ const B = [
    desc:"오사카 우메다 HEP FIVE 4F. 오타쿠×지뢰계 잡화 전문점. 이타쿠라, 아크릴 굿즈 취급.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/59.jpg", logoBgColor:"#F0D3E1", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/59.webp", japanUrl:"https://www.lafary.shop/", globalUrl:"", xId:"@lafary_jp", instaId:"@lafary_jp",
    st:[{city:"오사카",mall:"우메다 HEP FIVE",fl:"4F",map:"https://maps.google.com/?q=HEP+FIVE+Umeda+Osaka"}]},
-  {id:60, n:"michellMacaron",                s:"양산형·지뢰계", i:"MM", c:"#C41055", tax:false,
+  {id:60, n:"michellMacaron",                s:"양산형", i:"MM", c:"#E5468A", tax:false,
    desc:"아담한 체형을 위한 핏과 특유의 페미닌하고 귀여운 무드로 사랑받는 브랜드.",
    logo:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/logo/60.jpg", logoBgColor:"#FFFFFF", bgImg:"https://iwrkpwmpfhlyfvutlnuy.supabase.co/storage/v1/object/public/brand-assets/bg/60.webp", japanUrl:"https://mycolor.jp/michellmacaron", globalUrl:"", xId:"@michellMacar0n", instaId:"@michellmacaron_official",
    st:[]},
@@ -903,27 +903,49 @@ function drawBanner() {
 /* ═══════════════════════════════════
    브랜드 카드 HTML
 ═══════════════════════════════════ */
+/* 카테고리별 카드 배경 무드 (Tailwind 팔레트 값 그대로 사용).
+   dark=true 인 카테고리는 어두운 배경 + 밝은 글자로 렌더링.
+   .kawaii-card 의 background !important 를 이기려고 인라인에 !important 로 입힌다. */
+const CARD_THEME = {
+  "양산형":               { bg:"#FDF2F8", dark:false }, // bg-pink-50
+  "지뢰계":               { bg:"#27272A", dark:true  }, // bg-zinc-800 (text-white)
+  "서브컬쳐":             { bg:"#F0F9FF", dark:false }, // bg-sky-50
+  "비쥬얼계 고스·펑크":   { bg:"#FAF5FF", dark:false }, // bg-purple-50
+  "스나계":               { bg:"#F5F5F4", dark:false }, // bg-stone-100
+  "로리타":               { bg:"#FBCFE8", dark:false }, // bg-pink-200
+  "잡화(가방,신발,악세)": { bg:"#FEF3C7", dark:false }, // bg-amber-100
+};
+function cardTheme(cat){ return CARD_THEME[cat] || { bg:"#FFFFFF", dark:false }; }
+
 function card(b, delay){
   const fv = favs.includes(b.id);
-  return `<div class="fu kawaii-card" style="animation-delay:${delay}s;overflow:hidden;cursor:pointer"
+  const t = cardTheme(b.s);
+  const nameC = t.dark ? "#FFFFFF" : "#4A4A4A";
+  const subC  = t.dark ? "#D4D4D8" : "#8D7B80";   // zinc-300 / 기존 보조색
+  const likeC = t.dark ? "#FF9EC4" : "#C41055";
+  // 카테고리 칩: 밝은 배경 카드는 브랜드색 톤, 다크 카드는 반투명 화이트로 대비 확보
+  const catChip = t.dark
+    ? `background:rgba(255,255,255,.14);color:#EBD7FF;border:1px solid rgba(255,255,255,.22)`
+    : `background:${b.c}18;color:${b.c};border:1px solid ${b.c}33`;
+  return `<div class="fu kawaii-card" style="animation-delay:${delay}s;overflow:hidden;cursor:pointer;background:${t.bg} !important"
     onclick="openM(${b.id})">
     <div style="height:4px;background:${b.c}"></div>
     <div style="padding:13px 14px;display:flex;align-items:center;gap:11px">
       ${logoEl(b,50,16,'')}
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px">
-          <span style="font-weight:700;color:#4A4A4A;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'M PLUS Rounded 1c',sans-serif">${b.n}</span>
+          <span style="font-weight:700;color:${nameC};font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'M PLUS Rounded 1c',sans-serif">${b.n}</span>
           <div style="display:flex;align-items:center;gap:1px;flex-shrink:0">
-            <span id="lk-${b.id}" style="font-size:10px;font-weight:700;color:#C41055;font-family:'M PLUS Rounded 1c',sans-serif;white-space:nowrap">💖 ${getBrandLikes(b.id).toLocaleString()}</span>
+            <span id="lk-${b.id}" style="font-size:10px;font-weight:700;color:${likeC};font-family:'M PLUS Rounded 1c',sans-serif;white-space:nowrap">💖 ${getBrandLikes(b.id).toLocaleString()}</span>
             <button onclick="event.stopPropagation();tFav(${b.id})" style="font-size:17px;background:none;border:none;cursor:pointer;flex-shrink:0;transition:transform .1s;margin-left:3px" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='none'">${fv?"❤️":"🤍"}</button>
           </div>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px">
-          <span style="background:${b.c}18;color:${b.c};font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;border:1px solid ${b.c}33">${b.s}</span>
+          <span style="${catChip};font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px">${b.s}</span>
           ${b.tax?`<span style="background:#E0FFF5;color:#009966;font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;border:1px solid #B3FFDF">✓ 면세</span>`:""}
           ${b.st.length?`<span style="background:#EEEAFB;color:#8B7BC0;font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;border:1px solid #DAD2F2">🏪 ${b.st.length}개</span>`:`<span style="background:#EEEAFB;color:#8B7BC0;font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;border:1px solid #DAD2F2">🌐 온라인</span>`}
         </div>
-        <p class="clamp2" style="font-size:11px;color:#8D7B80;line-height:1.65">${b.desc}</p>
+        <p class="clamp2" style="font-size:11px;color:${subC};line-height:1.65">${b.desc}</p>
       </div>
     </div>
   </div>`;
