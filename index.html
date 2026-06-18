@@ -163,6 +163,9 @@
     </div>
   </div>
   <div id="banner" class="mx-4 mt-1 mb-3 overflow-hidden" style="height:156px;border-radius:24px"></div>
+  <button onclick="startQuiz()" class="pop" style="margin:0 16px 12px;padding:15px 16px;border:none;border-radius:20px;cursor:pointer;background:linear-gradient(120deg,#FF6FA8,#C41055);color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 10px 22px -10px rgba(196,16,85,.75);width:calc(100% - 32px)">
+    <span style="font-size:18px">✨</span> 내 서브컬쳐 취향 진단하기 <span style="font-size:16px">→</span>
+  </button>
   <p id="homeCountWrap" class="px-4 mb-2 text-xs" style="color:#8D7B80"></p>
   <div id="brandList" class="px-4 pb-28 flex flex-col gap-3"></div>
 </div>
@@ -371,6 +374,13 @@
         <button onclick="deleteAccount()" style="background:none;border:none;cursor:pointer;font-size:12px;color:#C4A8B0;text-decoration:underline;font-family:'Noto Sans KR',sans-serif;padding:4px 8px">회원탈퇴</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ══ 취향 진단 퀴즈 ══ -->
+<div id="quizOverlay" style="display:none;position:fixed;inset:0;z-index:60;background:#FFF0F5;overflow-y:auto">
+  <div style="width:100%;max-width:430px;margin:0 auto;min-height:100%;display:flex;flex-direction:column">
+    <div id="quizBody" style="flex:1;display:flex;flex-direction:column;transition:opacity .22s ease"></div>
   </div>
 </div>
 
@@ -1460,7 +1470,198 @@ ${b.st.length?`
   sh.classList.remove("su"); void sh.offsetWidth; sh.classList.add("su");
 }
 function closeModal(){ document.getElementById("overlay").style.display="none"; }
-document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeModal(); closeAuth(); } });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeModal(); closeAuth(); closeQuiz(); } });
+
+/* ═══════════════════════════════════
+   서브컬쳐 패션 취향 진단 테스트
+═══════════════════════════════════ */
+const QUIZ = [
+  { q:"주말에 약속이 없다면 당신의 행동 패턴은?", opts:[
+    { t:"예쁜 카페에 가서 디저트 사진 찍고 쇼핑하기", a:["ryousan","suna"] },
+    { t:"해가 질 때쯤 일어나 번화가(홍대·가부키초)로 밤 외출", a:["jirai"] },
+    { t:"침대에서 한 발짝도 안 나가고 유튜브·트위치·게임 섭렵", a:["subcul"] },
+    { t:"라이브 클럽 공연을 보거나 빈티지 샵 구경하기", a:["punk"] },
+    { t:"좋아하는 홍차를 세팅하고 동화 같은 방에서 영화 보기", a:["lolita"] },
+  ]},
+  { q:"나의 SNS(인스타·트위터) 사용 스타일은?", opts:[
+    { t:"내 예쁜 OOTD나 최애(오시) 사진을 공들여 꾸며 올린다", a:["ryousan","lolita"] },
+    { t:"감정 기복이 심해 우울한 감정·뻘글을 자주 쏟아낸다", a:["jirai"] },
+    { t:"현실 사진보단 애니·게임·밈 짤을 올리거나 눈팅만 한다", a:["subcul"] },
+    { t:"남 시선 신경 안 쓰고 내 취향 음악·거친 데일리룩 공유", a:["punk"] },
+    { t:"피드 톤앤매너를 매우 깔끔하고 우아하게 맞춘다", a:["suna"] },
+  ]},
+  { q:"코디할 때 절대 포기할 수 없는 '나만의 무기'는?", opts:[
+    { t:"풍성한 프릴, 예쁜 리본, 반짝이는 비즈", a:["ryousan"] },
+    { t:"절대적인 높이의 통굽 구두와 가터벨트", a:["jirai"] },
+    { t:"고양이 귀 헤드폰, 레그워머, 크고 헐렁한 져지", a:["subcul"] },
+    { t:"바디라인을 예쁘게 살려주는 스커트나 오프숄더", a:["suna"] },
+    { t:"치마를 부풀려주는 파니에와 화려한 헤드드레스", a:["lolita"] },
+    { t:"은장 체인, 가죽 초커, 주렁주렁한 피어싱", a:["punk"] },
+  ]},
+  { q:"내가 가장 끌리는 색상 조합은?", opts:[
+    { t:"화이트 & 베이비 핑크", a:["ryousan"] },
+    { t:"블랙 & 다크 핑크/레드", a:["jirai"] },
+    { t:"라이트 블루(수색) & 화이트", a:["subcul"] },
+    { t:"베이비 블루 / 아이보리 / 더스티 로즈", a:["suna"] },
+    { t:"클래식 브라운 / 보르도 / 네이비", a:["lolita"] },
+    { t:"올 블랙 & 메탈/네온 포인트", a:["punk"] },
+  ]},
+  { q:"나에게 '패션'이란 어떤 의미인가요?", opts:[
+    { t:"좋아하는 것을 응원(덕질)하고 사랑받기 위한 마법", a:["ryousan"] },
+    { t:"세상으로부터 나를 지키고 우울함을 뽐내는 전투복", a:["jirai"] },
+    { t:"현실을 벗어나 좋아하는 2D·가상 세계에 동화되는 것", a:["subcul"] },
+    { t:"성숙함과 여성스러운 매력을 자연스럽게 보여주는 것", a:["suna"] },
+    { t:"일상을 한 편의 예술·동화로 만들어주는 수단", a:["lolita"] },
+    { t:"억눌린 규칙을 깨부수고 거친 로큰롤 영혼을 표현", a:["punk"] },
+  ]},
+  { q:"나의 인간관계 성향을 한 줄로 요약한다면?", opts:[
+    { t:"모두에게 친절하려 노력하지만 가끔 피곤해", a:["ryousan","suna"] },
+    { t:"한 번 마음 연 사람에겐 다 퍼주고 집착해", a:["jirai"] },
+    { t:"현실 사람보단 온라인 지인·2D 캐릭터가 편해", a:["subcul"] },
+    { t:"나만의 좁고 깊은 세계를 이해하는 소수만 있으면 돼", a:["lolita","punk"] },
+  ]},
+  { q:"사람들에게 가장 듣고 싶은 나의 첫인상은?", opts:[
+    { t:"\"진짜 인형 같다! 너무 귀엽고 사랑스러워\"", a:["ryousan"] },
+    { t:"\"뭔가 사연 있어 보이고 묘하게 끌려\"", a:["jirai"] },
+    { t:"\"투명하고 신비로워... 현실 사람 안 같아\"", a:["subcul"] },
+    { t:"\"분위기 진짜 예쁘다. 어른스럽고 세련됐어\"", a:["suna"] },
+    { t:"\"동화 속에서 금방 걸어 나온 공주님 같아\"", a:["lolita"] },
+    { t:"\"스타일 엄청 힙하고 포스 장난 아니다\"", a:["punk"] },
+  ]},
+];
+
+const RESULT_ORDER = ["ryousan","jirai","subcul","suna","lolita","punk"];
+const RESULTS = {
+  ryousan:{ emoji:"🎀🌸", name:"영원한 사랑을 꿈꾸는 핑크빛 공주님 🎀",
+    desc:"덕질과 귀여움에 진심인 당신! 프릴과 리본으로 무장하고 예쁜 카페와 라이브 회장을 누비는 사랑스러운 공주님입니다. 누구에게나 호감을 주는 정석 카와이 스타일!",
+    brands:["Ank Rouge","Honey Cinnamon","Secret Honey"], bg:"#FCE7F3", fg:"#3A2B30", sub:"#8A6B74" },
+  jirai:{ emoji:"🖤🔪", name:"취급주의! 달콤살벌한 매력의 다크돌 🖤",
+    desc:"겉보기엔 귀엽지만 속엔 강렬한 감정과 딥한 매력을 숨긴 당신. 블랙과 핑크의 조합, 아찔한 통굽 구두로 세상에 맞서는 묘하게 사람을 홀리는 지뢰계의 정석!",
+    brands:["ROJITA","pium","MA*RS"], bg:"#27272A", fg:"#FFFFFF", sub:"#C9C4CE" },
+  subcul:{ emoji:"👼🎧", name:"현실 로그아웃! 방구석 인터넷 엔젤 🩵",
+    desc:"\"현실보단 인터넷이 편해...\" 오버사이즈 져지와 헤드폰 뒤에 숨어 나만의 세계를 유영하는 당신. 하늘색과 하얀색이 교차하는 네오 사이버 무드를 가장 잘 소화하는 천사입니다.",
+    brands:["DimMoire","REFLEM","ililil"], bg:"#E0F2FE", fg:"#23323A", sub:"#5E7480" },
+  suna:{ emoji:"🥂✨", name:"여유롭고 우아한 어른의 티타임 🥂",
+    desc:"과한 장식보다 실루엣과 분위기로 승부하는 세련된 언니 스타일! 차분한 베이지 톤과 머메이드 스커트를 사랑하며 성숙하고 우아한 프렌치 걸리시 무드를 뿜어냅니다.",
+    brands:["SNIDEL","REDYAZEL","titty&Co."], bg:"#F5F5F4", fg:"#3A332B", sub:"#857C6F" },
+  lolita:{ emoji:"👗🫖", name:"동화 속에서 걸어 나온 다과회의 주인공 👗",
+    desc:"패션을 넘어 하나의 예술을 입는 당신! 풍성하게 부풀린 파니에와 정교한 레이스를 사랑하며 일상을 동화책 속 한 페이지처럼 완벽하게 연출하는 클래식의 귀족입니다.",
+    brands:["Amavel","To Alice","Axes femme"], bg:"#FAE8FF", fg:"#3A2B38", sub:"#86708A" },
+  punk:{ emoji:"⛓️🎸", name:"반항심 100%, 거칠고 자유로운 록스타 ⛓️",
+    desc:"남들의 시선 따위 신경 쓰지 않는 힙스터! 체인, 피어싱, 올블랙 코디로 세상의 규칙에 반항하며 나만의 거친 록 스피릿을 패션으로 뿜어내는 마이웨이의 표본입니다.",
+    brands:["LISTEN FLAVOR","ACDC RAG","HELLCATPUNKS"], bg:"#F3E8FF", fg:"#332B3A", sub:"#7C6E86" },
+};
+
+let quizScores = {}, quizIdx = 0;
+
+function startQuiz(){
+  quizScores = { ryousan:0, jirai:0, subcul:0, suna:0, lolita:0, punk:0 };
+  quizIdx = 0;
+  document.getElementById("quizOverlay").style.display="block";
+  document.body.style.overflow="hidden";
+  renderQuizQuestion();
+}
+function closeQuiz(){
+  const ov=document.getElementById("quizOverlay");
+  if(ov){ ov.style.display="none"; }
+  document.body.style.overflow="";
+}
+
+function renderQuizQuestion(){
+  const item = QUIZ[quizIdx];
+  const pct = Math.round((quizIdx+1)/QUIZ.length*100);
+  const opts = item.opts.map((o,i)=>`
+    <button onclick="quizAnswer([${o.a.map(x=>`'${x}'`).join(",")}])"
+      style="display:block;width:100%;text-align:left;margin-bottom:10px;padding:16px 18px;border:2px solid #FFD6E8;border-radius:18px;background:#fff;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:600;color:#4A4A4A;line-height:1.45;box-shadow:0 4px 14px rgba(255,150,180,.12);transition:transform .15s var(--jelly),border-color .15s,box-shadow .15s"
+      onmouseover="this.style.borderColor='#FF6FA8';this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(255,120,160,.22)'"
+      onmouseout="this.style.borderColor='#FFD6E8';this.style.transform='none';this.style.boxShadow='0 4px 14px rgba(255,150,180,.12)'"
+      onmousedown="this.style.transform='scale(.98)'">
+      <span style="color:#FF6FA8;font-weight:800;font-family:'M PLUS Rounded 1c',sans-serif;margin-right:8px">${String.fromCharCode(65+i)}</span>${o.t}
+    </button>`).join("");
+  document.getElementById("quizBody").innerHTML = `
+    <div style="padding:22px 20px 8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span class="logo-font" style="font-size:18px;color:#C41055">취향 진단 🎀</span>
+        <button onclick="closeQuiz()" style="width:32px;height:32px;border-radius:50%;background:#fff;border:1.5px solid #FFD6E8;color:#8D7B80;cursor:pointer;font-size:14px;line-height:1">✕</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="flex:1;height:9px;background:#FFE0EE;border-radius:100px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FF6FA8,#C41055);border-radius:100px;transition:width .35s var(--jelly)"></div>
+        </div>
+        <span style="font-size:12px;font-weight:800;color:#C41055;font-family:'M PLUS Rounded 1c',sans-serif;white-space:nowrap">${quizIdx+1}/${QUIZ.length}</span>
+      </div>
+    </div>
+    <div style="padding:14px 20px 28px;flex:1">
+      <h2 style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:20px;color:#3A2B30;line-height:1.4;margin:6px 0 20px">${item.q}</h2>
+      ${opts}
+    </div>`;
+}
+
+function quizAnswer(attrs){
+  attrs.forEach(a=>{ if(a in quizScores) quizScores[a]++; });
+  quizIdx++;
+  const body=document.getElementById("quizBody");
+  body.style.opacity="0";
+  setTimeout(()=>{
+    if(quizIdx < QUIZ.length) renderQuizQuestion();
+    else renderQuizResult();
+    body.scrollTop=0;
+    document.getElementById("quizOverlay").scrollTop=0;
+    body.style.opacity="1";
+  }, 220);
+}
+
+function quizTopKey(){
+  let best=RESULT_ORDER[0], bestV=-1;
+  RESULT_ORDER.forEach(k=>{ if(quizScores[k] > bestV){ bestV=quizScores[k]; best=k; } });
+  return best;
+}
+
+/* 추천 브랜드명 → DB 브랜드 매칭 (공백·점·기호 무시, 부분 일치 허용) */
+function _findBrandByName(name){
+  const n = name.toLowerCase().replace(/[\s.]/g,"");
+  return B.find(x=>{ const bn=x.n.toLowerCase().replace(/[\s.]/g,""); return bn===n || bn.startsWith(n) || n.startsWith(bn); });
+}
+function quizBrand(name){
+  const b=_findBrandByName(name);
+  if(b){ closeQuiz(); openM(b.id); }
+  else { window.open("https://buyee.jp/item/search/query/"+encodeURIComponent(name), "_blank", "noopener"); }
+}
+
+function renderQuizResult(){
+  const key=quizTopKey(), r=RESULTS[key];
+  const dark = key==="jirai";
+  const circleBg = dark ? "rgba(255,255,255,.1)" : "#fff";
+  const brandsHtml = r.brands.map(name=>{
+    const b=_findBrandByName(name);
+    const tag = b ? `<span style="font-size:10px;color:${dark?'#C9C4CE':'#8D7B80'}">앱에서 보기 ›</span>` : `<span style="font-size:10px;color:${dark?'#C9C4CE':'#8D7B80'}">직구 검색 ↗</span>`;
+    return `<button onclick="quizBrand('${name.replace(/'/g,"\\'")}')"
+      style="display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:9px;padding:14px 16px;border:none;border-radius:16px;background:${dark?'rgba(255,255,255,.12)':'#fff'};cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.06);transition:transform .15s var(--jelly)"
+      onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+      <span style="font-weight:800;font-size:15px;color:${dark?'#fff':'#3A2B30'}">${name}</span>${tag}
+    </button>`;
+  }).join("");
+  document.getElementById("quizBody").innerHTML = `
+    <div style="background:${r.bg};min-height:100%;flex:1;padding:26px 20px 40px;display:flex;flex-direction:column;align-items:center">
+      <div style="width:100%;display:flex;justify-content:flex-end">
+        <button onclick="closeQuiz()" style="width:32px;height:32px;border-radius:50%;background:${dark?'rgba(255,255,255,.15)':'#ffffffcc'};border:none;color:${r.fg};cursor:pointer;font-size:14px;line-height:1">✕</button>
+      </div>
+      <p style="font-size:12px;font-weight:700;letter-spacing:1px;color:${r.sub};margin:4px 0 16px">나의 서브컬쳐 패션 유형은</p>
+      <div style="width:148px;height:148px;border-radius:50%;background:${circleBg};display:flex;align-items:center;justify-content:center;box-shadow:0 12px 34px rgba(0,0,0,.14);margin-bottom:20px;border:3px solid ${dark?'rgba(255,255,255,.25)':'#fff'}">
+        <span style="font-size:60px;line-height:1">${r.emoji}</span>
+      </div>
+      <h2 style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:21px;color:${r.fg};text-align:center;line-height:1.4;margin:0 0 16px;word-break:keep-all">${r.name}</h2>
+      <p style="font-size:14px;font-weight:500;line-height:1.8;color:${r.fg};opacity:.92;text-align:center;margin:0 0 28px;word-break:keep-all">${r.desc}</p>
+      <div style="width:100%">
+        <p style="font-size:13px;font-weight:800;color:${r.fg};margin:0 0 12px;font-family:'M PLUS Rounded 1c',sans-serif">💝 당신에게 추천하는 브랜드</p>
+        ${brandsHtml}
+      </div>
+      <div style="display:flex;gap:10px;width:100%;margin-top:22px">
+        <button onclick="startQuiz()" style="flex:1;padding:15px;border-radius:16px;border:none;cursor:pointer;background:${dark?'rgba(255,255,255,.16)':'#ffffffcc'};color:${r.fg};font-weight:800;font-size:14px;font-family:'M PLUS Rounded 1c',sans-serif">🔄 다시하기</button>
+        <button onclick="closeQuiz()" style="flex:1.4;padding:15px;border-radius:16px;border:none;cursor:pointer;background:linear-gradient(120deg,#FF6FA8,#C41055);color:#fff;font-weight:800;font-size:14px;font-family:'M PLUS Rounded 1c',sans-serif;box-shadow:0 8px 20px -8px rgba(196,16,85,.7)">브랜드 둘러보기 →</button>
+      </div>
+    </div>`;
+}
 
 /* ═══════════════════════════════════
    네이버 OAuth
