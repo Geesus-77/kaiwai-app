@@ -172,6 +172,11 @@
     <span style="font-size:18px">✨</span> 내 서브컬쳐 취향 진단하기 <span style="font-size:16px">→</span>
   </button>
   <p id="homeCountWrap" class="px-4 mb-2 text-xs" style="color:#8D7B80"></p>
+  <!-- 🔥 실시간 인기 랭킹 (좋아요순, 가로 스크롤) -->
+  <div id="rankSection" class="mb-4">
+    <h2 class="px-4 mb-2 logo-font" style="font-size:15px;color:#C41055">🔥 실시간 인기 랭킹</h2>
+    <div id="rankRow" class="flex gap-2.5 overflow-x-auto noscroll drag px-4 pb-1"></div>
+  </div>
   <div id="brandList" class="px-4 pb-28 flex flex-col gap-3"></div>
 </div>
 
@@ -777,7 +782,7 @@ function goHome() {
   const clr = document.getElementById("searchClear"); if(clr) clr.style.display = "none";
   // 홈 탭으로 전환 + 목록 다시 그리기
   go("home");
-  drawFilter(); drawBanner(); drawBrands();
+  drawFilter(); drawBanner(); drawBrands(); drawRanking();
   // 스크롤 맨 위로
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -1070,6 +1075,32 @@ function drawBrands(){
   document.getElementById("brandList").innerHTML = list.length
     ? list.map((b,i)=>card(b,i*.05)).join("")
     : `<div style="text-align:center;padding:64px 20px"><div class="kw-float" style="font-size:44px;margin-bottom:12px">🔍</div><p style="font-size:14px;font-weight:700;color:#8D7B80;margin-bottom:6px">검색 결과가 없어요</p><p style="font-size:12px;color:#C4A8B0;line-height:1.9">'<span style="color:#D63070">${srch.trim()}</span>'와 일치하는<br>브랜드를 찾을 수 없어요</p></div>`;
+  // 검색 중에는 실시간 랭킹 숨김 (검색 결과에 집중)
+  const rs=document.getElementById("rankSection"); if(rs) rs.style.display = q ? "none" : "";
+}
+
+/* ═══════════════════════════════════
+   실시간 인기 랭킹 (좋아요순 Top 10, 가로 스크롤)
+═══════════════════════════════════ */
+function drawRanking(){
+  const row=document.getElementById("rankRow"); if(!row) return;
+  const top=[...B].sort((a,b)=>getBrandLikes(b.id)-getBrandLikes(a.id)).slice(0,10);
+  row.innerHTML=top.map((b,i)=>{
+    const rank=i+1;
+    const badgeBg=rank<=3?"linear-gradient(135deg,#FF6FA8,#C41055)":"rgba(0,0,0,.5)";
+    const hasImg=isImg(b.bgImg);
+    return `<div onclick="openM(${b.id})" class="pop" style="flex-shrink:0;width:128px;cursor:pointer;background:#fff;border:1.5px solid #FFE0EE;border-radius:18px;overflow:hidden;box-shadow:0 5px 16px rgba(255,150,180,.2)">
+      <div style="height:96px;position:relative;background:${b.c}14">
+        ${hasImg?`<img src="${b.bgImg}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.display='none'"/>`:`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;opacity:.5">🎀</div>`}
+        <span style="position:absolute;top:6px;left:6px;min-width:24px;height:24px;padding:0 5px;border-radius:8px;background:${badgeBg};color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:'M PLUS Rounded 1c',sans-serif">${rank}</span>
+      </div>
+      <div style="padding:8px 9px 10px">
+        <div style="font-weight:800;font-size:13px;color:#3A2B30;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'M PLUS Rounded 1c',sans-serif">${b.n}</div>
+        <div style="font-size:11px;color:#C41055;font-weight:700;margin-top:2px;font-family:'M PLUS Rounded 1c',sans-serif">💖 ${getBrandLikes(b.id).toLocaleString()}</div>
+      </div>
+    </div>`;
+  }).join("");
+  drag(row);
 }
 
 /* ═══════════════════════════════════
@@ -2153,6 +2184,7 @@ async function tFav(id){
   localStorage.setItem("zp_fav",JSON.stringify(favs));
   _setLikeDelta(id, adding ? 1 : -1);
   drawBrands();
+  drawRanking();                                 // 실시간 랭킹 즉시 반영
   if(tab==="fav") drawFav();
   if(tab==="map") drawMap();
   updMFav(id);                                   // 맵 상세 시트 하트/카운트 갱신
@@ -2171,6 +2203,7 @@ async function tFav(id){
     localStorage.setItem("zp_fav",JSON.stringify(favs));
     _setLikeDelta(id, adding ? -1 : 1);          // 카운트도 원복
     drawBrands();
+    drawRanking();
     if(tab==="fav") drawFav();
     if(tab==="map") drawMap();
     updMFav(id);
@@ -2205,7 +2238,7 @@ function updMFav(id){
 /* ═══════════════════════════════════
    초기화
 ═══════════════════════════════════ */
-drawFilter(); drawBanner(); drawBrands(); go("home"); updateAuthBtn();
+drawFilter(); drawBanner(); drawBrands(); drawRanking(); go("home"); updateAuthBtn();
 
 /* ═══════════════════════════════════
    Supabase 세션 → authUser 브리지
