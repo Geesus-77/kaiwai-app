@@ -167,16 +167,15 @@
       <button id="searchClear" onclick="clearSearch()" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#8D7B80;cursor:pointer;font-size:14px;padding:0;width:26px;height:26px;line-height:1">✕</button>
     </div>
   </div>
-  <div id="banner" class="mx-4 mt-1 mb-3 overflow-hidden" style="height:156px;border-radius:24px"></div>
-  <button onclick="startQuiz()" class="pop" style="margin:0 16px 12px;padding:15px 16px;border:none;border-radius:20px;cursor:pointer;background:linear-gradient(120deg,#FF6FA8,#C41055);color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 10px 22px -10px rgba(196,16,85,.75);width:calc(100% - 32px)">
-    <span style="font-size:18px">✨</span> 내 서브컬쳐 취향 진단하기 <span style="font-size:16px">→</span>
-  </button>
-  <p id="homeCountWrap" class="px-4 mb-2 text-xs" style="color:#8D7B80"></p>
-  <!-- 🔥 실시간 인기 랭킹 (좋아요순, 가로 스크롤) -->
-  <div id="rankSection" class="mb-4">
+  <!-- 🔥 실시간 인기 랭킹 (검색창 바로 아래, 좋아요순 가로 스크롤) -->
+  <div id="rankSection" class="mt-3 mb-4">
     <h2 class="px-4 mb-2 logo-font" style="font-size:15px;color:#C41055">🔥 실시간 인기 랭킹</h2>
     <div id="rankRow" class="flex gap-2.5 overflow-x-auto noscroll drag px-4 pb-1"></div>
   </div>
+  <button onclick="startQuiz()" class="pop" style="margin:0 16px 14px;padding:15px 16px;border:none;border-radius:20px;cursor:pointer;background:linear-gradient(120deg,#FF6FA8,#C41055);color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 10px 22px -10px rgba(196,16,85,.75);width:calc(100% - 32px)">
+    <span style="font-size:18px">✨</span> 내 서브컬쳐 취향 진단하기 <span style="font-size:16px">→</span>
+  </button>
+  <p id="homeCountWrap" class="px-4 mb-2 text-xs" style="color:#8D7B80"></p>
   <div id="brandList" class="px-4 pb-28 flex flex-col gap-3"></div>
 </div>
 
@@ -896,6 +895,7 @@ function mHeader(b, fv, dark){
 ═══════════════════════════════════ */
 function drawBanner() {
   const el = document.getElementById("banner");
+  if(!el) return;   // 배너 제거됨 — 호출돼도 안전하게 무시
   if(srch.trim()){ el.style.display="none"; return; }
   el.style.display="";
   const m = CM[filt], cnt = filt==="전체보기" ? B.length : B.filter(x=>x.s===filt).length;
