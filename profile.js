@@ -134,16 +134,12 @@
     default: { cls: "badge--default", ico: "♡", label: "KAIWAI 계정" },
   };
 
-  // 현재 세션의 로그인 플랫폼을 정확히 판별.
-  //  · 카카오/구글: app_metadata.provider 에 'kakao'/'google' 로 정확히 들어옴 → 최우선
-  //  · 네이버(네이티브): app_metadata.provider 가 'naver'
-  //  · 우리 네이버: Edge Function(admin.createUser)이라 app_metadata.provider='email'
-  //    → 이때만 user_metadata.provider 로 보정
-  //  · 그 외/누락: 'default' (KAIWAI 계정)
+  // 현재 세션의 로그인 플랫폼을 정확히 판별. (index.html detectLoginProvider 와 동일 로직)
+  // ⚠️ 카카오로 로그인해도 "네이버"로 잘못 뜨던 버그 수정:
+  //    user_metadata.provider==="naver" 는 한 번 네이버를 쓴 계정에 영구히 남아,
+  //    그 계정으로 카카오 로그인해도 네이버로 폴백되던 것이 원인이었음.
   function detectProvider(user) {
-    // ① 가장 최근에 로그인에 사용한 identity = 이번에 누른 플랫폼.
-    //    같은 이메일로 여러 소셜이 한 계정에 병합돼도 정확하다
-    //    (app_metadata.provider 는 '대표' 공급자라 병합 시 첫 가입값으로 고정됨).
+    // ① 가장 최근 로그인 identity = 이번에 쓴 제공자 (병합 계정도 정확)
     const ids = Array.isArray(user?.identities) ? user.identities : [];
     if (ids.length) {
       const latest = ids.reduce((a, b) =>
@@ -152,12 +148,18 @@
       const p = (latest?.provider || "").toLowerCase();
       if (p === "kakao" || p === "google" || p === "naver") return p;
       // 우리 네이버는 Edge Function(admin.createUser)이라 identity.provider 가 'email'
-      if (p === "email" && user?.user_metadata?.provider === "naver") return "naver";
+      if (p === "email" && (user?.user_metadata?.provider || "").toLowerCase() === "naver") return "naver";
     }
-    // ② 폴백: app_metadata.provider
+    // ② app_metadata.provider 가 소셜이면 그대로 (단일 제공자 계정은 항상 정확)
     const ap = (user?.app_metadata?.provider || "").toLowerCase();
     if (ap === "kakao" || ap === "google" || ap === "naver") return ap;
-    if (user?.user_metadata?.provider === "naver") return "naver";
+    // ③ 병합 계정(app_metadata.provider==="email")은 providers 배열로 실제 소셜 보강
+    const provs = (user?.app_metadata?.providers || []).map((x) => String(x).toLowerCase());
+    if (provs.includes("kakao")  && !provs.includes("naver")) return "kakao";
+    if (provs.includes("google") && !provs.includes("naver")) return "google";
+    if (provs.includes("naver")) return "naver";
+    // ④ 커스텀 네이버 표식 / ⑤ 기본
+    if ((user?.user_metadata?.provider || "").toLowerCase() === "naver") return "naver";
     return "default";
   }
 

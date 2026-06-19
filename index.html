@@ -2111,7 +2111,7 @@ function switchAuth(v){
     const PROV_BADGE = {
       kakao:  { bg:"#FEE500", col:"#191919", label:"카카오 계정" },
       naver:  { bg:"#03C75A", col:"#fff",    label:"네이버 계정" },
-      google: { bg:"#fff",    col:"#4A4A4A", label:"Google 계정", border:"1px solid #E8D8DC" },
+      google: { bg:"#fff",    col:"#4A4A4A", label:"구글 계정", border:"1px solid #E8D8DC" },
       email:  { bg:"#FFE0EE", col:"#C41055", label:"KAIWAI 계정" },
     };
     const pv = PROV_BADGE[authUser.provider] || PROV_BADGE.email;
@@ -2529,9 +2529,17 @@ renderPoints(); if(authUser) checkDailyAttendance();
    네이버(리다이렉트) 로그인으로 확립된 Supabase 세션을 기존 UI에 반영.
    카카오/구글/이메일(localStorage mock)은 기존 그대로 동작.
 ═══════════════════════════════════ */
-/* 현재 세션의 로그인 플랫폼 판별 — profile.js 와 동일 로직.
-   app_metadata.provider 는 계정 병합 시 첫 가입값으로 고정되므로,
-   identities 의 가장 최근 last_sign_in_at 을 우선 사용한다. */
+/* 현재 세션의 로그인 플랫폼 판별 — profile.js 의 detectProvider 와 동일 로직.
+   ⚠️ 카카오로 로그인해도 "네이버"로 잘못 뜨던 버그 수정:
+      user_metadata.provider==="naver" 는 한 번 네이버를 쓴 계정에 영구히 남아,
+      그 계정으로 카카오 로그인해도 네이버로 폴백되던 것이 원인.
+   판별 우선순위:
+     1) identities(가장 최근 last_sign_in_at) — 세션에 실제 쓰인 제공자라 가장 정확
+     2) app_metadata.provider 가 kakao/google/naver 면 그대로 (단일 제공자 계정)
+     3) app_metadata.provider==="email"(자체가입 or 커스텀네이버)인 병합 계정은
+        app_metadata.providers 배열로 보강 — kakao/google 이 있고 naver 가 없으면 그 소셜
+     4) 그래도 모르면 커스텀 네이버 표식(user_metadata.provider) 확인
+     5) 전부 아니면 email(자체 계정) */
 function detectLoginProvider(user){
   const ids = Array.isArray(user?.identities) ? user.identities : [];
   if(ids.length){
@@ -2539,11 +2547,16 @@ function detectLoginProvider(user){
       new Date(b?.last_sign_in_at||0) >= new Date(a?.last_sign_in_at||0) ? b : a);
     const p = (latest?.provider||"").toLowerCase();
     if(p==="kakao"||p==="google"||p==="naver") return p;
-    if(p==="email" && user?.user_metadata?.provider==="naver") return "naver"; // 우리 네이버
+    if(p==="email" && (user?.user_metadata?.provider||"").toLowerCase()==="naver") return "naver";
   }
   const ap = (user?.app_metadata?.provider||"").toLowerCase();
   if(ap==="kakao"||ap==="google"||ap==="naver") return ap;
-  if(user?.user_metadata?.provider==="naver") return "naver";
+  // 병합 계정(app_metadata.provider==="email")은 providers 배열로 실제 소셜 보강
+  const provs = (user?.app_metadata?.providers||[]).map(x=>String(x).toLowerCase());
+  if(provs.includes("kakao")  && !provs.includes("naver")) return "kakao";
+  if(provs.includes("google") && !provs.includes("naver")) return "google";
+  if(provs.includes("naver")) return "naver";
+  if((user?.user_metadata?.provider||"").toLowerCase()==="naver") return "naver";
   return "email";
 }
 
