@@ -1565,6 +1565,18 @@ function renderBusRoom(b){
   const owner = isBusOwner(b);
   const canMng = owner || isAdminUser();   // 관리자(God Mode)는 모든 방 관리 가능
   const locked = b.ordered && !isAdminUser();   // 관리자는 주문 잠금도 우회
+  const now = Date.now();
+
+  // 관리자 패널 버튼(상태 반영): 노쇼는 10분 쿨다운 동안 '노쇼 경고중'(비활성)→이후 복귀, 문제는 처리 후 '문제 처리중'
+  const noshowBtn = (r,i)=>{
+    const left = NOSHOW_CD_MS - (now - ((coopCooldowns[_cdKey(b.id,r)]||{}).noshow || 0));
+    return left > 0
+      ? `<button disabled style="border:none;font-size:11px;font-weight:800;color:#fff;background:#B0A06A;padding:7px 11px;border-radius:100px;font-family:'M PLUS Rounded 1c',sans-serif;cursor:not-allowed;opacity:.85">⏰ 노쇼 경고중</button>`
+      : `<button onclick="noshowWarn(${b.id},${i})" style="border:none;cursor:pointer;font-size:11px;font-weight:800;color:#fff;background:#C77800;padding:7px 11px;border-radius:100px;font-family:'M PLUS Rounded 1c',sans-serif">⏰ 노쇼 경고</button>`;
+  };
+  const problemBtn = (r,i)=> r.issue
+    ? `<button onclick="openIssue(${b.id},${i})" style="border:none;cursor:pointer;font-size:11px;font-weight:800;color:#fff;background:#B23B3F;padding:7px 11px;border-radius:100px;font-family:'M PLUS Rounded 1c',sans-serif">🚨 문제 처리중</button>`
+    : `<button onclick="openIssue(${b.id},${i})" style="border:none;cursor:pointer;font-size:11px;font-weight:800;color:#fff;background:#E5484D;padding:7px 11px;border-radius:100px;font-family:'M PLUS Rounded 1c',sans-serif">⚠️ 문제</button>`;
 
   // 문제 발생 사유 코드 → 장부 표시 태그
   const ISSUE_LABEL = {
@@ -1619,8 +1631,8 @@ function renderBusRoom(b){
           ${ r.paid
             ? `<span style="display:inline-block;font-size:11px;font-weight:800;color:#1A9E5E;background:#E3F6EC;border:1px solid #B6E6CA;padding:6px 10px;border-radius:100px">✅ 입금완료</span>`
             : `<button onclick="approvePay(${b.id},${i})" style="border:none;cursor:pointer;font-size:11px;font-weight:800;color:#fff;background:#1A9E5E;padding:7px 11px;border-radius:100px;font-family:'M PLUS Rounded 1c',sans-serif">✅ 입금 승인</button>
-               <button onclick="noshowWarn(${b.id},${i})" style="border:none;cursor:pointer;font-size:11px;font-weight:800;color:#fff;background:#C77800;padding:7px 11px;border-radius:100px;font-family:'M PLUS Rounded 1c',sans-serif">⏰ 노쇼경고</button>` }
-          <button onclick="openIssue(${b.id},${i})" style="border:none;cursor:pointer;font-size:11px;font-weight:800;color:#fff;background:#E5484D;padding:7px 11px;border-radius:100px;font-family:'M PLUS Rounded 1c',sans-serif">⚠️ 문제</button>
+               ${noshowBtn(r,i)}` }
+          ${problemBtn(r,i)}
         </div>
         ${ r.issue ? `<div style="font-size:10px;font-weight:800;color:#E5484D;margin-top:5px">${_esc(issueText(r))}</div>` : "" }
       </td>
@@ -1725,6 +1737,7 @@ function renderBusRoom(b){
 
       ${adminPanel}
     </div>`;
+  _scheduleNoshowRefresh(b);   // 노쇼 '경고중' 버튼 10분 후 자동 복귀
 }
 
 function _ridersOf(id){
@@ -1812,7 +1825,27 @@ let _issueTarget = { busId:null, idx:null };
 
 // 참여자별 알림 쿨다운 { "busId:nick": { problem:ts, noshow:ts } }
 const coopCooldowns = {};
+const NOSHOW_CD_MS = 10*60*1000;     // 노쇼 경고 쿨다운 10분
+const PROBLEM_CD_MS = 60*60*1000;    // 문제 알림 쿨다운 60분
+let _noshowTimer = null;             // 노쇼 '경고중' → '경고' 자동 복귀용 재렌더 타이머
 function _cdKey(busId, r){ return busId + ":" + (r && r.nick || ""); }
+// 가장 빨리 끝나는 노쇼 쿨다운에 맞춰 공구방을 자동 재렌더 → 버튼 복귀
+function _scheduleNoshowRefresh(b){
+  clearTimeout(_noshowTimer);
+  const now = Date.now();
+  let soonest = Infinity;
+  (b.riders||[]).forEach(r=>{
+    if(r.paid) return;
+    const left = NOSHOW_CD_MS - (now - ((coopCooldowns[_cdKey(b.id,r)]||{}).noshow || 0));
+    if(left > 0) soonest = Math.min(soonest, left);
+  });
+  if(soonest !== Infinity){
+    _noshowTimer = setTimeout(()=>{
+      const ov = document.getElementById("busRoomOverlay");
+      if(_roomBusId === b.id && ov && ov.style.display !== "none") renderBusRoom(b);
+    }, soonest + 150);
+  }
+}
 // 참여자 상태값 업데이트 + UI 동기화
 function updateParticipantStatus(busId, idx, status){
   const b = BUSES.find(x=>x.id===busId);
@@ -1853,7 +1886,7 @@ function saveIssue(){
   // 알림 쿨다운 (문제: 60분) — 관리자도 동일 적용
   const key = _cdKey(b.id, r);
   const now = Date.now();
-  if(now - ((coopCooldowns[key]||{}).problem || 0) < 60*60*1000){
+  if(now - ((coopCooldowns[key]||{}).problem || 0) < PROBLEM_CD_MS){
     closeIssue();
     showToast("이미 알림을 보냈습니다. 1시간 뒤에 다시 시도해주세요.");
     return;
@@ -1916,7 +1949,7 @@ function noshowWarn(busId, idx){
   // 알림 쿨다운 (노쇼: 10분)
   const key = _cdKey(b.id, r);
   const now = Date.now();
-  if(now - ((coopCooldowns[key]||{}).noshow || 0) < 10*60*1000){
+  if(now - ((coopCooldowns[key]||{}).noshow || 0) < NOSHOW_CD_MS){
     showToast("10분 뒤에 다시 경고 알림을 보낼 수 있습니다.");
     return;
   }
