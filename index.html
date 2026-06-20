@@ -354,53 +354,43 @@
         <p id="boardBusCaptain" style="font-size:11px;color:#8D7B80;margin-top:3px"></p>
       </div>
 
-      <!-- 렌즈 상품 -->
-      <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">렌즈 상품 *</label>
-      <select id="boardProduct" required
+      <!-- 상품 선택 (드롭다운) -->
+      <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">렌즈 상품 선택 *</label>
+      <select id="boardProduct" required onchange="updateReceipt()"
         style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;background:#fff;margin-bottom:16px">
-        <option value="">상품을 선택해 주세요</option>
-        <option>렌즈라라 밤비 (Bambi)</option>
-        <option>렌즈라라 플러리 (Flury)</option>
-        <option>렌즈라라 트윙클 (Twinkle)</option>
-        <option>기타 (메모에 기재)</option>
+        <option value="">렌즈를 선택해 주세요</option>
       </select>
 
-      <!-- 도수 + 수량 -->
-      <div class="flex gap-3 mb-4">
-        <div style="flex:1.4">
-          <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">도수 (양안) *</label>
-          <input id="boardPower" required placeholder="예) -3.50 / -4.00"
-            style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box"/>
+      <!-- 도수 입력 -->
+      <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">도수 입력 *</label>
+      <input id="boardPower" required placeholder="좌 -2.00, 우 -2.50 / 무도수는 0.00"
+        style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box"/>
+
+      <!-- 실시간 자동 계산 영수증 -->
+      <div class="bg-gray-50 p-4 rounded-xl mt-4 mb-4">
+        <p style="font-size:11px;font-weight:800;color:#8D7B80;margin:0 0 10px;letter-spacing:.3px">🧾 예상 결제 영수증 <span style="font-weight:600;color:#B6AAB0">(100엔 = 900원 적용)</span></p>
+        <div class="flex items-center justify-between" style="margin-bottom:7px">
+          <span style="font-size:13px;color:#6B5B60">상품가 (원화)</span>
+          <span id="rcGoods" style="font-size:14px;font-weight:700;color:#4A4A4A;font-family:'M PLUS Rounded 1c',sans-serif">-</span>
         </div>
-        <div style="flex:1">
-          <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">수량</label>
-          <div class="flex items-center" style="border:1.5px solid #FFD6E8;border-radius:14px;overflow:hidden">
-            <button type="button" onclick="boardQty(-1)" style="width:38px;height:48px;border:none;background:#FFF0F5;color:#C41055;font-size:18px;font-weight:800;cursor:pointer">−</button>
-            <input id="boardQty" value="1" readonly style="flex:1;width:100%;text-align:center;border:none;outline:none;font-size:15px;font-weight:800;color:#4A4A4A;font-family:'M PLUS Rounded 1c',sans-serif"/>
-            <button type="button" onclick="boardQty(1)" style="width:38px;height:48px;border:none;background:#FFF0F5;color:#C41055;font-size:18px;font-weight:800;cursor:pointer">+</button>
-          </div>
+        <div class="flex items-center justify-between" style="margin-bottom:10px">
+          <span style="font-size:13px;color:#6B5B60">반택비</span>
+          <span style="font-size:14px;font-weight:700;color:#4A4A4A;font-family:'M PLUS Rounded 1c',sans-serif">1,800원</span>
+        </div>
+        <div class="flex items-center justify-between" style="padding-top:11px;border-top:1.5px dashed #E2DCE0">
+          <span style="font-size:13px;font-weight:800;color:#4A4A4A;font-family:'M PLUS Rounded 1c',sans-serif">최종 결제 예정 금액</span>
+          <span id="rcTotal" style="font-size:21px;font-weight:800;color:#FF1E88;font-family:'M PLUS Rounded 1c',sans-serif">-</span>
         </div>
       </div>
 
-      <!-- 메모 -->
-      <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">총대에게 메모 (선택)</label>
-      <textarea id="boardMemo" rows="2" placeholder="추가 요청사항을 적어주세요 ✨"
-        style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;resize:none;line-height:1.6;margin-bottom:16px"></textarea>
-
-      <!-- 결제 요약 -->
-      <div class="rounded-2xl px-4 py-3 mb-4 flex items-center justify-between" style="background:#FFF0F5">
-        <span style="font-size:12px;font-weight:700;color:#6B5B60">탑승비 (안심 수수료)</span>
-        <span style="font-size:15px;font-weight:800;color:#C41055;font-family:'M PLUS Rounded 1c',sans-serif">300P</span>
-      </div>
-
-      <!-- 동의 -->
+      <!-- 노쇼 방지 동의 -->
       <label class="flex items-start gap-2 mb-4" style="cursor:pointer">
-        <input id="boardAgree" type="checkbox" required style="margin-top:2px;width:16px;height:16px;accent-color:#C41055;flex-shrink:0"/>
-        <span style="font-size:12px;color:#6B5B60;line-height:1.5">안심 공구 정책 및 환불 규정에 동의하며, 입력한 도수 정보가 정확함을 확인합니다.</span>
+        <input id="boardAgree" type="checkbox" onchange="updateBoardBtn()" style="margin-top:2px;width:16px;height:16px;accent-color:#C41055;flex-shrink:0"/>
+        <span style="font-size:12px;color:#6B5B60;line-height:1.55">보증금 <b style="color:#C41055">300P가 차감</b>되며, 2시간 내 미입금(노쇼) 시 환불되지 않음에 동의합니다.</span>
       </label>
 
-      <button type="submit"
-        style="width:100%;padding:15px;border:none;border-radius:16px;cursor:pointer;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:15px;background:linear-gradient(135deg,#FF6FA8,#C41055);box-shadow:0 14px 26px -12px rgba(196,16,85,.9)">탑승 신청 완료 (300P) 🚌</button>
+      <button id="boardSubmitBtn" type="submit" disabled
+        style="width:100%;padding:15px;border:none;border-radius:16px;cursor:pointer;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:15px;background:linear-gradient(135deg,#FF6FA8,#C41055);box-shadow:0 14px 26px -12px rgba(196,16,85,.9);opacity:.45;transition:opacity .15s">🚀 300P 내고 탑승 완료하기</button>
     </form>
   </div>
 </div>
@@ -1016,6 +1006,20 @@ function drawBus() {
 
 let _boardBusId = null;
 
+// 큐레이션 렌즈 더미 데이터 (추후 Supabase 'lens_catalog' 로 교체 예정)
+const curatedLenses = [
+  { id: 'L01', name: 'Flurry 원데이 (칭찬받는 판다)', price: 1760 },
+  { id: 'L02', name: 'Flurry 먼슬리 (사랑받는 링고)', price: 1320 },
+  { id: 'L03', name: 'Bambi Series 원데이 (아몬드)', price: 1760 },
+  { id: 'L04', name: 'Bambi Series 먼슬리 (스완 블루)', price: 1650 },
+  { id: 'L05', name: "Chu's Lens 원데이 (모테 브라운)", price: 1705 },
+  { id: 'L06', name: 'Majolica Majorca (지뢰계 블랙)', price: 1600 },
+];
+
+// 결제 계산 상수 (고정 환율 100엔=900원 → ×9, 반택비 고정)
+const YEN_TO_KRW = 9;
+const BOARD_SHIPPING = 1800;
+
 function boardBus(id){
   const b = BUSES.find(x=>x.id===id);
   if(!b) return;
@@ -1029,8 +1033,13 @@ function boardBus(id){
   document.getElementById("boardBusTitle").textContent = b.title;
   document.getElementById("boardBusCaptain").textContent = `총대 ${b.captain} · 달성률 ${Math.round(b.current/b.goal*100)}%`;
   document.getElementById("boardForm").reset();
-  document.getElementById("boardQty").value = "1";
+  // 드롭다운을 큐레이션 데이터로 채움
+  const sel = document.getElementById("boardProduct");
+  sel.innerHTML = `<option value="">렌즈를 선택해 주세요</option>` +
+    curatedLenses.map(l=>`<option value="${l.id}">${l.name} · ${l.price.toLocaleString()}엔</option>`).join("");
+  updateReceipt();
   document.getElementById("boardOverlay").style.display = "flex";
+  document.getElementById("boardSheet").scrollTop = 0;
   document.body.style.overflow = "hidden";
 }
 
@@ -1039,19 +1048,39 @@ function closeBoard(){
   document.body.style.overflow = "";
 }
 
-function boardQty(delta){
-  const el = document.getElementById("boardQty");
-  const n = Math.min(10, Math.max(1, (parseInt(el.value,10)||1) + delta));
-  el.value = String(n);
+// 렌즈 선택 시 실시간 원화 영수증 계산
+function updateReceipt(){
+  const id = document.getElementById("boardProduct").value;
+  const lens = curatedLenses.find(l=>l.id===id);
+  const goodsEl = document.getElementById("rcGoods");
+  const totalEl = document.getElementById("rcTotal");
+  if(!lens){
+    goodsEl.textContent = "-";
+    totalEl.textContent = "-";
+  } else {
+    const goods = lens.price * YEN_TO_KRW;        // 상품가(원화) = 엔화 × 9
+    const total = goods + BOARD_SHIPPING;          // 최종 = 상품가 + 반택비 1,800원
+    goodsEl.textContent = goods.toLocaleString() + "원";
+    totalEl.textContent = total.toLocaleString() + "원";
+  }
+  updateBoardBtn();
+}
+
+// 노쇼 동의 + 상품 선택 시에만 제출 버튼 활성화
+function updateBoardBtn(){
+  const agreed = document.getElementById("boardAgree").checked;
+  const hasLens = !!document.getElementById("boardProduct").value;
+  const btn = document.getElementById("boardSubmitBtn");
+  const on = agreed && hasLens;
+  btn.disabled = !on;
+  btn.style.opacity = on ? "1" : "0.45";
 }
 
 function submitBoard(e){
   e.preventDefault();
-  const b = BUSES.find(x=>x.id===_boardBusId);
-  const qty = document.getElementById("boardQty").value;
-  // MVP: 백엔드 연동 전, 신청 접수 안내만 표시
+  // MVP: 백엔드 연동 전, 완료 안내만 표시
   closeBoard();
-  alert(`🚌 '${b ? b.title : "버스"}' 탑승 신청이 접수되었어요!\n수량 ${qty}개 · 탑승비 300P\n총대 확인 후 결제 안내를 드릴게요. (결제 연동 준비 중)`);
+  alert("탑승이 완료되었습니다! 방장의 입금 안내를 기다려주세요.");
 }
 
 /* ═══════════════════════════════════
