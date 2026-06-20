@@ -1350,10 +1350,10 @@ const curatedLenses = [
 
 // 결제 계산 상수 (고정 환율 100엔=900원 → ×9)
 const YEN_TO_KRW = 9;
-// 도수 드롭다운 옵션: 0.00 ~ -10.00 (0.25 단위)
+// 도수 드롭다운 옵션: 0.00 ~ -8.00 (0.25 단위)
 const POWER_OPTIONS = (function(){
   const arr = ["0.00"];
-  for(let v=0.25; v<=10.0001; v+=0.25){ arr.push("-" + v.toFixed(2)); }
+  for(let v=0.25; v<=8.0001; v+=0.25){ arr.push("-" + v.toFixed(2)); }
   return arr;
 })();
 // 수령 방법별 배송비 (etc 는 사용자 직접입력)
