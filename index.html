@@ -436,11 +436,40 @@
         <!-- 섹션 A: 상품 및 배송 방법 -->
         <p style="font-size:12px;font-weight:800;color:#3A2B30;margin:0 0 10px;font-family:'M PLUS Rounded 1c',sans-serif">🛍️ 상품 · 배송 방법</p>
 
-        <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">렌즈 상품 선택 *</label>
-        <select id="boardProduct" required onchange="updateReceipt()"
-          style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;background:#fff;margin-bottom:16px">
-          <option value="">렌즈를 선택해 주세요</option>
-        </select>
+        <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">🔗 구매할 렌즈 링크 입력 <span style="color:#8D7B80;font-weight:600">(선택)</span></label>
+        <input id="boardUrl" placeholder="렌즈 상품 페이지 주소를 붙여넣으세요"
+          style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:8px;background:#fff"/>
+        <button type="button" id="boardFetchBtn" onclick="autofillBoardFromUrl()"
+          style="width:100%;padding:12px;border:none;border-radius:12px;cursor:pointer;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:13px;background:linear-gradient(135deg,#A855F7,#EC4899);box-shadow:0 8px 18px -8px rgba(168,85,247,.7);margin-bottom:10px">✨ 내 렌즈 불러오기</button>
+
+        <!-- 상품 미리보기 썸네일 -->
+        <div id="boardImgWrap" style="display:none;margin-bottom:12px;text-align:center">
+          <img id="boardImgPreview" alt="렌즈 미리보기" style="max-width:100%;max-height:150px;border-radius:12px;border:1.5px solid #EBC9F5;background:#fff" onerror="this.parentElement.style.display='none'"/>
+        </div>
+
+        <!-- 상품 정보 (자동/수동) -->
+        <div style="background:#FFF6FB;border:1.5px dashed #F2B8DC;border-radius:16px;padding:14px;margin-bottom:16px">
+          <p style="font-size:11px;font-weight:800;color:#C41055;margin:0 0 10px;font-family:'M PLUS Rounded 1c',sans-serif">📝 렌즈 정보 (직접 입력 / 수정 가능)</p>
+          <label style="display:block;font-size:11px;font-weight:700;color:#8D7B80;margin-bottom:4px">상품명 *</label>
+          <input id="boardProdName" maxlength="60" oninput="updateBoardBtn()" placeholder="예) Bambi Series 원데이 (아몬드)"
+            style="width:100%;padding:11px 12px;border:1.5px solid #FFD6E8;border-radius:12px;font-size:13px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:10px;background:#fff"/>
+          <label style="display:block;font-size:11px;font-weight:700;color:#8D7B80;margin-bottom:4px">가격 (엔 ¥) *</label>
+          <div style="position:relative">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:800;color:#C41055;pointer-events:none">¥</span>
+            <input id="boardProdPrice" type="number" min="1" inputmode="numeric" oninput="updateReceipt()" placeholder="예) 1760"
+              style="width:100%;padding:11px 12px 11px 28px;border:1.5px solid #FFD6E8;border-radius:12px;font-size:13px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;background:#fff"/>
+          </div>
+        </div>
+
+        <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">수량 *</label>
+        <div class="flex items-center gap-3" style="margin-bottom:16px">
+          <button type="button" onclick="changeQty(-1)"
+            style="width:42px;height:42px;border-radius:12px;border:1.5px solid #FFD6E8;background:#fff;color:#C41055;font-size:20px;font-weight:800;cursor:pointer;flex-shrink:0">−</button>
+          <input id="boardQty" type="number" min="1" value="1" inputmode="numeric" oninput="updateReceipt()" readonly
+            style="flex:1;text-align:center;padding:11px;border:1.5px solid #FFD6E8;border-radius:12px;font-size:16px;font-weight:800;color:#4A4A4A;outline:none;font-family:'M PLUS Rounded 1c',sans-serif;box-sizing:border-box;background:#fff"/>
+          <button type="button" onclick="changeQty(1)"
+            style="width:42px;height:42px;border-radius:12px;border:1.5px solid #FFD6E8;background:#fff;color:#C41055;font-size:20px;font-weight:800;cursor:pointer;flex-shrink:0">+</button>
+        </div>
 
         <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">도수 선택 * <span style="color:#8D7B80;font-weight:600">(무도수는 0.00)</span></label>
         <div class="flex gap-2" style="margin-bottom:16px">
@@ -649,11 +678,33 @@
         <input id="cbImage" type="hidden"/>
       </div>
 
+      <!-- 직접 입력 토글 -->
+      <div style="margin:-4px 0 14px;text-align:right">
+        <button type="button" id="cbManualToggle" onclick="toggleManualForm()"
+          style="background:none;border:none;color:#A855F7;font-size:12px;font-weight:800;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;text-decoration:underline">✍️ 직접 입력 / 수정하기</button>
+      </div>
+
+      <!-- 수동 입력 폼: 자동 불러오기 실패 시 펼쳐지거나, 성공 시 값이 채워진 채로 노출 -->
+      <div id="cbManualForm" style="display:none;background:#FFF6FB;border:1.5px dashed #F2B8DC;border-radius:16px;padding:14px;margin-bottom:18px">
+        <p style="font-size:11px;font-weight:800;color:#C41055;margin:0 0 10px;font-family:'M PLUS Rounded 1c',sans-serif">📝 물품 정보 (직접 입력 / 수정 가능)</p>
+        <label style="display:block;font-size:11px;font-weight:700;color:#8D7B80;margin-bottom:4px">상품명 *</label>
+        <input id="cbProdName" maxlength="60" placeholder="예) Bambi Series 원데이 (아몬드)"
+          style="width:100%;padding:11px 12px;border:1.5px solid #FFD6E8;border-radius:12px;font-size:13px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:10px;background:#fff"/>
+        <label style="display:block;font-size:11px;font-weight:700;color:#8D7B80;margin-bottom:4px">상품 이미지 주소(URL) *</label>
+        <input id="cbProdImg" placeholder="https://...jpg" oninput="syncManualPreview()"
+          style="width:100%;padding:11px 12px;border:1.5px solid #FFD6E8;border-radius:12px;font-size:13px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:10px;background:#fff"/>
+        <label style="display:block;font-size:11px;font-weight:700;color:#8D7B80;margin-bottom:4px">가격 (엔 ¥) *</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:800;color:#C41055;pointer-events:none">¥</span>
+          <input id="cbProdPrice" type="number" min="1" inputmode="numeric" placeholder="예) 1760"
+            style="width:100%;padding:11px 12px 11px 28px;border:1.5px solid #FFD6E8;border-radius:12px;font-size:13px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;background:#fff"/>
+        </div>
+      </div>
+
       <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">플랫폼 선택 *</label>
       <select id="cbPlatform" required
         style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;background:#fff;margin-bottom:16px">
         <option value="렌즈라라" selected>렌즈라라</option>
-        <option value="파스비">파스비</option>
         <option value="기타">기타</option>
       </select>
 
@@ -1373,6 +1424,9 @@ const BUSES = [
     tier: "pro",          // 프로 총대
     goal: 10000,
     current: 8500,
+    productName: "Bambi Series 원데이 (아몬드)",
+    productImg: "",
+    productPrice: 1760,
     ownerId: "demo-host-1",   // 더미 방장(가상 유저) — 실제 로그인 유저와 불일치 → 일반 유저엔 패널 미노출
     notice: "오늘 밤 10시까지 입금 부탁드려요! 🌙 내일 오전 일괄 주문합니다.",
     ordered: false,
@@ -1390,6 +1444,9 @@ const BUSES = [
     tier: "beginner",     // 비기너 총대
     goal: 10000,
     current: 3000,
+    productName: "Majolica Majorca (지뢰계 블랙)",
+    productImg: "",
+    productPrice: 1600,
     ownerId: "demo-host-2",   // 더미 방장(가상 유저) — 실제 로그인 유저와 불일치 → 일반 유저엔 패널 미노출
     notice: "현재 일본에서 배송 시작되었습니다! 조금만 기다려주세요 ✈️",
     ordered: false,
@@ -1418,6 +1475,11 @@ function getMyHostAccount(){
 function lensName(id){
   const l = (typeof curatedLenses !== "undefined") && curatedLenses.find(x=>x.id===id);
   return l ? l.name : (id || "-");
+}
+// 탑승자 표시용 상품명 — 신규(productName/qty) 우선, 구 더미(lensId) 호환
+function riderProduct(r){
+  if(r && r.productName) return r.productName + ((r.qty && r.qty > 1) ? ` ×${r.qty}` : "");
+  return lensName(r && r.lensId);
 }
 
 const BUS_TIER = {
@@ -1496,6 +1558,10 @@ function openCreateBus(){
   }
   const f = document.getElementById("createBusForm");
   if(f) f.reset();
+  // 수동 폼/미리보기 초기화
+  const mf = document.getElementById("cbManualForm"); if(mf) mf.style.display = "none";
+  const iw = document.getElementById("cbImgWrap"); if(iw) iw.style.display = "none";
+  const ci = document.getElementById("cbImage"); if(ci) ci.value = "";
   const rn = document.getElementById("cbRewardNote");
   if(rn) rn.style.display = REWARDS_ENABLED ? "block" : "none";
   syncDeadlineUI();
@@ -1664,13 +1730,30 @@ function _cbFlash(el){
   setTimeout(function(){ el.classList.remove("cb-flash"); }, 1200);
 }
 
-// 🔗 상품 링크 → 상품명/이미지/가격 자동 채우기
+// 수동 입력 폼 열기/닫기 토글
+function toggleManualForm(show){
+  const f = document.getElementById("cbManualForm");
+  if(!f) return;
+  const willShow = (typeof show === "boolean") ? show : (f.style.display === "none" || !f.style.display);
+  f.style.display = willShow ? "block" : "none";
+}
+// 수동 이미지 URL → 미리보기 썸네일 동기화
+function syncManualPreview(){
+  const url = (document.getElementById("cbProdImg").value || "").trim();
+  const img = document.getElementById("cbImgPreview");
+  const wrap = document.getElementById("cbImgWrap");
+  document.getElementById("cbImage").value = url;
+  if(url){ img.src = url; wrap.style.display = "block"; }
+  else { wrap.style.display = "none"; }
+}
+
+// 🔗 상품 링크 → 상품명/이미지/가격 자동 채우기 (실패 시 수동 폼을 빈 채로 펼침)
 async function autofillFromUrl(){
   const url = document.getElementById("cbUrl").value.trim();
   const btn = document.getElementById("cbFetchBtn");
-  if(!url){ showToast("상품 링크(URL)를 입력해 주세요"); return; }
+  if(!url){ showToast("상품 링크(URL)를 입력해 주세요"); toggleManualForm(true); return; }
   if(typeof CoopCore === "undefined" || !CoopCore.fetchProductDataFromUrl){
-    showToast("불러오기 모듈을 로드하지 못했어요. 수동으로 입력해 주세요."); return;
+    showToast("불러오기 모듈을 로드하지 못했어요. 직접 입력해 주세요."); toggleManualForm(true); return;
   }
   const orig = btn.innerHTML;
   btn.disabled = true;
@@ -1678,21 +1761,26 @@ async function autofillFromUrl(){
   btn.innerHTML = '<span class="cb-spin">⏳</span> 정보를 불러오는 중…';
   try{
     const data = await CoopCore.fetchProductDataFromUrl(url);   // 잘못된 URL 만 throw
-    if(!data || !data.ok){
-      showToast("자동 불러오기에 실패했습니다. 수동으로 입력해 주세요.");
-    } else {
+    // 성공/실패 모두 수동 폼을 펼쳐 사용자가 확인·수정할 수 있게 함 (실패해도 에러 토스트 없음)
+    toggleManualForm(true);
+    const nameEl  = document.getElementById("cbProdName");
+    const imgEl   = document.getElementById("cbProdImg");
+    const priceEl = document.getElementById("cbProdPrice");
+    if(data && data.ok){
       let filled = 0;
-      if(data.title){ const t=document.getElementById("cbTitle"); t.value=data.title; _cbFlash(t); filled++; }
-      if(data.imageUrl){
-        const img=document.getElementById("cbImgPreview"); img.src=data.imageUrl;
-        const wrap=document.getElementById("cbImgWrap"); wrap.style.display="block";
-        document.getElementById("cbImage").value=data.imageUrl; _cbFlash(wrap); filled++;
-      }
-      if(data.price && data.price>0){ const g=document.getElementById("cbGoal"); g.value=data.price; _cbFlash(g.parentElement||g); filled++; }
-      showToast(filled ? "상품 정보를 불러왔어요 ✨ 확인 후 수정하세요" : "불러올 정보가 없어요. 수동으로 입력해 주세요.");
+      if(data.title){ nameEl.value = data.title; _cbFlash(nameEl); filled++; }
+      if(data.imageUrl){ imgEl.value = data.imageUrl; _cbFlash(imgEl); filled++; }
+      if(data.price && data.price>0){ priceEl.value = data.price; _cbFlash(priceEl); filled++; }
+      syncManualPreview();
+      showToast(filled ? "상품 정보를 불러왔어요 ✨ 확인 후 수정하세요" : "불러올 정보가 없어요. 아래에 직접 입력해 주세요.");
+    } else {
+      // 실패: 빈 수동 폼만 노출 (에러 토스트 대신 안내)
+      showToast("자동 불러오기에 실패했어요. 아래에 직접 입력해 주세요 ✍️");
     }
   }catch(e){
-    showToast("자동 불러오기에 실패했습니다. 수동으로 입력해 주세요.");
+    // 잘못된 URL 등 → 수동 폼만 펼침
+    toggleManualForm(true);
+    showToast("자동 불러오기에 실패했어요. 아래에 직접 입력해 주세요 ✍️");
   }finally{
     btn.disabled = false;
     btn.style.opacity = "1";
@@ -1707,7 +1795,18 @@ function submitCreateBus(e){
   const goal = parseInt(document.getElementById("cbGoal").value, 10);
   const dlEl = document.querySelector('input[name="cbDeadline"]:checked');
   const deadlineH = dlEl ? parseInt(dlEl.value, 10) : 24;
-  if(!title || !goal || goal < 1){ alert("제목과 목표 금액을 확인해 주세요"); return; }
+
+  // 물품 정보 (상품명/이미지/가격) — 자동 또는 수동
+  const prodName  = (document.getElementById("cbProdName").value || "").trim();
+  const prodImg   = (document.getElementById("cbProdImg").value || "").trim();
+  const prodPrice = parseInt(document.getElementById("cbProdPrice").value, 10);
+  // 방어: 3가지 중 하나라도 비어있으면 생성 차단
+  if(!prodName || !prodImg || !prodPrice || prodPrice < 1){
+    alert("물품 정보를 정확히 입력해주세요.");
+    toggleManualForm(true);
+    return;
+  }
+  if(!title || !goal || goal < 1){ alert("버스 제목과 목표 금액을 확인해 주세요"); return; }
 
   // 새 공구방을 BUSES 맨 앞에 추가 (내가 연 방 → 방장 패널 노출)
   const newId = BUSES.reduce((m,b)=>Math.max(m, b.id), 0) + 1;
@@ -1720,6 +1819,9 @@ function submitCreateBus(e){
     goal: goal,
     current: 0,
     deadlineH: deadlineH,
+    productName: prodName,             // 물품명
+    productImg: prodImg,               // 물품 이미지 URL
+    productPrice: prodPrice,           // 물품 가격(엔)
     ownerId: (typeof authUser !== "undefined" && authUser && authUser.id) || "me",   // 개설자 = 방장
     notice: document.getElementById("cbNotice").value.trim(),  // 방장 공지
     ordered: false,                    // 렌즈라라 주문 완료 여부(수정 잠금 트리거)
@@ -1784,10 +1886,18 @@ function boardBus(id){
   document.getElementById("boardBusTitle").textContent = b.title;
   document.getElementById("boardBusCaptain").textContent = `총대 ${b.captain} · 달성률 ${Math.round(b.current/b.goal*100)}%`;
   document.getElementById("boardForm").reset();
-  // 렌즈 드롭다운을 큐레이션 데이터로 채움
-  const sel = document.getElementById("boardProduct");
-  sel.innerHTML = `<option value="">렌즈를 선택해 주세요</option>` +
-    curatedLenses.map(l=>`<option value="${l.id}">${l.name} · ${l.price.toLocaleString()}엔</option>`).join("");
+  // 링크/미리보기 초기화
+  document.getElementById("boardUrl").value = "";
+  const biw = document.getElementById("boardImgWrap"); if(biw) biw.style.display = "none";
+  // 상품 정보는 방장이 등록한 메인 물품으로 기본 채움 (탑승자가 수정 가능)
+  document.getElementById("boardProdName").value  = b.productName || "";
+  document.getElementById("boardProdPrice").value = b.productPrice || "";
+  document.getElementById("boardQty").value = "1";
+  if(b.productImg){
+    const img = document.getElementById("boardImgPreview");
+    img.src = b.productImg;
+    document.getElementById("boardImgWrap").style.display = "block";
+  }
   // 도수 드롭다운(좌·우) 채움 — 0.00 ~ -10.00 (0.25 단위), 기본 0.00
   const opts = POWER_OPTIONS.map(v=>`<option value="${v}">${v}</option>`).join("");
   document.getElementById("boardPowerL").innerHTML = opts;
@@ -1805,7 +1915,56 @@ function closeBoard(){
   document.body.style.overflow = "";
 }
 
-// 렌즈 + 수령 방법 → 실시간 영수증 + 주소 placeholder 동기화
+// 수량 +/- (최소 1)
+function changeQty(d){
+  const el = document.getElementById("boardQty");
+  let q = parseInt(el.value, 10);
+  if(isNaN(q)) q = 1;
+  q = Math.max(1, q + d);
+  el.value = q;
+  updateReceipt();
+}
+
+// 현재 엔화 단가 / 수량 헬퍼
+function _boardYen(){ const v = parseInt(document.getElementById("boardProdPrice").value, 10); return isNaN(v)||v<0 ? 0 : v; }
+function _boardQty(){ const v = parseInt(document.getElementById("boardQty").value, 10); return isNaN(v)||v<1 ? 1 : v; }
+
+// 🔗 내 렌즈 링크 → 상품명/이미지/가격 자동 채우기
+async function autofillBoardFromUrl(){
+  const url = document.getElementById("boardUrl").value.trim();
+  const btn = document.getElementById("boardFetchBtn");
+  if(!url){ showToast("렌즈 링크(URL)를 입력해 주세요"); return; }
+  if(typeof CoopCore === "undefined" || !CoopCore.fetchProductDataFromUrl){
+    showToast("불러오기 모듈을 로드하지 못했어요. 아래에 직접 입력해 주세요."); return;
+  }
+  const orig = btn.innerHTML;
+  btn.disabled = true; btn.style.opacity = "0.85";
+  btn.innerHTML = '<span class="cb-spin">⏳</span> 불러오는 중…';
+  try{
+    const data = await CoopCore.fetchProductDataFromUrl(url);
+    const nameEl  = document.getElementById("boardProdName");
+    const priceEl = document.getElementById("boardProdPrice");
+    if(data && data.ok){
+      let filled = 0;
+      if(data.title){ nameEl.value = data.title; _cbFlash(nameEl); filled++; }
+      if(data.price && data.price>0){ priceEl.value = data.price; _cbFlash(priceEl); filled++; }
+      if(data.imageUrl){
+        const img = document.getElementById("boardImgPreview"); img.src = data.imageUrl;
+        document.getElementById("boardImgWrap").style.display = "block"; filled++;
+      }
+      updateReceipt();
+      showToast(filled ? "렌즈 정보를 불러왔어요 ✨ 확인 후 수정하세요" : "불러올 정보가 없어요. 직접 입력해 주세요.");
+    } else {
+      showToast("자동 불러오기에 실패했어요. 아래에 직접 입력해 주세요 ✍️");
+    }
+  }catch(e){
+    showToast("자동 불러오기에 실패했어요. 아래에 직접 입력해 주세요 ✍️");
+  }finally{
+    btn.disabled = false; btn.style.opacity = "1"; btn.innerHTML = orig;
+  }
+}
+
+// 상품(가격×수량) + 수령 방법 → 실시간 영수증 + 주소 placeholder 동기화
 function updateReceipt(){
   const method = getShipMethod();
   // 기타택배일 때만 금액 입력칸 노출
@@ -1824,15 +1983,16 @@ function updateReceipt(){
     homeWrap.style.display = isConv ? "none" : "block";
   }
 
-  const lens = curatedLenses.find(l=>l.id===document.getElementById("boardProduct").value);
+  const yen = _boardYen();
+  const qty = _boardQty();
   const goodsEl = document.getElementById("rcGoods");
   const totalEl = document.getElementById("rcTotal");
-  if(!lens){
+  if(!yen){
     goodsEl.textContent = "-";
     totalEl.textContent = "-";
   } else {
-    const goods = lens.price * YEN_TO_KRW;   // 상품가(원화) = 엔화 × 9
-    goodsEl.textContent = goods.toLocaleString() + "원";
+    const goods = yen * qty * YEN_TO_KRW;   // 상품가(원화) = 엔화 × 수량 × 9
+    goodsEl.textContent = `${goods.toLocaleString()}원 (¥${yen.toLocaleString()}×${qty})`;
     totalEl.textContent = (goods + fee).toLocaleString() + "원";
   }
   updateBoardBtn();
@@ -1870,10 +2030,11 @@ function openAddrSearch(targetId){
 // 원스텝 폼 전 항목 + 동의 통과 시에만 제출 활성화
 function boardFormValid(){
   if(isAdminUser()) return true;   // 관리자(God Mode): 검증 우회 → 버튼 항상 활성
-  const lens   = document.getElementById("boardProduct").value;
+  const prodName = _noSpaceLen(document.getElementById("boardProdName").value) >= 1;
+  const prodOk   = prodName && _boardYen() >= 1 && _boardQty() >= 1;
   const agreed = document.getElementById("boardAgree").checked;
-  // 입금자명·실명: 공백 제외 2자 이상 / 전화: 숫자 10~11 / 주소: 공백 제외 4자 이상
-  return !!lens
+  // 상품명/가격/수량 + 입금자명·실명: 공백 제외 2자 이상 / 전화: 숫자 10~11 / 주소: 공백 제외 4자 이상
+  return prodOk
     && _noSpaceLen(document.getElementById("bPayer").value) >= 2
     && _noSpaceLen(document.getElementById("bName").value) >= 2
     && vPhone(document.getElementById("bPhone").value)
@@ -1895,23 +2056,30 @@ function _myNick(){
 
 function submitBoard(e){
   e.preventDefault();
-  if(!boardFormValid()) return;
-  let lens = curatedLenses.find(l=>l.id===document.getElementById("boardProduct").value);
-  if(!lens && isAdminUser()) lens = curatedLenses[0];   // 관리자: 미선택 시 첫 렌즈로 진행(검증용)
+  if(!boardFormValid()){ alert("렌즈 정보(상품명·가격·수량)와 배송 정보를 정확히 입력해주세요."); return; }
   const bus  = BUSES.find(b=>b.id===_boardBusId);
-  if(!lens || !bus) return;
+  if(!bus) return;
+  // 상품 정보 (자동/수동)
+  let prodName = document.getElementById("boardProdName").value.trim();
+  let yen = _boardYen();
+  const qty = _boardQty();
+  if(isAdminUser() && (!prodName || !yen)){ prodName = prodName || (bus.productName || "테스트 렌즈"); yen = yen || (bus.productPrice || 1000); }
   // 탑승 수수료 300P 검사 (Mock) — 관리자는 우회
   if(!isAdminUser() && getPoints() < 300){ alert("포인트가 부족합니다. 매일 로그인하여 포인트를 모아보세요!"); return; }
 
   const method = getShipMethod();
   const fee = getShipFee(method);
+  const goods = yen * qty * YEN_TO_KRW;   // 상품가(원화) = 엔화 × 수량 × 9
   if(!bus.riders) bus.riders = [];
   bus.riders.push({
     nick: _myNick(),
-    lensId: lens.id,
+    productName: prodName,
+    yen: yen,
+    qty: qty,
     power: `좌 ${document.getElementById("boardPowerL").value} / 우 ${document.getElementById("boardPowerR").value}`,
     method: method,
-    amount: lens.price * YEN_TO_KRW + fee,
+    goods: goods,
+    amount: goods + fee,
     paid: false,
     issue: null,
     realName: document.getElementById("bName").value.trim(),
@@ -2011,7 +2179,7 @@ function renderBusRoom(b){
         <span style="font-size:13px;font-weight:800;color:#3A2B30">${r.trackingNumber?"🚚 ":""}${r.nick}${r.me?` <span style="font-size:10px;color:#C41055">(나)</span>`:""}</span>
         <span style="font-size:13px;font-weight:800;color:#C41055;font-family:'M PLUS Rounded 1c',sans-serif">${r.amount.toLocaleString()}원</span>
       </div>
-      <p style="font-size:11px;color:#8D7B80;margin-top:3px">${lensName(r.lensId)} · ${r.power||"도수 미입력"} · <b style="color:#6B5B60">${methodShort(r.method)}</b></p>
+      <p style="font-size:11px;color:#8D7B80;margin-top:3px">${riderProduct(r)} · ${r.power||"도수 미입력"} · <b style="color:#6B5B60">${methodShort(r.method)}</b></p>
       <div class="flex items-center gap-1.5 mt-2" style="flex-wrap:wrap">${statusTag(r)}${payTag(r.paid)}${addrTag(r.hasAddr)}${ (owner && riderNeedsCheck(r)) ? `<span style="font-size:10px;font-weight:800;color:#fff;background:#E5484D;border:1px solid #C73B3F;padding:3px 8px;border-radius:100px">⚠️ 정보 확인 필요</span>` : "" }</div>
       ${ r.me ? (locked
         ? `<div class="mt-2" style="font-size:11px;font-weight:700;color:#9A8D93">🔒 주문이 시작되어 수정·취소가 잠겼어요</div>`
@@ -2345,7 +2513,7 @@ function openOrderProcess(busId){
     return `<div class="flex items-center justify-between" style="padding:9px 2px;border-bottom:1px solid #F0ECEE">
       <div style="min-width:0">
         <p style="font-size:13px;font-weight:800;color:#3A2B30">${i+1}. ${r.nick}</p>
-        <p style="font-size:11px;color:#8D7B80;margin-top:2px">${lensName(r.lensId)} · ${r.power||"도수 미입력"} · ${methodShort(r.method)}</p>
+        <p style="font-size:11px;color:#8D7B80;margin-top:2px">${riderProduct(r)} · ${r.power||"도수 미입력"} · ${methodShort(r.method)}</p>
       </div>
       <span style="font-size:13px;font-weight:800;color:#C41055;font-family:'M PLUS Rounded 1c',sans-serif;flex-shrink:0">${(r.amount||0).toLocaleString()}원</span>
     </div>`;
@@ -2515,7 +2683,7 @@ function copyOrderSheet(){
   const riders = _ridersOf(_roomBusId);
   if(!riders.length){ alert("탑승객이 아직 없어요."); return; }
   const text = riders.map((r,i)=>
-    `${i+1}. ${lensName(r.lensId)} | ${r.power||"도수 미입력"}`).join("\n");
+    `${i+1}. ${riderProduct(r)} | ${r.power||"도수 미입력"}`).join("\n");
   _copy(text, `주문서 ${riders.length}건을 복사했어요 🛒`);
 }
 

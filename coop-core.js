@@ -147,16 +147,25 @@
       const el = doc.querySelector('meta[property="' + prop + '"]') || doc.querySelector('meta[name="' + prop + '"]');
       return el ? (el.getAttribute("content") || "").trim() : "";
     }
+    // 상품명: og:title → twitter:title → <title>
     const titleEl = doc.querySelector("title");
-    const title = meta("og:title") || (titleEl ? (titleEl.textContent || "").trim() : "");
-    const imageUrl = meta("og:image") || "";
-    // og 태그가 전혀 없으면(차단/봇 페이지 등) 안전 기본값 반환
+    const title = meta("og:title") || meta("twitter:title") || (titleEl ? (titleEl.textContent || "").trim() : "");
+    // 이미지: og:image → twitter:image → 본문 첫 유효 <img>(data/svg/1px 제외)
+    let imageUrl = meta("og:image") || meta("twitter:image") || "";
+    if (!imageUrl) {
+      const imgs = doc.querySelectorAll("img");
+      for (let i = 0; i < imgs.length; i++) {
+        const s = (imgs[i].getAttribute("src") || imgs[i].getAttribute("data-src") || "").trim();
+        if (s && !/^data:/i.test(s) && !/\.svg(\?|$)/i.test(s) && !/1x1|spacer|blank/i.test(s)) { imageUrl = s; break; }
+      }
+    }
+    // 제목·이미지 둘 다 없으면(차단/봇 페이지 등) 안전 기본값 반환
     if (!title && !imageUrl) return _productFallback("no-og-tags");
     return {
       title: title || PRODUCT_FALLBACK_TITLE,
       imageUrl: imageUrl,
       price: extractPrice(doc, meta("og:description")),
-      ok: !!title,
+      ok: !!(title || imageUrl),
     };
   }
 
