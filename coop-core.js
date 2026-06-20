@@ -198,15 +198,43 @@
         return { userId: userId, status: r.status, cooldownEndsAt: t + NOSHOW_COOLDOWN_MS };
       },
 
-      /* 운송장 등록 */
+      /* 운송장 등록 — 숫자만 허용(공백/하이픈만 정리), 6자리 이상 */
       registerTracking: function (userId, trackingNum, courierName) {
         const r = _rider(userId);
         if (!r) throw new Error("탑승자가 아닙니다.");
-        const num = String(trackingNum == null ? "" : trackingNum).replace(/[^0-9A-Za-z]/g, "");
-        if (num.length < 6) throw new Error("운송장 번호 형식이 올바르지 않습니다. (6자리 이상)");
+        const digits = String(trackingNum == null ? "" : trackingNum).replace(/[\s-]/g, "");
+        if (!/^\d+$/.test(digits)) throw new Error("운송장 번호는 숫자만 입력할 수 있습니다.");
+        if (digits.length < 6) throw new Error("운송장 번호 형식이 올바르지 않습니다. (6자리 이상)");
         r.courierName = courierName || r.courierName || "택배";
-        r.trackingNumber = num;
-        return { userId: userId, courierName: r.courierName, trackingNumber: num };
+        r.trackingNumber = digits;
+        return { userId: userId, courierName: r.courierName, trackingNumber: digits };
+      },
+
+      /* ── 트랜잭션 락(블랙컨슈머 방어): 주문 시작 후 파티원 수정/취소 차단 ── */
+      /* 파티원 정보 수정 */
+      editRiderInfo: function (userId, patch) {
+        const r = _rider(userId);
+        if (!r) throw new Error("탑승자가 아닙니다.");
+        if (coop.status === COOP_STATUS.CANCELLED) throw new Error("무산된 공구는 수정할 수 없습니다.");
+        if (coop.isOrderStarted) throw new Error("주문이 시작되어 정보를 수정할 수 없습니다. (트랜잭션 잠금)");
+        if (patch && typeof patch === "object") {
+          ["lensId", "power", "courierName"].forEach(function (k) {
+            if (Object.prototype.hasOwnProperty.call(patch, k)) r[k] = patch[k];
+          });
+        }
+        return true;
+      },
+
+      /* 파티원 탑승 취소 → 보증금 환불 + 라이더 제거 */
+      cancelRide: function (userId) {
+        const r = _rider(userId);
+        if (!r) throw new Error("탑승자가 아닙니다.");
+        if (coop.status === COOP_STATUS.CANCELLED) throw new Error("무산된 공구입니다.");
+        if (coop.isOrderStarted) throw new Error("주문이 시작되어 탑승을 취소할 수 없습니다. (트랜잭션 잠금)");
+        const u = _users.get(userId);
+        if (u && r.deposit > 0) u.points += r.deposit;   // 보증금 환불
+        coop.riders.splice(coop.riders.indexOf(r), 1);
+        return true;
       },
 
       /* ── 무산 & 환불 ── */
@@ -297,6 +325,68 @@
     return api;
   }
 
+  /* ════════════════════════════════════════════════════════════════
+     자동 테스트 — 브라우저 콘솔에서 runCoopAutoTest() 실행
+     (mock 시계로 쿨다운까지 검증, [✅ 통과]/[❌ 실패] 출력)
+     ════════════════════════════════════════════════════════════════ */
+  function runCoopAutoTest() {
+    const out = [];
+    let clk = 1700000000000;                 // mock now (쿨다운 검증용)
+    const now = function () { return clk; };
+    function pass(m) { out.push("[✅ 통과] " + m); }
+    function failed(m) { out.push("[❌ 실패] " + m); }
+    function check(name, fn) {                // 정상 동작 기대 (true 반환)
+      try { const r = fn(); if (r === false) failed(name + " — false 반환"); else pass(name); }
+      catch (e) { failed(name + " — 예기치 못한 에러: " + e.message); }
+    }
+    function expectThrow(name, fn, frag) {    // 에러(방어) 기대
+      try { fn(); failed(name + " — 에러가 발생하지 않음(방어 실패!)"); }
+      catch (e) {
+        if (!frag || e.message.indexOf(frag) !== -1) pass(name + " — 방어됨: " + e.message);
+        else failed(name + " — 다른 에러: " + e.message);
+      }
+    }
+
+    // ── 셋업 ──
+    const host = createUserProfile("host", "contact@kaiwai.kr");
+    const u1 = createUserProfile("u1", "party1@test.com"); u1.points = 500;
+    const u2 = createUserProfile("u2", "party2@test.com"); u2.points = 100; // 포인트 부족 케이스
+    const coop = createCoop({ id: "qa", hostId: "host", goalYen: 10000, platform: "렌즈라라" });
+    const sys = createCoopSystem(coop, [host, u1, u2], { now: now });
+
+    // ── 1) 파티원 탑승 (300P 차감) ──
+    check("1) 파티원 탑승 + 300P 차감", function () { return sys.joinCoop("u1", 300) === true && u1.points === 200; });
+    expectThrow("1-2) 포인트 부족 탑승 차단", function () { sys.joinCoop("u2", 300); }, "부족");
+
+    // ── 2) 방장의 주문 시작 (Lock) ──
+    check("2) 방장 주문 시작 → Lock 작동", function () { return sys.startOrder("host") === true && coop.isOrderStarted === true; });
+
+    // ── 3) Lock 이후 파티원 수정/취소 시도 (방어) ──
+    expectThrow("3) Lock 후 정보 수정 차단", function () { sys.editRiderInfo("u1", { power: "-2.00" }); }, "트랜잭션 잠금");
+    expectThrow("3-2) Lock 후 탑승 취소 차단", function () { sys.cancelRide("u1"); }, "트랜잭션 잠금");
+
+    // ── 4) 노쇼 경고 연속 2번 (쿨다운 방어) ──
+    check("4) 노쇼 경고 1회 발송", function () { return !!sys.warnNoShow("u1"); });
+    expectThrow("4-2) 노쇼 즉시 재발송 쿨다운 차단", function () { sys.warnNoShow("u1"); }, "다시 보낼");
+    clk += 11 * 60 * 1000;                    // 11분 경과
+    check("4-3) 10분 경과 후 재발송 가능", function () { return !!sys.warnNoShow("u1"); });
+
+    // ── 보너스) 운송장 숫자 검증 ──
+    expectThrow("5) 운송장 비숫자 차단", function () { sys.registerTracking("u1", "ABC123!!"); }, "숫자");
+    check("5-2) 정상 운송장 등록", function () { return sys.registerTracking("u1", "1234-567-890").trackingNumber === "1234567890"; });
+
+    // ── 출력 ──
+    const fails = out.filter(function (s) { return s.indexOf("❌") !== -1; }).length;
+    const passes = out.length - fails;
+    const log = (typeof console !== "undefined") ? console : { log: function () {}, group: function () {}, groupEnd: function () {} };
+    if (log.group) log.group("🧪 KAIWAI 공구 로직 자동 테스트");
+    out.forEach(function (line) { log.log(line); });
+    log.log("\n━━━━━━━━━━━━━━━━━━━━");
+    log.log((fails === 0 ? "🎉 전체 통과" : "⚠️ 일부 실패") + " — 총 " + out.length + "건 / ✅ " + passes + " / ❌ " + fails);
+    if (log.groupEnd) log.groupEnd();
+    return { total: out.length, passed: passes, failed: fails, results: out };
+  }
+
   const CoopCore = {
     ADMIN_EMAILS: ADMIN_EMAILS,
     DEPOSIT: DEPOSIT,
@@ -313,8 +403,11 @@
     createUserProfile: createUserProfile,
     createCoop: createCoop,
     createCoopSystem: createCoopSystem,
+    runCoopAutoTest: runCoopAutoTest,
   };
 
   if (typeof module !== "undefined" && module.exports) module.exports = CoopCore;
   else global.CoopCore = CoopCore;
+  // 브라우저 콘솔에서 바로 호출 가능하도록 전역 노출
+  if (typeof global !== "undefined") global.runCoopAutoTest = runCoopAutoTest;
 })(typeof window !== "undefined" ? window : (typeof globalThis !== "undefined" ? globalThis : this));
