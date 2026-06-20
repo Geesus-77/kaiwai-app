@@ -422,9 +422,16 @@
         <input id="bPhone" required type="tel" inputmode="numeric" oninput="updateBoardBtn()" placeholder="01012345678 (숫자만 10~11자리)"
           style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:16px"/>
 
-        <label id="bAddrLabel" style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">수령 편의점 주소 *</label>
-        <input id="bAddr" required oninput="updateBoardBtn()" placeholder="예) GS25 홍대입구역점"
-          style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:8px"/>
+        <div id="bAddrConvWrap">
+          <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">수령 편의점 주소 * <span style="color:#8D7B80;font-weight:600">(편의점 반택)</span></label>
+          <input id="bAddr" oninput="updateBoardBtn()" placeholder="예) GS25 홍대입구역점"
+            style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:8px"/>
+        </div>
+        <div id="bAddrHomeWrap" style="display:none">
+          <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">일반택배 배송지 주소 * <span style="color:#8D7B80;font-weight:600">(자택/기타택배)</span></label>
+          <input id="bAddrHome" oninput="updateBoardBtn()" placeholder="예) 서울시 마포구 와우산로 00, 000동 000호"
+            style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:8px"/>
+        </div>
         <div class="rounded-xl px-3 py-2.5 mb-4" style="background:#F0ECEE">
           <p style="font-size:11px;color:#8D7B80;line-height:1.5">🔒 통관고유부호는 <b>총대 명의 통관</b>으로 진행되어 <b>수집하지 않습니다.</b></p>
         </div>
@@ -1466,17 +1473,13 @@ function updateReceipt(){
   document.getElementById("rcShipLabel").textContent = `배송비 (${SHIP_METHODS[method].label})`;
   document.getElementById("rcShip").textContent = fee.toLocaleString() + "원";
 
-  // 수령 방법에 따라 주소 라벨/placeholder 변경
-  const addrLabel = document.getElementById("bAddrLabel");
-  const addr = document.getElementById("bAddr");
-  if(addrLabel && addr){
-    if(method === "home"){
-      addrLabel.textContent = "배송지 도로명 주소 *";
-      addr.placeholder = "예) 서울시 마포구 와우산로 00, 000동 000호";
-    } else {
-      addrLabel.textContent = "수령 편의점 주소 *";
-      addr.placeholder = "예) GS25 홍대입구역점 / CU 강남터미널점";
-    }
+  // 수령 방법에 따라 주소 입력칸 토글: 편의점 반택 → 편의점 주소칸 / 자택·기타 → 일반택배 주소칸
+  const convWrap = document.getElementById("bAddrConvWrap");
+  const homeWrap = document.getElementById("bAddrHomeWrap");
+  if(convWrap && homeWrap){
+    const isConv = (method === "conv");
+    convWrap.style.display = isConv ? "block" : "none";
+    homeWrap.style.display = isConv ? "none" : "block";
   }
 
   const lens = curatedLenses.find(l=>l.id===document.getElementById("boardProduct").value);
@@ -1495,6 +1498,12 @@ function updateReceipt(){
 
 // 전화: 숫자 10~11자리
 function vPhone(v){ return /^\d{10,11}$/.test(String(v).replace(/[^0-9]/g,"")); }
+// 수령 방법에 맞는 주소칸 값 (편의점 반택 → bAddr / 자택·기타 → bAddrHome)
+function _boardAddr(){
+  return (getShipMethod()==="conv"
+    ? document.getElementById("bAddr").value
+    : document.getElementById("bAddrHome").value).trim();
+}
 
 // 원스텝 폼 전 항목 + 동의 통과 시에만 제출 활성화
 function boardFormValid(){
@@ -1502,7 +1511,7 @@ function boardFormValid(){
   const lens   = document.getElementById("boardProduct").value;
   const payer  = document.getElementById("bPayer").value.trim();
   const name   = document.getElementById("bName").value.trim();
-  const addr   = document.getElementById("bAddr").value.trim();
+  const addr   = _boardAddr();
   const agreed = document.getElementById("boardAgree").checked;
   // 도수는 드롭다운(기본 0.00)이라 항상 값이 있음 → 별도 검사 불필요
   return !!lens && payer.length>=2 && name.length>=2
@@ -1544,7 +1553,7 @@ function submitBoard(e){
     issue: null,
     realName: document.getElementById("bName").value.trim(),
     phone: document.getElementById("bPhone").value.replace(/[^0-9]/g,""),
-    store: document.getElementById("bAddr").value.trim(),
+    store: _boardAddr(),
     payer: document.getElementById("bPayer").value.trim(),
     memo: document.getElementById("boardMemo").value.trim(),
     hasAddr: true,
