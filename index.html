@@ -174,6 +174,9 @@
       <span class="logo-font text-[32px] leading-none pop" onclick="goHome()" title="홈으로" role="button" style="color:#4A4A4A;cursor:pointer;display:inline-block">KAIWAI <span style="color:#FF6FA8">🎀</span></span>
       <div style="display:flex;align-items:center;gap:8px">
         <span id="pointChip" title="내 포인트"><span style="font-size:13px">🪙</span> 0P</span>
+        <button id="notifBell" onclick="openNotifs()" title="알림함" style="position:relative;background:#FFF0F5;border:1.5px solid #FFD6E8;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center">🔔
+          <span id="notifCount" style="display:none;position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:100px;background:#E5484D;color:#fff;font-size:10px;font-weight:800;align-items:center;justify-content:center;font-family:'M PLUS Rounded 1c',sans-serif">0</span>
+        </button>
         <button id="authBtn" onclick="openAuth('login')" style="background:#FFF0F5;border:1.5px solid #FFD6E8;border-radius:100px;padding:7px 16px;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:12px;font-weight:700;color:#FF6FA8;transition:all .2s" onmouseover="this.style.background='#FFE0EE'" onmouseout="this.style.background='#FFF0F5'">로그인</button>
       </div>
     </div>
@@ -562,23 +565,44 @@
   </div>
 </div>
 
+<!-- ══ 알림함 모달 ══ -->
+<div id="notifOverlay" onclick="closeNotifs()" style="display:none;position:fixed;inset:0;background:rgba(74,74,74,.4);z-index:59;align-items:flex-end;justify-content:center">
+  <div onclick="event.stopPropagation()" style="position:relative;width:100%;max-width:430px;background:#FFF7FB;border-radius:28px 28px 0 0;overflow-y:auto;max-height:80vh">
+    <div style="width:44px;height:4px;background:#FFD6E8;border-radius:100px;margin:12px auto 0"></div>
+    <button onclick="closeNotifs()" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:#FFF0F5;border:none;color:#8D7B80;cursor:pointer;font-size:13px;z-index:10;display:flex;align-items:center;justify-content:center">✕</button>
+    <div style="padding:22px 22px 36px">
+      <div class="flex items-center justify-between" style="margin:6px 0 16px">
+        <h2 style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:20px;color:#4A4A4A">🔔 알림함</h2>
+        <button onclick="clearNotifs()" style="border:none;background:none;color:#C4A8B0;cursor:pointer;font-size:12px;font-weight:700;font-family:'M PLUS Rounded 1c',sans-serif">모두 지우기</button>
+      </div>
+      <div id="notifBody"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ 문제 발생(Issue) 사유 선택 모달 ══ -->
 <div id="issueOverlay" onclick="closeIssue()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;align-items:center;justify-content:center;padding:24px">
   <div onclick="event.stopPropagation()" style="width:100%;max-width:340px;background:#fff;border-radius:22px;padding:22px">
     <h2 style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:17px;color:#3A2B30;margin:0 0 4px">⚠️ 문제 발생 처리</h2>
     <p style="font-size:12px;color:#8D7B80;margin:0 0 16px">사유를 선택하면 장부에 경고 태그가 표시됩니다.</p>
     <label class="flex items-center gap-2.5" style="cursor:pointer;padding:12px 13px;border:1.5px solid #FFE0EE;border-radius:14px;margin-bottom:8px">
-      <input type="radio" name="issueReason" value="soldout" style="width:16px;height:16px;accent-color:#E5484D"/>
+      <input type="radio" name="issueReason" value="soldout" onchange="onIssueReasonChange()" style="width:16px;height:16px;accent-color:#E5484D"/>
       <span style="font-size:13px;font-weight:700;color:#3A2B30">품절로 인한 환불 필요</span>
     </label>
     <label class="flex items-center gap-2.5" style="cursor:pointer;padding:12px 13px;border:1.5px solid #FFE0EE;border-radius:14px;margin-bottom:8px">
-      <input type="radio" name="issueReason" value="short" style="width:16px;height:16px;accent-color:#E5484D"/>
+      <input type="radio" name="issueReason" value="short" onchange="onIssueReasonChange()" style="width:16px;height:16px;accent-color:#E5484D"/>
       <span style="font-size:13px;font-weight:700;color:#3A2B30">입금 금액 부족</span>
     </label>
-    <label class="flex items-center gap-2.5" style="cursor:pointer;padding:12px 13px;border:1.5px solid #FFE0EE;border-radius:14px;margin-bottom:18px">
-      <input type="radio" name="issueReason" value="address" style="width:16px;height:16px;accent-color:#E5484D"/>
+    <label class="flex items-center gap-2.5" style="cursor:pointer;padding:12px 13px;border:1.5px solid #FFE0EE;border-radius:14px;margin-bottom:8px">
+      <input type="radio" name="issueReason" value="address" onchange="onIssueReasonChange()" style="width:16px;height:16px;accent-color:#E5484D"/>
       <span style="font-size:13px;font-weight:700;color:#3A2B30">배송지 정보 오류</span>
     </label>
+    <label class="flex items-center gap-2.5" style="cursor:pointer;padding:12px 13px;border:1.5px solid #FFE0EE;border-radius:14px;margin-bottom:10px">
+      <input type="radio" name="issueReason" value="etc" onchange="onIssueReasonChange()" style="width:16px;height:16px;accent-color:#E5484D"/>
+      <span style="font-size:13px;font-weight:700;color:#3A2B30">기타 (직접 입력)</span>
+    </label>
+    <textarea id="issueEtcText" rows="2" placeholder="문제 사유를 상세히 적어주세요" oninput="onIssueReasonChange()"
+      style="display:none;width:100%;padding:11px 13px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:13px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;resize:none;line-height:1.5;margin-bottom:18px"></textarea>
     <div class="flex gap-2">
       <button onclick="closeIssue()" class="flex-1 rounded-xl py-3" style="border:1.5px solid #E2DCE0;background:#fff;color:#8D7B80;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800">취소</button>
       <button onclick="saveIssue()" class="flex-1 rounded-xl py-3" style="border:none;background:#E5484D;color:#fff;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800">저장</button>
@@ -1554,8 +1578,9 @@ function renderBusRoom(b){
   const addrTag = (a)=> a
     ? `<span style="font-size:10px;font-weight:800;color:#2D6FE0;background:#E5EEFC;border:1px solid #C2D6F7;padding:3px 8px;border-radius:100px">주소 입력완료</span>`
     : `<span style="font-size:10px;font-weight:800;color:#9A8D93;background:#F0ECEE;border:1px solid #E2DCE0;padding:3px 8px;border-radius:100px">주소 미입력</span>`;
-  const issueTag = (code)=> code
-    ? `<span style="font-size:10px;font-weight:800;color:#fff;background:#E5484D;border:1px solid #C73B3F;padding:3px 8px;border-radius:100px">${ISSUE_LABEL[code] || "🚨 확인요망"}</span>`
+  const issueText = (r)=> r.issue==="etc" ? ("🚨 " + (r.issueText||"기타")) : (ISSUE_LABEL[r.issue] || "🚨 확인요망");
+  const issueTag = (r)=> r.issue
+    ? `<span style="font-size:10px;font-weight:800;color:#fff;background:#E5484D;border:1px solid #C73B3F;padding:3px 8px;border-radius:100px">${_esc(issueText(r))}</span>`
     : "";
 
   // A. 투명 장부 (개인정보 숨김, 닉네임/수령방법/금액/상태만)
@@ -1566,7 +1591,7 @@ function renderBusRoom(b){
         <span style="font-size:13px;font-weight:800;color:#C41055;font-family:'M PLUS Rounded 1c',sans-serif">${r.amount.toLocaleString()}원</span>
       </div>
       <p style="font-size:11px;color:#8D7B80;margin-top:3px">${lensName(r.lensId)} · ${r.power||"도수 미입력"} · <b style="color:#6B5B60">${methodShort(r.method)}</b></p>
-      <div class="flex items-center gap-1.5 mt-2" style="flex-wrap:wrap">${issueTag(r.issue)}${payTag(r.paid)}${addrTag(r.hasAddr)}</div>
+      <div class="flex items-center gap-1.5 mt-2" style="flex-wrap:wrap">${issueTag(r)}${payTag(r.paid)}${addrTag(r.hasAddr)}</div>
       ${ r.me ? (b.ordered
         ? `<div class="mt-2" style="font-size:11px;font-weight:700;color:#9A8D93">🔒 주문 완료되어 수정이 잠겼어요</div>`
         : `<button onclick="editMyInfo(${b.id},${i})" class="mt-2" style="border:1.5px solid #FFD6E8;background:#fff;color:#C41055;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:11px;font-weight:800;padding:6px 12px;border-radius:100px">✏️ 내 정보 수정</button>`) : "" }
@@ -1585,10 +1610,11 @@ function renderBusRoom(b){
         <div style="display:flex;gap:6px;align-items:center">
           ${ r.paid
             ? `<span style="display:inline-block;font-size:11px;font-weight:800;color:#1A9E5E;background:#E3F6EC;border:1px solid #B6E6CA;padding:6px 10px;border-radius:100px">✅ 입금완료</span>`
-            : `<button onclick="approvePay(${b.id},${i})" style="border:none;cursor:pointer;font-size:11px;font-weight:800;color:#fff;background:#1A9E5E;padding:7px 11px;border-radius:100px;font-family:'M PLUS Rounded 1c',sans-serif">✅ 입금 승인</button>` }
+            : `<button onclick="approvePay(${b.id},${i})" style="border:none;cursor:pointer;font-size:11px;font-weight:800;color:#fff;background:#1A9E5E;padding:7px 11px;border-radius:100px;font-family:'M PLUS Rounded 1c',sans-serif">✅ 입금 승인</button>
+               <button onclick="noshowWarn(${b.id},${i})" style="border:none;cursor:pointer;font-size:11px;font-weight:800;color:#fff;background:#C77800;padding:7px 11px;border-radius:100px;font-family:'M PLUS Rounded 1c',sans-serif">⏰ 노쇼경고</button>` }
           <button onclick="openIssue(${b.id},${i})" style="border:none;cursor:pointer;font-size:11px;font-weight:800;color:#fff;background:#E5484D;padding:7px 11px;border-radius:100px;font-family:'M PLUS Rounded 1c',sans-serif">⚠️ 문제</button>
         </div>
-        ${ r.issue ? `<div style="font-size:10px;font-weight:800;color:#E5484D;margin-top:5px">${ISSUE_LABEL[r.issue]||"🚨 확인요망"}</div>` : "" }
+        ${ r.issue ? `<div style="font-size:10px;font-weight:800;color:#E5484D;margin-top:5px">${_esc(issueText(r))}</div>` : "" }
       </td>
     </tr>`).join("");
 
@@ -1625,8 +1651,9 @@ function renderBusRoom(b){
       <div style="margin-top:12px">
         ${ b.ordered
           ? `<div class="w-full rounded-xl py-3" style="text-align:center;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#7BE8A8;background:#22351F;border:1px solid #2F5A2C">✅ 렌즈라라 주문 완료됨 (파티원 수정 잠금)</div>`
-          : `<button onclick="toggleOrdered(${b.id})" class="w-full rounded-xl py-3" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#2B2330;background:#FFD166">🛒 렌즈라라 주문 완료 처리</button>` }
+          : `<button onclick="toggleOrdered(${b.id})" class="w-full rounded-xl py-3" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#2B2330;background:#FFD166">🛒 렌즈라라에서 한 번에 결제하기</button>` }
       </div>
+      <button onclick="registerTracking(${b.id})" class="w-full rounded-xl py-3" style="margin-top:8px;border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#fff;background:#2D6FE0">🚚 운송장 등록 · 한국 도착 알림${ b.tracking ? " (등록됨)" : "" }</button>
       <div style="margin-top:14px;border-top:1px solid #3E3447;padding-top:14px">
         ${ riders.some(r=>r.paid)
           ? `<button disabled class="w-full rounded-xl py-3" style="border:none;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#8A8090;background:#3E3447;cursor:not-allowed">🗑️ 공구방 취소/삭제</button>
@@ -1722,7 +1749,43 @@ function cancelBus(busId){
   drawBus();
 }
 
-// 방장 주도 입금 승인: 입금대기 → 입금완료
+// HTML 이스케이프 (방장 공지·파티원 메모 등 사용자 입력 표시용)
+function _esc(s){ return String(s||"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ═══════════════════════════════════
+   알림 시스템 (Toast + 알림함 로그 + 데모 콘솔)
+═══════════════════════════════════ */
+const ISSUE_REASON_TEXT = { soldout:"품절로 인한 환불 필요", short:"입금 금액 부족", address:"배송지 정보 오류" };
+function _loadNotifs(){ try{ return JSON.parse(localStorage.getItem("kaiwai_notifs")||"[]"); }catch(e){ return []; } }
+function _saveNotifs(l){ try{ localStorage.setItem("kaiwai_notifs", JSON.stringify(l.slice(0,100))); }catch(e){} }
+function sendNotification(participantId, title, message){
+  showToast("🔔 " + title);                                                   // 1) 상단 알림 바(Toast)
+  const l = _loadNotifs(); l.unshift({ pid:participantId, title, message, ts:Date.now() }); _saveNotifs(l);  // 2) 알림함 로그
+  renderNotifBadge();
+  console.log("[PUSH] 파티원 ID: " + participantId + "에게 발송: " + message);   // 3) 데모용 콘솔
+}
+function renderNotifBadge(){
+  const el = document.getElementById("notifCount"); if(!el) return;
+  const n = _loadNotifs().length;
+  el.textContent = n > 99 ? "99+" : String(n);
+  el.style.display = n > 0 ? "flex" : "none";
+}
+function _notifTime(ts){ const d=new Date(ts); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; }
+function openNotifs(){
+  const l = _loadNotifs();
+  document.getElementById("notifBody").innerHTML = l.length ? l.map(x=>`
+    <div style="padding:13px 14px;border:1.5px solid #FFE0EE;border-radius:14px;margin-bottom:8px;background:#fff">
+      <p style="font-size:13px;font-weight:800;color:#3A2B30">${_esc(x.title)}</p>
+      <p style="font-size:12px;color:#6B5B60;line-height:1.55;margin-top:3px">${_esc(x.message)}</p>
+      <p style="font-size:10px;color:#C4A8B0;margin-top:6px">${_notifTime(x.ts)}${x.pid?(" · "+_esc(String(x.pid))):""}</p>
+    </div>`).join("") : `<p style="text-align:center;color:#C4A8B0;font-size:13px;padding:48px 0">아직 알림이 없어요 🔔</p>`;
+  document.getElementById("notifOverlay").style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
+function closeNotifs(){ document.getElementById("notifOverlay").style.display = "none"; document.body.style.overflow = ""; }
+function clearNotifs(){ if(!confirm("알림을 모두 지울까요?")) return; _saveNotifs([]); renderNotifBadge(); openNotifs(); }
+
+// 방장 주도 입금 승인 → 파티원에게 알림
 function approvePay(busId, idx){
   const b = BUSES.find(x=>x.id===busId);
   if(!b || !b.riders || !b.riders[idx]) return;
@@ -1730,17 +1793,20 @@ function approvePay(busId, idx){
   if(r.paid) return;
   if(!confirm(`'${r.payer||r.nick}' 님의 입금을 확인하셨나요?\n승인하면 장부가 [입금완료]로 바뀝니다.`)) return;
   r.paid = true;
-  renderBusRoom(b);   // 장부 + 패널 즉시 갱신
+  sendNotification(r.nick, "입금 확인 완료 💖", "입금이 확인됐어요! 이제 마음 놓으세요 💖 곧 일괄 주문이 진행됩니다.");
+  renderBusRoom(b);
 }
-
-// HTML 이스케이프 (방장 공지·파티원 메모 등 사용자 입력 표시용)
-function _esc(s){ return String(s||"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
 // ── 문제 발생(Issue) 처리 ──
 let _issueTarget = { busId:null, idx:null };
+function onIssueReasonChange(){
+  const sel = document.querySelector('input[name="issueReason"]:checked');
+  document.getElementById("issueEtcText").style.display = (sel && sel.value==="etc") ? "block" : "none";
+}
 function openIssue(busId, idx){
   _issueTarget = { busId, idx };
   document.querySelectorAll('input[name="issueReason"]').forEach(r=>{ r.checked = false; });
+  const et = document.getElementById("issueEtcText"); et.value = ""; et.style.display = "none";
   document.getElementById("issueOverlay").style.display = "flex";
   document.body.style.overflow = "hidden";
 }
@@ -1752,20 +1818,52 @@ function saveIssue(){
   const sel = document.querySelector('input[name="issueReason"]:checked');
   if(!sel){ alert("사유를 선택해 주세요"); return; }
   const b = BUSES.find(x=>x.id===_issueTarget.busId);
-  if(b && b.riders && b.riders[_issueTarget.idx]){
-    b.riders[_issueTarget.idx].issue = sel.value;
+  const r = b && b.riders && b.riders[_issueTarget.idx];
+  if(!r){ closeIssue(); return; }
+  let reasonText;
+  if(sel.value === "etc"){
+    const t = document.getElementById("issueEtcText").value.trim();
+    if(!t){ alert("기타 사유를 입력해 주세요"); return; }
+    r.issue = "etc"; r.issueText = t; reasonText = t;
+  } else {
+    r.issue = sel.value; r.issueText = ""; reasonText = ISSUE_REASON_TEXT[sel.value] || "확인요망";
   }
   closeIssue();
-  if(b) renderBusRoom(b);
+  renderBusRoom(b);
+  // 알림 발송: 해당 파티원에게 문제 사유 전달
+  sendNotification(r.nick, "공구 주문에 문제가 발생했어요 ⚠️", "방장님이 적은 사유: " + reasonText);
 }
 
-// ── 방장: 렌즈라라 주문 완료 → 파티원 수정 잠금(되돌릴 수 없음) ──
+// ── 방장: 렌즈라라 한 번에 결제(주문 완료) → 전체 알림 + 수정 잠금 ──
 function toggleOrdered(busId){
   const b = BUSES.find(x=>x.id===busId);
   if(!b) return;
-  if(!confirm("렌즈라라 주문을 완료하셨나요?\n완료 시 파티원들의 정보 수정이 잠깁니다.")) return;
+  if(!confirm("렌즈라라에서 한 번에 결제(주문)하셨나요?\n완료 시 파티원들의 정보 수정이 잠깁니다.")) return;
   b.ordered = true;
+  (b.riders||[]).forEach(r=> sendNotification(r.nick, "버스 출발! 🚀", "렌즈라라에서 일괄 주문이 완료됐어요! 곧 일본에서 발송됩니다 ✈️"));
   renderBusRoom(b);
+}
+
+// ── 방장: 운송장 등록(한국 도착/반택 접수) → 전체 알림 ──
+function registerTracking(busId){
+  const b = BUSES.find(x=>x.id===busId);
+  if(!b) return;
+  const v = prompt("운송장 번호를 입력하세요 (입력 시 파티원에게 '한국 도착' 알림 발송):", b.tracking||"");
+  if(v === null) return;
+  b.tracking = v.trim();
+  if(b.tracking){
+    (b.riders||[]).forEach(r=> sendNotification(r.nick, "렌즈가 한국에 도착했어요! 📦", `곧 편의점 택배로 발송돼요. 운송장: ${b.tracking}`));
+  }
+  renderBusRoom(b);
+}
+
+// ── 방장: 노쇼(미입금) 사전 경고 → 보증금 차감 전 알림 ──
+function noshowWarn(busId, idx){
+  const b = BUSES.find(x=>x.id===busId);
+  const r = b && b.riders && b.riders[idx];
+  if(!r) return;
+  if(!confirm(`'${r.payer||r.nick}' 님에게 미입금 경고를 보낼까요?`)) return;
+  sendNotification(r.nick, "⏰ 미입금 경고", "기한 내 미입금 시 보증금 300P 차감 + 3진 아웃제가 적용돼요. 빠른 입금 부탁드려요!");
 }
 
 // ── 방장: 실시간 공지 업데이트 ──
@@ -3471,7 +3569,8 @@ function checkDailyAttendance(){
     o.lastAttend=today;
     localStorage.setItem(k, JSON.stringify(o));
     renderPoints();
-    showToast("+50P 출석 완료! 🎀");
+    // 포인트 지급 알림 (시스템)
+    sendNotification("나", "출석 완료! 🎀 +50P 적립", `오늘 출석하고 +50P 받으셨어요! 누적 ${(o.points||0).toLocaleString()}P 💰`);
   } else {
     renderPoints();
   }
@@ -3498,7 +3597,7 @@ function _checkMonthlyLikeReset(){
 ═══════════════════════════════════ */
 _checkMonthlyLikeReset();
 drawFilter(); drawBanner(); drawBrands(); drawRanking(); go("home"); updateAuthBtn();
-renderPoints(); if(authUser) checkDailyAttendance();
+renderPoints(); renderNotifBadge(); if(authUser) checkDailyAttendance();
 
 /* ═══════════════════════════════════
    Supabase 세션 → authUser 브리지
