@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&family=Gowun+Dodum&family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <!-- 소셜 로그인 전부 Supabase Auth 로 통일 (카카오/구글/네이버 SDK 모두 제거) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -424,13 +425,13 @@
 
         <div id="bAddrConvWrap">
           <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">수령 편의점 주소 * <span style="color:#8D7B80;font-weight:600">(편의점 반택)</span></label>
-          <input id="bAddr" oninput="updateBoardBtn()" placeholder="예) GS25 홍대입구역점"
-            style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:8px"/>
+          <input id="bAddr" oninput="updateBoardBtn()" onclick="openAddrSearch('bAddr')" placeholder="클릭 → 주소 검색 후 점포명 추가"
+            style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:8px;cursor:pointer"/>
         </div>
         <div id="bAddrHomeWrap">
-          <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">일반택배 배송지 주소 <span style="color:#8D7B80;font-weight:600">(자택/기타택배)</span></label>
-          <input id="bAddrHome" oninput="updateBoardBtn()" placeholder="예) 서울시 마포구 와우산로 00, 000동 000호"
-            style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:8px"/>
+          <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">일반택배 배송지 주소 * <span style="color:#8D7B80;font-weight:600">(자택/기타택배)</span></label>
+          <input id="bAddrHome" oninput="updateBoardBtn()" onclick="openAddrSearch('bAddrHome')" placeholder="클릭 → 주소 검색 후 상세주소(동/호) 추가"
+            style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:8px;cursor:pointer"/>
         </div>
         <div class="rounded-xl px-3 py-2.5 mb-4" style="background:#F0ECEE">
           <p style="font-size:11px;color:#8D7B80;line-height:1.5">🔒 통관고유부호는 <b>총대 명의 통관</b>으로 진행되어 <b>수집하지 않습니다.</b></p>
@@ -1492,6 +1493,14 @@ function updateReceipt(){
   document.getElementById("rcShipLabel").textContent = `배송비 (${SHIP_METHODS[method].label})`;
   document.getElementById("rcShip").textContent = fee.toLocaleString() + "원";
 
+  // 수령 방법에 따라 주소칸 조건부 표시: 편의점 반택 → 편의점 주소 / 자택·기타 → 일반택배 주소
+  const convWrap = document.getElementById("bAddrConvWrap");
+  const homeWrap = document.getElementById("bAddrHomeWrap");
+  if(convWrap && homeWrap){
+    const isConv = (method === "conv");
+    convWrap.style.display = isConv ? "block" : "none";
+    homeWrap.style.display = isConv ? "none" : "block";
+  }
 
   const lens = curatedLenses.find(l=>l.id===document.getElementById("boardProduct").value);
   const goodsEl = document.getElementById("rcGoods");
@@ -1509,24 +1518,45 @@ function updateReceipt(){
 
 // 전화: 숫자 10~11자리
 function vPhone(v){ return /^\d{10,11}$/.test(String(v).replace(/[^0-9]/g,"")); }
+// 공백 제외 글자 수
+function _noSpaceLen(v){ return String(v||"").replace(/\s/g,"").length; }
+// 총대용: 입력 정보(전화/주소)가 형식에 어긋나면 true (정보 확인 필요)
+function riderNeedsCheck(r){
+  if(!r || !r.hasAddr) return false;            // 아직 정보 미입력 → 검사 대상 아님
+  return !vPhone(r.phone||"") || _noSpaceLen(r.store) < 4;
+}
 // 수령 방법에 맞는 주소칸 값 (편의점 반택 → bAddr / 자택·기타 → bAddrHome)
 function _boardAddr(){
   return (getShipMethod()==="conv"
     ? document.getElementById("bAddr").value
     : document.getElementById("bAddrHome").value).trim();
 }
+// 다음(카카오) 우편번호 검색 → 입력칸에 도로명 주소 자동 입력
+function openAddrSearch(targetId){
+  const el = document.getElementById(targetId);
+  if(typeof daum === "undefined" || !daum.Postcode){ return; }  // 스크립트 미로드 시 수동 입력 허용
+  new daum.Postcode({
+    oncomplete: function(data){
+      const base = data.roadAddress || data.address || "";
+      el.value = base + " ";          // 뒤에 상세주소/점포명 이어 입력
+      updateBoardBtn();
+      el.focus();
+    }
+  }).open();
+}
 
 // 원스텝 폼 전 항목 + 동의 통과 시에만 제출 활성화
 function boardFormValid(){
   if(isAdminUser()) return true;   // 관리자(God Mode): 검증 우회 → 버튼 항상 활성
   const lens   = document.getElementById("boardProduct").value;
-  const payer  = document.getElementById("bPayer").value.trim();
-  const name   = document.getElementById("bName").value.trim();
-  const addr   = _boardAddr();
   const agreed = document.getElementById("boardAgree").checked;
-  // 도수는 드롭다운(기본 0.00)이라 항상 값이 있음 → 별도 검사 불필요
-  return !!lens && payer.length>=2 && name.length>=2
-    && vPhone(document.getElementById("bPhone").value) && addr.length>=2 && agreed;
+  // 입금자명·실명: 공백 제외 2자 이상 / 전화: 숫자 10~11 / 주소: 공백 제외 4자 이상
+  return !!lens
+    && _noSpaceLen(document.getElementById("bPayer").value) >= 2
+    && _noSpaceLen(document.getElementById("bName").value) >= 2
+    && vPhone(document.getElementById("bPhone").value)
+    && _noSpaceLen(_boardAddr()) >= 4
+    && agreed;
 }
 function updateBoardBtn(){
   const ok = boardFormValid();
@@ -1660,7 +1690,7 @@ function renderBusRoom(b){
         <span style="font-size:13px;font-weight:800;color:#C41055;font-family:'M PLUS Rounded 1c',sans-serif">${r.amount.toLocaleString()}원</span>
       </div>
       <p style="font-size:11px;color:#8D7B80;margin-top:3px">${lensName(r.lensId)} · ${r.power||"도수 미입력"} · <b style="color:#6B5B60">${methodShort(r.method)}</b></p>
-      <div class="flex items-center gap-1.5 mt-2" style="flex-wrap:wrap">${statusTag(r)}${payTag(r.paid)}${addrTag(r.hasAddr)}</div>
+      <div class="flex items-center gap-1.5 mt-2" style="flex-wrap:wrap">${statusTag(r)}${payTag(r.paid)}${addrTag(r.hasAddr)}${ (owner && riderNeedsCheck(r)) ? `<span style="font-size:10px;font-weight:800;color:#fff;background:#E5484D;border:1px solid #C73B3F;padding:3px 8px;border-radius:100px">⚠️ 정보 확인 필요</span>` : "" }</div>
       ${ r.me ? (locked
         ? `<div class="mt-2" style="font-size:11px;font-weight:700;color:#9A8D93">🔒 주문이 시작되어 수정·취소가 잠겼어요</div>`
         : `<div class="flex gap-1.5 mt-2">
