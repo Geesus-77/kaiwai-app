@@ -1164,8 +1164,9 @@ function drawBus() {
 /* ═══════════════════════════════════
    공구방 개설 (FAB → 인증분기 → 폼)
 ═══════════════════════════════════ */
-// 총대(방장) 인증 여부 — 추후 Supabase 본인인증 결과로 교체
-let isVerifiedHost = false;
+// 총대(방장) 인증 여부 — 마이페이지 2단계 인증 완료 시 localStorage 에 저장됨
+// (추후 Supabase 본인인증 결과로 교체)
+let isVerifiedHost = (function(){ try { return localStorage.getItem("kaiwai_verified_host") === "1"; } catch(_) { return false; } })();
 
 // 보상(총대 수고비/리워드) 노출 플래그 — 무료 운영 중엔 false.
 // 유료/리워드 전환 시 true 로 바꾸면 관련 안내가 전부 다시 노출됨.

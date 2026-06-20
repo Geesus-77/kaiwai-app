@@ -274,12 +274,42 @@ body{
 .cap-submit{
   width:100%; padding:15px; border:none; border-radius:16px; cursor:pointer; color:#fff;
   font-family:var(--font-round); font-weight:800; font-size:15px;
-  background:linear-gradient(135deg,#A855F7,#EC4899);
-  box-shadow:0 14px 26px -12px rgba(168,85,247,.85);
-  transition:filter .15s;
+  background:linear-gradient(135deg,#FF6FA8,#C41055);
+  box-shadow:0 14px 26px -12px rgba(196,16,85,.85);
+  transition:filter .15s, background .15s;
 }
-.cap-submit:hover{ filter:brightness(1.04); }
-.cap-submit:active{ transform:scale(.99); }
+.cap-submit:hover:not(:disabled){ filter:brightness(1.04); }
+.cap-submit:active:not(:disabled){ transform:scale(.99); }
+.cap-submit:disabled{ background:#D8CFD4; box-shadow:none; cursor:default; }
+
+/* ── 2단계 인증 스텝 박스 ── */
+.cap-step{
+  border:1.5px solid var(--pink-soft,#FFD6E8); border-radius:16px;
+  padding:14px; margin-bottom:14px; background:#fff;
+  transition:border-color .2s, background .2s;
+}
+.cap-step--done{ border-color:#B6E6CA; background:#F4FBF7; }
+.cap-step__top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.cap-step__no{
+  font-size:11px; font-weight:800; color:var(--pink-deep,#C41055);
+  background:var(--pink-tint,#FFF0F5); padding:3px 9px; border-radius:100px;
+  font-family:var(--font-round);
+}
+.cap-step__status{ font-size:12px; font-weight:800; }
+.cap-step__status--no{ color:#E5484D; }
+.cap-step__status--ok{ color:#1A9E5E; }
+.cap-step__row{ display:flex; align-items:center; gap:10px; }
+.cap-step__ico{ font-size:24px; flex-shrink:0; }
+.cap-step__body{ flex:1; min-width:0; }
+.cap-step__title{ font-size:14px; font-weight:800; color:var(--ink,#3A2B30); font-family:var(--font-round); }
+.cap-step__desc{ font-size:11px; color:var(--muted,#8D7B80); margin-top:2px; line-height:1.45; }
+.cap-step__btn{
+  flex-shrink:0; border:none; cursor:pointer; font-family:var(--font-round);
+  font-weight:800; font-size:12px; color:#fff;
+  background:linear-gradient(135deg,#FF6FA8,#C41055);
+  padding:10px 12px; border-radius:12px; white-space:nowrap;
+}
+.cap-step__btn:disabled{ background:#C9BFC4; cursor:default; }
 
 /* ── 활동(탭 + 그리드) ──────────────────────────────────── */
 .activity{
