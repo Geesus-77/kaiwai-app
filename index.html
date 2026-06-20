@@ -411,11 +411,11 @@
       <!-- 노쇼 방지 동의 -->
       <label class="flex items-start gap-2 mb-4" style="cursor:pointer">
         <input id="boardAgree" type="checkbox" onchange="updateBoardBtn()" style="margin-top:2px;width:16px;height:16px;accent-color:#C41055;flex-shrink:0"/>
-        <span style="font-size:12px;color:#6B5B60;line-height:1.55">보증금 <b style="color:#C41055">300P가 차감</b>되며, 2시간 내 미입금(노쇼) 시 환불되지 않음에 동의합니다.</span>
+        <span style="font-size:12px;color:#6B5B60;line-height:1.55">2시간 내 미입금(노쇼) 시 <b style="color:#C41055">다음 공구 참여가 제한</b>될 수 있음에 동의합니다.</span>
       </label>
 
       <button id="boardSubmitBtn" type="submit" disabled
-        style="width:100%;padding:15px;border:none;border-radius:16px;cursor:pointer;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:15px;background:linear-gradient(135deg,#FF6FA8,#C41055);box-shadow:0 14px 26px -12px rgba(196,16,85,.9);opacity:.45;transition:opacity .15s">🚀 300P 내고 탑승 완료하기</button>
+        style="width:100%;padding:15px;border:none;border-radius:16px;cursor:pointer;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:15px;background:linear-gradient(135deg,#FF6FA8,#C41055);box-shadow:0 14px 26px -12px rgba(196,16,85,.9);opacity:.45;transition:opacity .15s">🚀 탑승 완료하기</button>
     </form>
   </div>
 </div>
@@ -1089,7 +1089,6 @@ const BUSES = [
     tier: "pro",          // 프로 총대
     goal: 10000,
     current: 8500,
-    fee: 300,
     mine: false,          // 방장 여부(데모용) — true 면 관리자 패널 노출
     riders: [
       { nick:"마카롱공주", lensId:"L01", power:"좌 -2.00 / 우 -2.25", method:"conv", amount:17640, paid:true,  realName:"김민지", phone:"010-1234-5678", store:"GS25 홍대입구역점", payer:"김민지", hasAddr:true },
@@ -1104,7 +1103,6 @@ const BUSES = [
     tier: "beginner",     // 비기너 총대
     goal: 10000,
     current: 3000,
-    fee: 300,
     mine: true,           // ← 데모: 내가 연 공구방(방장 관리자 패널 미리보기용)
     riders: [
       { nick:"딸기소다", lensId:"L02", power:"좌 -1.50 / 우 -1.75", method:"conv", amount:13680, paid:true,  realName:"정하늘", phone:"010-7777-1234", store:"GS25 신촌오거리점", payer:"정하늘", hasAddr:true },
@@ -1156,7 +1154,7 @@ function drawBus() {
       </div>
 
       <button onclick="event.stopPropagation();boardBus(${b.id})" class="w-full mt-3.5 rounded-xl py-3" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(120deg,#FF6FA8,#C41055);box-shadow:0 8px 18px -8px rgba(196,16,85,.7)">
-        지금 탑승하기 (${b.fee}P) 🚌
+        지금 탑승하기 🚌
       </button>
     </div>`;
   }).join("");
@@ -1555,7 +1553,7 @@ function renderBusRoom(b){
         </div>
       </div>
 
-      <button onclick="event.stopPropagation();boardBus(${b.id})" class="w-full mt-4 rounded-xl py-3" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(120deg,#FF6FA8,#C41055);box-shadow:0 8px 18px -8px rgba(196,16,85,.7)">지금 탑승하기 (${b.fee}P) 🚌</button>
+      <button onclick="event.stopPropagation();boardBus(${b.id})" class="w-full mt-4 rounded-xl py-3" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(120deg,#FF6FA8,#C41055);box-shadow:0 8px 18px -8px rgba(196,16,85,.7)">지금 탑승하기 🚌</button>
 
       <div class="flex items-center gap-2 mt-6 mb-2.5">
         <span style="font-size:14px;font-weight:800;color:#3A2B30;font-family:'M PLUS Rounded 1c',sans-serif">📒 실시간 투명 장부</span>
