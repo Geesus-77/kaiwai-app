@@ -119,42 +119,62 @@
   }
 
   // HTML 문자열 → 상품 정보 (DOMParser 필요). fetch 와 분리해 단위 테스트 용이.
+  // 가져오기 실패/차단/정보 없음 시 안전 기본값
+  const PRODUCT_FALLBACK_TITLE = "정보를 불러올 수 없습니다";
+  function _productFallback(reason) {
+    return { title: PRODUCT_FALLBACK_TITLE, imageUrl: "", price: 0, ok: false, reason: reason || "unknown" };
+  }
+
+  // URL 형식 사전 검증 (이상 텍스트 차단). 유효하면 정규화된 URL 문자열, 아니면 null.
+  function validateUrl(url) {
+    const s = String(url == null ? "" : url).trim();
+    // http/https + 점 있는 호스트 + 공백 없음
+    if (!/^https?:\/\/[^\s/$.?#][^\s]*\.[^\s]+$/i.test(s)) return null;
+    if (typeof URL === "function") {
+      try { const u = new URL(s); if (u.protocol !== "http:" && u.protocol !== "https:") return null; return u.href; }
+      catch (e) { return null; }
+    }
+    return s;
+  }
+
   function parseProductHtml(html) {
-    if (!html || typeof html !== "string") throw new Error("HTML 콘텐츠가 비어 있습니다.");
-    if (typeof DOMParser === "undefined") throw new Error("DOMParser 를 사용할 수 없는 환경입니다.");
-    const doc = new DOMParser().parseFromString(html, "text/html");
+    if (!html || typeof html !== "string") return _productFallback("empty-html");
+    if (typeof DOMParser === "undefined") return _productFallback("no-domparser");
+    let doc;
+    try { doc = new DOMParser().parseFromString(html, "text/html"); }
+    catch (e) { return _productFallback("parse-error"); }
     function meta(prop) {
       const el = doc.querySelector('meta[property="' + prop + '"]') || doc.querySelector('meta[name="' + prop + '"]');
       return el ? (el.getAttribute("content") || "").trim() : "";
     }
     const titleEl = doc.querySelector("title");
     const title = meta("og:title") || (titleEl ? (titleEl.textContent || "").trim() : "");
-    if (!title) throw new Error("상품명(og:title/title)을 찾을 수 없습니다.");
     const imageUrl = meta("og:image") || "";
-    const price = extractPrice(doc, meta("og:description"));
-    return { title: title, imageUrl: imageUrl, price: price };
+    // og 태그가 전혀 없으면(차단/봇 페이지 등) 안전 기본값 반환
+    if (!title && !imageUrl) return _productFallback("no-og-tags");
+    return {
+      title: title || PRODUCT_FALLBACK_TITLE,
+      imageUrl: imageUrl,
+      price: extractPrice(doc, meta("og:description")),
+      ok: !!title,
+    };
   }
 
+  /* 상품 정보 추출 — 잘못된 URL 만 throw(사전 차단), 그 외(차단/네트워크/og없음)는 안전 폴백 반환 */
   async function fetchProductDataFromUrl(url) {
-    const target = String(url == null ? "" : url).trim();
-    if (!/^https?:\/\//i.test(target)) throw new Error("올바른 상품 URL(http/https)이 아닙니다.");
-    if (typeof fetch === "undefined") throw new Error("fetch 를 사용할 수 없는 환경입니다.");
-
-    let res;
+    const target = validateUrl(url);
+    if (!target) throw new Error("올바른 상품 URL 형식이 아닙니다. (http/https 주소를 입력하세요)");
+    if (typeof fetch === "undefined") return _productFallback("no-fetch");
     try {
-      res = await fetch(PROXY_BASE + encodeURIComponent(target));
+      const res = await fetch(PROXY_BASE + encodeURIComponent(target));
+      if (!res.ok) return _productFallback("http-" + res.status);
+      const payload = await res.json();
+      const html = payload && payload.contents;
+      if (!html) return _productFallback("no-contents");
+      return parseProductHtml(html);   // { title, imageUrl, price, ok }
     } catch (e) {
-      throw new Error("네트워크 오류로 상품 정보를 가져오지 못했습니다.");
+      return _productFallback("network-error");   // 차단/타임아웃/JSON오류 등 → 안전 폴백
     }
-    if (!res.ok) throw new Error("프록시 응답 오류: HTTP " + res.status);
-
-    let payload;
-    try { payload = await res.json(); }
-    catch (e) { throw new Error("프록시 응답(JSON) 파싱에 실패했습니다."); }
-
-    const html = payload && payload.contents;
-    if (!html) throw new Error("대상 페이지의 HTML 을 가져오지 못했습니다.");
-    return parseProductHtml(html);   // { title, imageUrl, price }
   }
 
   /* ── 시스템(컨텍스트): 유저 레지스트리 + 하나의 공구 ──
@@ -459,6 +479,35 @@
     return { total: out.length, passed: passes, failed: fails, results: out };
   }
 
+  /* ════════════════════════════════════════════════════════════════
+     상품 스크래퍼 테스트 — 브라우저 콘솔에서 runScraperTest("URL") 실행
+     실제 추출 결과(title/imageUrl/price)를 console.table 로 출력
+     ════════════════════════════════════════════════════════════════ */
+  async function runScraperTest(url) {
+    const target = url || "https://www.lenslala.com/products/flurry-1day";
+    const log = (typeof console !== "undefined") ? console : { log: function () {}, table: function () {} };
+
+    // 1) 잘못된 URL 사전 차단 검증
+    log.log("🧪 스크래퍼 테스트 — 잘못된 입력 사전 차단 확인");
+    try { await fetchProductDataFromUrl("그냥텍스트123"); log.log("[❌ 실패] 이상 입력이 차단되지 않음"); }
+    catch (e) { log.log("[✅ 통과] 이상 입력 차단됨: " + e.message); }
+
+    // 2) 실제 URL 스크래핑
+    log.log("\n🔎 스크래핑 대상: " + target);
+    let r;
+    try { r = await fetchProductDataFromUrl(target); }
+    catch (e) { log.log("[❌ 실패] URL 형식 오류: " + e.message); return null; }
+
+    log.table([{
+      "상품명(title)": r.title,
+      "이미지(imageUrl)": r.imageUrl || "(없음)",
+      "가격(price)": r.price,
+      "성공(ok)": r.ok,
+    }]);
+    log.log(r.ok ? "✅ 추출 성공" : "⚠️ 차단/정보없음 → 안전 폴백(\"" + r.title + "\") 반환 [reason: " + (r.reason || "-") + "]");
+    return r;
+  }
+
   const CoopCore = {
     ADMIN_EMAILS: ADMIN_EMAILS,
     DEPOSIT: DEPOSIT,
@@ -478,10 +527,12 @@
     runCoopAutoTest: runCoopAutoTest,
     fetchProductDataFromUrl: fetchProductDataFromUrl,
     parseProductHtml: parseProductHtml,
+    validateUrl: validateUrl,
+    runScraperTest: runScraperTest,
   };
 
   if (typeof module !== "undefined" && module.exports) module.exports = CoopCore;
   else global.CoopCore = CoopCore;
   // 브라우저 콘솔에서 바로 호출 가능하도록 전역 노출
-  if (typeof global !== "undefined") global.runCoopAutoTest = runCoopAutoTest;
+  if (typeof global !== "undefined") { global.runCoopAutoTest = runCoopAutoTest; global.runScraperTest = runScraperTest; }
 })(typeof window !== "undefined" ? window : (typeof globalThis !== "undefined" ? globalThis : this));
