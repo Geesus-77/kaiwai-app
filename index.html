@@ -1284,7 +1284,7 @@ let isVerifiedHost = (function(){ try { return localStorage.getItem("kaiwai_veri
 const REWARDS_ENABLED = true;
 
 function openCreateBus(){
-  if(!isVerifiedHost){
+  if(!isVerifiedHost && !isAdminUser()){   // 관리자(God Mode)는 인증 없이 개설 가능
     document.getElementById("hostVerifyOverlay").style.display = "flex";
     document.body.style.overflow = "hidden";
     return;
@@ -1661,10 +1661,10 @@ function renderBusRoom(b){
       </div>
       <button onclick="registerTracking(${b.id})" class="w-full rounded-xl py-3" style="margin-top:8px;border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#fff;background:#2D6FE0">🚚 운송장 등록 · 한국 도착 알림${ b.tracking ? " (등록됨)" : "" }</button>
       <div style="margin-top:14px;border-top:1px solid #3E3447;padding-top:14px">
-        ${ riders.some(r=>r.paid)
+        ${ (riders.some(r=>r.paid) && !isAdminUser())
           ? `<button disabled class="w-full rounded-xl py-3" style="border:none;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#8A8090;background:#3E3447;cursor:not-allowed">🗑️ 공구방 취소/삭제</button>
              <p style="font-size:11px;color:#FF8A8A;font-weight:700;line-height:1.5;margin-top:8px">⚠️ 입금자가 발생하여 임의 취소가 불가능합니다. (사고 발생 시 고객센터 문의)</p>`
-          : `<button onclick="cancelBus(${b.id})" class="w-full rounded-xl py-3" style="border:1.5px solid #6E4550;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#FF8A8A;background:transparent">🗑️ 공구방 취소/삭제</button>` }
+          : `<button onclick="cancelBus(${b.id})" class="w-full rounded-xl py-3" style="border:1.5px solid #6E4550;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#FF8A8A;background:transparent">🗑️ 공구방 취소/삭제${ isAdminUser() ? " (관리자 강제)" : "" }</button>` }
       </div>
     </div>` : "";
 
@@ -1739,7 +1739,7 @@ function cancelBus(busId){
   const b = BUSES.find(x=>x.id===busId);
   if(!b) return;
   const riders = b.riders || [];
-  if(riders.some(r=>r.paid)){
+  if(riders.some(r=>r.paid) && !isAdminUser()){   // 관리자(God Mode)는 강제 삭제 가능
     alert("입금자가 발생하여 임의 취소가 불가능합니다. (사고 발생 시 고객센터 문의)");
     return;
   }
@@ -3132,8 +3132,10 @@ async function submitPost(){
   const file=fileInput && fileInput.files && fileInput.files[0];
   if(!file){ showToast('사진을 먼저 선택해 주세요! 🎀'); return; }
 
-  // 글자 수 검증 (공백 제외 10자보다 길게)
-  if(document.getElementById("uploadCaption").value.replace(/\s/g,"").length <= 10){
+  const _admin = isAdminUser();   // 관리자(God Mode): 모든 제약 우회
+
+  // 글자 수 검증 (공백 제외 10자보다 길게) — 관리자 우회
+  if(!_admin && document.getElementById("uploadCaption").value.replace(/\s/g,"").length <= 10){
     showToast('코디에 대한 설명을 10자보다 길게 적어주세요! 🎀');
     return;
   }
@@ -3143,8 +3145,8 @@ async function submitPost(){
   if(!session){ showToast('로그인이 필요해요 🎀'); openAuth('login'); return; }
   const userId=session.user.id;
 
-  // 하루(오늘 0시 기준) 업로드 3회 제한 — 도배 방지
-  try{
+  // 하루(오늘 0시 기준) 업로드 3회 제한 — 도배 방지 (관리자 우회)
+  if(!_admin) try{
     const since=new Date(); since.setHours(0,0,0,0);
     const { count, error: cntErr } = await window.sb
       .from("public_feed").select("id",{ count:"exact", head:true })

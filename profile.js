@@ -20,8 +20,14 @@
     '82feb4b1-5365-4ff9-b68b-ce1b0805a2b2',   // noitaloiv@gmail.com
     '6b2482ab-ddde-46a2-bb71-f26880619fd2',   // rmfjwlak114@gmail.com (운영자)
   ];
+  // 이메일 기준 관리자(God Mode) — index.html 의 ADMIN_EMAILS 와 동일하게 유지
+  const ADMIN_EMAILS = [
+    'jisulee83@naver.com', 'rmfjwlak114@gmail.com', 'admin@kaiwai.kr', 'contact@kaiwai.kr',
+  ];
   function isAdminUser(user) {
-    return !!user && ADMIN_IDS.includes(user.id);
+    if (!user) return false;
+    if (ADMIN_IDS.includes(user.id)) return true;
+    return !!user.email && ADMIN_EMAILS.includes(String(user.email).trim().toLowerCase());
   }
 
   /* ── DOM 참조 ───────────────────────────────────────── */
