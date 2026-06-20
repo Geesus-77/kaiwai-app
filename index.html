@@ -266,9 +266,9 @@
     </div>
   </div>
   <div class="px-4 pt-1 pb-3">
-    <div class="rounded-2xl px-4 py-3 mb-1" style="background:linear-gradient(120deg,#FFE0EE,#FFF0F5)">
-      <p style="font-size:14px;font-weight:800;color:#C41055;font-family:'M PLUS Rounded 1c',sans-serif">안전하고 저렴한 렌즈라라 무배 탑승! 🛒</p>
-      <p style="font-size:11px;color:#8D7B80;margin-top:3px">목표 금액을 함께 채우면 무료배송 · 총대가 안전하게 진행해요</p>
+    <!-- 신뢰도 슬로건 배너 (? 클릭 → 안심 공구 3대 철칙 모달) -->
+    <div class="rounded-xl p-4 mb-1" style="background:#EFF6FF;border:1.5px solid #DBEAFE">
+      <p style="font-size:14px;font-weight:800;color:#1E40AF;font-family:'M PLUS Rounded 1c',sans-serif;line-height:1.45">먹튀 0%, 잠수 0%. 스트레스 없는 KAIWAI 안심 버스 🚌 <span onclick="openRuleModal()" role="button" title="안심 공구 3대 철칙 보기" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#94A3B8;color:#fff;font-size:12px;font-weight:800;cursor:pointer;vertical-align:middle">?</span></p>
     </div>
   </div>
   <div id="busList" class="px-4 pb-28 flex flex-col gap-3"></div>
@@ -529,6 +529,31 @@
       <button type="submit"
         style="width:100%;padding:15px;border:none;border-radius:16px;cursor:pointer;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:15px;background:linear-gradient(135deg,#FF6FA8,#C41055);box-shadow:0 14px 26px -12px rgba(196,16,85,.9)">🚀 버스 출발시키기</button>
     </form>
+  </div>
+</div>
+
+<!-- ══ 안심 공구 3대 철칙 안내 모달 ══ -->
+<div id="ruleOverlay" onclick="closeRuleModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:59;align-items:center;justify-content:center;padding:22px">
+  <div onclick="event.stopPropagation()" style="position:relative;width:100%;max-width:380px;max-height:88vh;overflow-y:auto;background:#fff;border-radius:24px;padding:24px 22px;box-shadow:0 24px 60px -16px rgba(0,0,0,.4)">
+    <button onclick="closeRuleModal()" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:#F0ECEE;border:none;color:#8D7B80;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center">✕</button>
+    <h2 style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:19px;color:#3A2B30;margin:2px 0 18px;line-height:1.4">🛡️ KAIWAI 안심 공구 3대 철칙</h2>
+
+    <div class="rounded-xl p-4 mb-3" style="background:#FFF0F5;border:1.5px solid #FFE0EE">
+      <p style="font-size:14px;font-weight:800;color:#C41055;font-family:'M PLUS Rounded 1c',sans-serif;margin-bottom:6px">① 신원 보증 100% <span style="color:#8D7B80;font-size:12px">(먹튀 차단)</span></p>
+      <p style="font-size:12px;color:#6B5B60;line-height:1.65">KAIWAI의 모든 총대는 <b>휴대폰 본인인증</b>과 <b>실명 계좌 인증</b>을 통과한 유저입니다. 사기 발생 시 KAIWAI가 즉각적인 추적과 법적 대응을 지원합니다.</p>
+    </div>
+
+    <div class="rounded-xl p-4 mb-3" style="background:#FFF8E8;border:1.5px solid #F7E4B0">
+      <p style="font-size:14px;font-weight:800;color:#B8860B;font-family:'M PLUS Rounded 1c',sans-serif;margin-bottom:6px">② 보증금 시스템 <span style="color:#8D7B80;font-size:12px">(노쇼 차단)</span></p>
+      <p style="font-size:12px;color:#6B5B60;line-height:1.65">공구 탑승 시 <b>300P가 보증금</b>으로 차감됩니다. 정해진 시간 내에 입금하지 않는 노쇼(잠수) 유저의 포인트는 압수되어 총대님께 위로금으로 지급됩니다.</p>
+    </div>
+
+    <div class="rounded-xl p-4" style="background:#EFF6FF;border:1.5px solid #DBEAFE">
+      <p style="font-size:14px;font-weight:800;color:#1E40AF;font-family:'M PLUS Rounded 1c',sans-serif;margin-bottom:6px">③ 투명한 실시간 장부 <span style="color:#8D7B80;font-size:12px">(분쟁 차단)</span></p>
+      <p style="font-size:12px;color:#6B5B60;line-height:1.65">누가 얼마를 내야 하는지, 입금은 확인되었는지 모든 과정이 공구방 내 <b>투명 장부에 실시간으로 박제</b>됩니다. 가격 올려치기나 환율 속이기가 원천 불가능합니다.</p>
+    </div>
+
+    <button onclick="closeRuleModal()" style="width:100%;margin-top:18px;padding:14px;border:none;border-radius:14px;cursor:pointer;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:14px;background:linear-gradient(135deg,#FF6FA8,#C41055)">확인했어요 🚌</button>
   </div>
 </div>
 
@@ -1159,6 +1184,18 @@ function drawBus() {
       </button>
     </div>`;
   }).join("");
+}
+
+/* ═══════════════════════════════════
+   안심 공구 3대 철칙 안내 모달
+═══════════════════════════════════ */
+function openRuleModal(){
+  document.getElementById("ruleOverlay").style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
+function closeRuleModal(){
+  document.getElementById("ruleOverlay").style.display = "none";
+  document.body.style.overflow = "";
 }
 
 /* ═══════════════════════════════════
