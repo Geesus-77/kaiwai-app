@@ -1097,6 +1097,7 @@ const BUSES = [
     goal: 10000,
     current: 8500,
     mine: false,          // 방장 여부(데모용) — true 면 관리자 패널 노출
+    hostAccount: { bankName:"신한은행", accountNumber:"110-234-567890", realName:"박서연" },
     riders: [
       { nick:"마카롱공주", lensId:"L01", power:"좌 -2.00 / 우 -2.25", method:"conv", amount:17640, paid:true,  realName:"김민지", phone:"010-1234-5678", store:"GS25 홍대입구역점", payer:"김민지", hasAddr:true },
       { nick:"블랙로즈",   lensId:"L06", power:"좌 -4.50 / 우 -4.50", method:"home", amount:17900, paid:false, realName:"이수아", phone:"010-2222-3333", store:"서울시 강남구 테헤란로 00, 000호", payer:"이수아", hasAddr:true },
@@ -1111,12 +1112,26 @@ const BUSES = [
     goal: 10000,
     current: 3000,
     mine: true,           // ← 데모: 내가 연 공구방(방장 관리자 패널 미리보기용)
+    hostAccount: { bankName:"국민은행", accountNumber:"123456-78-901234", realName:"김지수" },
     riders: [
       { nick:"딸기소다", lensId:"L02", power:"좌 -1.50 / 우 -1.75", method:"conv", amount:13680, paid:true,  realName:"정하늘", phone:"010-7777-1234", store:"GS25 신촌오거리점", payer:"정하늘", hasAddr:true },
       { nick:"네온키티", lensId:"L05", power:"좌 -3.00 / 우 -3.00", method:"home", amount:18845, paid:false, realName:"", phone:"", store:"", payer:"", hasAddr:false },
     ],
   },
 ];
+
+// 이름 마스킹: 첫 글자 + 마지막 글자만, 가운데는 * (2글자는 '김*')
+function maskName(name){
+  const s = String(name||"").trim();
+  if(s.length <= 1) return s;
+  if(s.length === 2) return s[0] + "*";
+  return s[0] + "*".repeat(s.length - 2) + s[s.length - 1];
+}
+
+// 방장(현재 유저) 인증 계좌 — Mock. 추후 본인인증 결과/Supabase 에서 로드.
+function getMyHostAccount(){
+  return { bankName:"국민은행", accountNumber:"123456-78-901234", realName:"김지수" };
+}
 
 // 렌즈 id → 이름 (장부/주문서 표기용; curatedLenses 는 아래에 정의됨)
 function lensName(id){
@@ -1257,6 +1272,7 @@ function submitCreateBus(e){
     current: 0,
     deadlineH: deadlineH,
     mine: true,
+    hostAccount: getMyHostAccount(),   // 방장 인증 계좌 자동 연동
     riders: [],
   });
   closeCreateBus();
@@ -1535,7 +1551,19 @@ function renderBusRoom(b){
         ? `<div class="w-full mt-4 rounded-xl py-3" style="text-align:center;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:700;color:#8D7B80;background:#F0ECEE">👑 내가 총대인 공구방이에요</div>`
         : `<button onclick="event.stopPropagation();boardBus(${b.id})" class="w-full mt-4 rounded-xl py-3" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(120deg,#FF6FA8,#C41055);box-shadow:0 8px 18px -8px rgba(196,16,85,.7)">🚀 지금 탑승하기 (300P)</button>` }
 
-      <div class="flex items-center gap-2 mt-6 mb-2.5">
+      ${ b.hostAccount ? `
+      <div class="rounded-xl p-4 mt-6 mb-4" style="background:#EFF6FF;border:1px solid #DBEAFE">
+        <p style="font-size:12px;font-weight:800;color:#1E40AF;margin:0 0 9px;font-family:'M PLUS Rounded 1c',sans-serif">💸 방장 입금 계좌</p>
+        <div class="flex items-center justify-between" style="gap:10px">
+          <div style="min-width:0">
+            <p style="font-size:14px;font-weight:800;color:#1E3A5F;font-family:'M PLUS Rounded 1c',sans-serif;line-height:1.4">${b.hostAccount.bankName} ${b.hostAccount.accountNumber}</p>
+            <p style="font-size:11px;color:#5B6B80;margin-top:3px">예금주: <b>${maskName(b.hostAccount.realName)}</b></p>
+          </div>
+          <button onclick="copyAccount(${b.id})" style="flex-shrink:0;border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:12px;font-weight:800;color:#fff;background:#2D6FE0;padding:9px 13px;border-radius:100px;white-space:nowrap">📋 계좌 복사</button>
+        </div>
+      </div>` : "" }
+
+      <div class="flex items-center gap-2 ${ b.hostAccount ? "" : "mt-6" } mb-2.5">
         <span style="font-size:14px;font-weight:800;color:#3A2B30;font-family:'M PLUS Rounded 1c',sans-serif">📒 실시간 투명 장부</span>
         <span style="font-size:11px;color:#8D7B80">탑승객 ${riders.length}명 (개인정보 비공개)</span>
       </div>
@@ -1604,6 +1632,14 @@ function copyOrderSheet(){
   const text = riders.map((r,i)=>
     `${i+1}. ${lensName(r.lensId)} | ${r.power||"도수 미입력"}`).join("\n");
   _copy(text, `주문서 ${riders.length}건을 복사했어요 🛒`);
+}
+
+// 💸 방장 입금 계좌 복사 (파티원이 뱅킹앱에 바로 붙여넣기)
+function copyAccount(busId){
+  const b = BUSES.find(x=>x.id===busId);
+  if(!b || !b.hostAccount) return;
+  const a = b.hostAccount;
+  _copy(`${a.bankName} ${a.accountNumber}`, "계좌번호를 복사했어요 📋");
 }
 
 function _copy(text, okMsg){
