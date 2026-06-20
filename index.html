@@ -348,115 +348,95 @@
   </div>
 </div>
 
-<!-- ══ 버스 탑승 폼 모달 ══ -->
+<!-- ══ 원스텝 탑승 폼 모달 (상품·배송·입금·영수증 한 번에) ══ -->
 <div id="boardOverlay" onclick="closeBoard()" style="display:none;position:fixed;inset:0;background:rgba(74,74,74,.4);z-index:55;align-items:flex-end;justify-content:center">
-  <div id="boardSheet" onclick="event.stopPropagation()" style="position:relative;width:100%;max-width:430px;background:#fff;border-radius:28px 28px 0 0;overflow-y:auto;max-height:92vh">
-    <div style="width:44px;height:4px;background:#FFD6E8;border-radius:100px;margin:12px auto 0"></div>
+  <div id="boardSheet" onclick="event.stopPropagation()" style="position:relative;width:100%;max-width:430px;background:#fff;border-radius:28px 28px 0 0;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="width:44px;height:4px;background:#FFD6E8;border-radius:100px;margin:12px auto 4px"></div>
     <button onclick="closeBoard()" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:#FFF0F5;border:none;color:#8D7B80;cursor:pointer;font-size:13px;z-index:10;display:flex;align-items:center;justify-content:center">✕</button>
-    <form id="boardForm" onsubmit="submitBoard(event)" style="padding:24px 24px 36px">
-      <h2 style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:22px;color:#4A4A4A;margin:8px 0 4px">🚌 버스 탑승하기</h2>
-      <!-- 선택한 버스 요약 -->
-      <div id="boardBusInfo" class="rounded-2xl px-4 py-3 mb-4" style="background:#FFF5F8;border:1.5px solid #FFE0EE">
-        <p id="boardBusTitle" style="font-size:13px;font-weight:800;color:#3A2B30;line-height:1.45"></p>
-        <p id="boardBusCaptain" style="font-size:11px;color:#8D7B80;margin-top:3px"></p>
-      </div>
-
-      <!-- 상품 선택 (드롭다운) -->
-      <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">렌즈 상품 선택 *</label>
-      <select id="boardProduct" required onchange="updateReceipt()"
-        style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;background:#fff;margin-bottom:16px">
-        <option value="">렌즈를 선택해 주세요</option>
-      </select>
-
-      <!-- 도수 입력 -->
-      <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">도수 입력 *</label>
-      <input id="boardPower" required placeholder="좌 -2.00, 우 -2.50 / 무도수는 0.00"
-        style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:16px"/>
-
-      <!-- 수령 방법 -->
-      <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:8px;font-family:'M PLUS Rounded 1c',sans-serif">수령 방법 *</label>
-      <div class="flex flex-col gap-2">
-        <label class="flex items-center gap-2.5" style="cursor:pointer;padding:11px 13px;border:1.5px solid #FFE0EE;border-radius:14px">
-          <input type="radio" name="boardShip" value="conv" checked onchange="updateReceipt()" style="width:16px;height:16px;accent-color:#C41055"/>
-          <span style="font-size:13px;font-weight:700;color:#3A2B30">편의점 반택 <span style="color:#8D7B80;font-weight:600">(1,800원)</span></span>
-        </label>
-        <label class="flex items-center gap-2.5" style="cursor:pointer;padding:11px 13px;border:1.5px solid #FFE0EE;border-radius:14px">
-          <input type="radio" name="boardShip" value="home" onchange="updateReceipt()" style="width:16px;height:16px;accent-color:#C41055"/>
-          <span style="font-size:13px;font-weight:700;color:#3A2B30">일반 자택 택배 <span style="color:#8D7B80;font-weight:600">(3,500원)</span></span>
-        </label>
-        <label class="flex items-center gap-2.5" style="cursor:pointer;padding:11px 13px;border:1.5px solid #FFE0EE;border-radius:14px">
-          <input type="radio" name="boardShip" value="etc" onchange="updateReceipt()" style="width:16px;height:16px;accent-color:#C41055"/>
-          <span style="font-size:13px;font-weight:700;color:#3A2B30">기타택배 <span style="color:#8D7B80;font-weight:600">(금액입력)</span></span>
-        </label>
-        <input id="boardShipEtc" type="number" min="0" placeholder="기타 배송비 입력 (원)" oninput="updateReceipt()"
-          style="display:none;width:100%;padding:11px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box"/>
-      </div>
-
-      <!-- 실시간 자동 계산 영수증 -->
-      <div class="bg-gray-50 p-4 rounded-xl mt-4 mb-4">
-        <p style="font-size:11px;font-weight:800;color:#8D7B80;margin:0 0 10px;letter-spacing:.3px">🧾 예상 결제 영수증 <span style="font-weight:600;color:#B6AAB0">(100엔 = 900원 적용)</span></p>
-        <div class="flex items-center justify-between" style="margin-bottom:7px">
-          <span style="font-size:13px;color:#6B5B60">상품가 (원화)</span>
-          <span id="rcGoods" style="font-size:14px;font-weight:700;color:#4A4A4A;font-family:'M PLUS Rounded 1c',sans-serif">-</span>
+    <form id="boardForm" onsubmit="submitBoard(event)" style="display:flex;flex-direction:column;min-height:0;flex:1">
+      <!-- 스크롤 본문 -->
+      <div style="overflow-y:auto;flex:1;padding:8px 24px 18px">
+        <h2 style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:22px;color:#4A4A4A;margin:0 0 12px">🚌 버스 탑승하기</h2>
+        <!-- 선택한 버스 요약 -->
+        <div id="boardBusInfo" class="rounded-2xl px-4 py-3 mb-4" style="background:#FFF5F8;border:1.5px solid #FFE0EE">
+          <p id="boardBusTitle" style="font-size:13px;font-weight:800;color:#3A2B30;line-height:1.45"></p>
+          <p id="boardBusCaptain" style="font-size:11px;color:#8D7B80;margin-top:3px"></p>
         </div>
-        <div class="flex items-center justify-between" style="margin-bottom:10px">
-          <span id="rcShipLabel" style="font-size:13px;color:#6B5B60">배송비 (편의점 반택)</span>
-          <span id="rcShip" style="font-size:14px;font-weight:700;color:#4A4A4A;font-family:'M PLUS Rounded 1c',sans-serif">1,800원</span>
+
+        <!-- 섹션 A: 상품 및 배송 방법 -->
+        <p style="font-size:12px;font-weight:800;color:#3A2B30;margin:0 0 10px;font-family:'M PLUS Rounded 1c',sans-serif">🛍️ 상품 · 배송 방법</p>
+
+        <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">렌즈 상품 선택 *</label>
+        <select id="boardProduct" required onchange="updateReceipt()"
+          style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;background:#fff;margin-bottom:16px">
+          <option value="">렌즈를 선택해 주세요</option>
+        </select>
+
+        <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">도수 입력 *</label>
+        <input id="boardPower" required oninput="updateBoardBtn()" placeholder="좌 -2.00, 우 -2.50 / 무도수는 0.00"
+          style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:16px"/>
+
+        <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:8px;font-family:'M PLUS Rounded 1c',sans-serif">수령 방법 *</label>
+        <div class="flex flex-col gap-2" style="margin-bottom:20px">
+          <label class="flex items-center gap-2.5" style="cursor:pointer;padding:11px 13px;border:1.5px solid #FFE0EE;border-radius:14px">
+            <input type="radio" name="boardShip" value="conv" checked onchange="updateReceipt()" style="width:16px;height:16px;accent-color:#C41055"/>
+            <span style="font-size:13px;font-weight:700;color:#3A2B30">편의점 반택 <span style="color:#8D7B80;font-weight:600">(1,800원)</span></span>
+          </label>
+          <label class="flex items-center gap-2.5" style="cursor:pointer;padding:11px 13px;border:1.5px solid #FFE0EE;border-radius:14px">
+            <input type="radio" name="boardShip" value="home" onchange="updateReceipt()" style="width:16px;height:16px;accent-color:#C41055"/>
+            <span style="font-size:13px;font-weight:700;color:#3A2B30">일반 자택 택배 <span style="color:#8D7B80;font-weight:600">(3,500원)</span></span>
+          </label>
         </div>
-        <div class="flex items-center justify-between" style="padding-top:11px;border-top:1.5px dashed #E2DCE0">
-          <span style="font-size:13px;font-weight:800;color:#4A4A4A;font-family:'M PLUS Rounded 1c',sans-serif">최종 결제 예정 금액</span>
-          <span id="rcTotal" style="font-size:21px;font-weight:800;color:#FF1E88;font-family:'M PLUS Rounded 1c',sans-serif">-</span>
+
+        <!-- 섹션 B: 배송 및 입금 정보 -->
+        <p style="font-size:12px;font-weight:800;color:#3A2B30;margin:0 0 10px;font-family:'M PLUS Rounded 1c',sans-serif">📦 배송 · 입금 정보</p>
+
+        <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">입금자명 (내 통장 이름) *</label>
+        <input id="bPayer" required oninput="updateBoardBtn()" placeholder="방장이 통장에서 확인할 이름"
+          style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:16px"/>
+
+        <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">수령인 실명 *</label>
+        <input id="bName" required oninput="updateBoardBtn()" placeholder="택배 수령인 실명"
+          style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:16px"/>
+
+        <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">전화번호 *</label>
+        <input id="bPhone" required type="tel" inputmode="numeric" oninput="updateBoardBtn()" placeholder="01012345678 (숫자만 10~11자리)"
+          style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:16px"/>
+
+        <label id="bAddrLabel" style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">수령 편의점 주소 *</label>
+        <input id="bAddr" required oninput="updateBoardBtn()" placeholder="예) GS25 홍대입구역점"
+          style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:8px"/>
+        <div class="rounded-xl px-3 py-2.5 mb-5" style="background:#F0ECEE">
+          <p style="font-size:11px;color:#8D7B80;line-height:1.5">🔒 통관고유부호는 <b>총대 명의 통관</b>으로 진행되어 <b>수집하지 않습니다.</b></p>
+        </div>
+
+        <!-- 섹션 C: 실시간 영수증 -->
+        <div class="bg-gray-50 p-4 rounded-xl">
+          <p style="font-size:11px;font-weight:800;color:#8D7B80;margin:0 0 10px;letter-spacing:.3px">🧾 예상 결제 영수증 <span style="font-weight:600;color:#B6AAB0">(100엔 = 900원 적용)</span></p>
+          <div class="flex items-center justify-between" style="margin-bottom:7px">
+            <span style="font-size:13px;color:#6B5B60">상품가 (원화)</span>
+            <span id="rcGoods" style="font-size:14px;font-weight:700;color:#4A4A4A;font-family:'M PLUS Rounded 1c',sans-serif">-</span>
+          </div>
+          <div class="flex items-center justify-between" style="margin-bottom:10px">
+            <span id="rcShipLabel" style="font-size:13px;color:#6B5B60">배송비 (편의점 반택)</span>
+            <span id="rcShip" style="font-size:14px;font-weight:700;color:#4A4A4A;font-family:'M PLUS Rounded 1c',sans-serif">1,800원</span>
+          </div>
+          <div class="flex items-center justify-between" style="padding-top:11px;border-top:1.5px dashed #E2DCE0">
+            <span style="font-size:13px;font-weight:800;color:#4A4A4A;font-family:'M PLUS Rounded 1c',sans-serif">최종 결제 예정 금액</span>
+            <span id="rcTotal" style="font-size:21px;font-weight:800;color:#FF1E88;font-family:'M PLUS Rounded 1c',sans-serif">-</span>
+          </div>
         </div>
       </div>
 
-      <!-- 노쇼 방지 동의 -->
-      <label class="flex items-start gap-2 mb-4" style="cursor:pointer">
-        <input id="boardAgree" type="checkbox" onchange="updateBoardBtn()" style="margin-top:2px;width:16px;height:16px;accent-color:#C41055;flex-shrink:0"/>
-        <span style="font-size:12px;color:#6B5B60;line-height:1.55"><b style="color:#C41055">[필수]</b> 탑승 수수료 <b style="color:#C41055">300P 차감</b>에 동의하며, 미입금(노쇼) 시 <b style="color:#C41055">3진 아웃제</b> 패널티가 부여됨을 확인했습니다.</span>
-      </label>
-
-      <button id="boardSubmitBtn" type="submit" disabled
-        style="width:100%;padding:15px;border:none;border-radius:16px;cursor:pointer;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:15px;background:linear-gradient(135deg,#FF6FA8,#C41055);box-shadow:0 14px 26px -12px rgba(196,16,85,.9);opacity:.45;transition:opacity .15s">🚀 300P 내고 탑승 완료하기</button>
-    </form>
-  </div>
-</div>
-
-<!-- ══ STEP 2: 배송지 입력 모달 (후 입력) ══ -->
-<div id="deliveryOverlay" onclick="closeDelivery()" style="display:none;position:fixed;inset:0;background:rgba(74,74,74,.4);z-index:56;align-items:flex-end;justify-content:center">
-  <div onclick="event.stopPropagation()" style="position:relative;width:100%;max-width:430px;background:#fff;border-radius:28px 28px 0 0;overflow-y:auto;max-height:92vh">
-    <div style="width:44px;height:4px;background:#FFD6E8;border-radius:100px;margin:12px auto 0"></div>
-    <button onclick="closeDelivery()" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:#FFF0F5;border:none;color:#8D7B80;cursor:pointer;font-size:13px;z-index:10;display:flex;align-items:center;justify-content:center">✕</button>
-    <form id="deliveryForm" onsubmit="saveDelivery(event)" style="padding:24px 24px 32px">
-      <h2 style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:22px;color:#4A4A4A;margin:8px 0 4px">📦 배송지 입력</h2>
-      <p style="font-size:12px;color:#8D7B80;margin:0 0 18px;line-height:1.55">탑승이 완료됐어요! 받으실 정보를 입력해 주세요. <b style="color:#C41055">나중에 입력</b>해도 괜찮아요.</p>
-
-      <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">실명 *</label>
-      <input id="dvName" required placeholder="택배 수령인 실명 (한글 2~5자)" oninput="validateDelivery()"
-        style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:16px"/>
-
-      <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">전화번호 *</label>
-      <input id="dvPhone" required type="tel" inputmode="numeric" placeholder="01012345678 (숫자만 10~11자리)" oninput="validateDelivery()"
-        style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:16px"/>
-
-      <label id="dvAddrLabel" style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">수령 편의점 주소 *</label>
-      <input id="dvStore" required placeholder="예) GS25 홍대입구역점" oninput="validateDelivery()"
-        style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:16px"/>
-
-      <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">실제 입금자명 * <span style="color:#FF1E88">(매우 중요)</span></label>
-      <input id="dvPayer" required placeholder="방장이 통장에서 확인할 이름 (한글 2~5자)" oninput="validateDelivery()"
-        style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:6px"/>
-      <p style="font-size:11px;color:#8D7B80;margin:0 0 12px">💸 입금자명이 다르면 방장이 입금 확인을 못 해요!</p>
-
-      <p id="dvError" style="display:none;font-size:12px;font-weight:700;color:#E5484D;margin:0 0 12px">⚠️ 올바른 양식을 입력해주세요</p>
-
-      <div class="rounded-xl px-3 py-2.5 mb-4" style="background:#F0ECEE">
-        <p style="font-size:11px;color:#8D7B80;line-height:1.5">🔒 통관고유부호는 <b>총대 명의 통관</b>으로 진행되어 <b>수집하지 않습니다.</b></p>
+      <!-- 하단 고정(Sticky) 동의 + 제출 -->
+      <div style="flex-shrink:0;padding:13px 24px 22px;border-top:1px solid #FFE0EE;background:#fff;box-shadow:0 -6px 18px -10px rgba(196,16,85,.25)">
+        <label class="flex items-start gap-2 mb-3" style="cursor:pointer">
+          <input id="boardAgree" type="checkbox" onchange="updateBoardBtn()" style="margin-top:2px;width:16px;height:16px;accent-color:#C41055;flex-shrink:0"/>
+          <span style="font-size:11.5px;color:#6B5B60;line-height:1.5"><b style="color:#C41055">[필수]</b> 탑승 수수료 <b style="color:#C41055">300P 차감</b>에 동의하며, 미입금 시 <b style="color:#C41055">3진 아웃제</b> 패널티가 부여됨을 확인했습니다.</span>
+        </label>
+        <button id="boardSubmitBtn" type="submit" disabled
+          style="width:100%;padding:15px;border:none;border-radius:16px;cursor:pointer;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:15px;background:linear-gradient(135deg,#FF6FA8,#C41055);box-shadow:0 14px 26px -12px rgba(196,16,85,.9);opacity:.45;transition:opacity .15s">🚀 300P 내고 탑승 완료하기</button>
       </div>
-
-      <button id="dvSubmitBtn" type="submit" disabled
-        style="width:100%;padding:15px;border:none;border-radius:16px;cursor:pointer;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:15px;background:linear-gradient(135deg,#FF6FA8,#C41055);box-shadow:0 14px 26px -12px rgba(196,16,85,.9);opacity:.45;transition:opacity .15s">배송 정보 저장하기</button>
-      <button type="button" onclick="skipDelivery()"
-        style="width:100%;margin-top:10px;padding:11px;border:none;border-radius:14px;cursor:pointer;color:#8D7B80;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:700;font-size:13px;background:none">나중에 입력하기</button>
     </form>
   </div>
 </div>
@@ -1304,18 +1284,13 @@ const YEN_TO_KRW = 9;
 const SHIP_METHODS = {
   conv: { label: "편의점 반택", fee: 1800 },
   home: { label: "자택 택배",   fee: 3500 },
-  etc:  { label: "기타택배",     fee: 0 },  // 사용자 입력값 사용
 };
 function getShipMethod(){
   const r = document.querySelector('input[name="boardShip"]:checked');
-  return r ? r.value : "conv";
+  return r && SHIP_METHODS[r.value] ? r.value : "conv";
 }
 function getShipFee(method){
-  if(method === "etc"){
-    const v = parseInt(document.getElementById("boardShipEtc").value, 10);
-    return isNaN(v) || v < 0 ? 0 : v;
-  }
-  return SHIP_METHODS[method].fee;
+  return (SHIP_METHODS[method] || SHIP_METHODS.conv).fee;
 }
 
 function boardBus(id){
@@ -1346,17 +1321,27 @@ function closeBoard(){
   document.body.style.overflow = "";
 }
 
-// 렌즈 + 수령 방법에 따라 실시간 원화 영수증 계산
+// 렌즈 + 수령 방법 → 실시간 영수증 + 주소 placeholder 동기화
 function updateReceipt(){
   const method = getShipMethod();
-  // 기타택배일 때만 금액 입력칸 노출
-  document.getElementById("boardShipEtc").style.display = (method === "etc") ? "block" : "none";
   const fee = getShipFee(method);
   document.getElementById("rcShipLabel").textContent = `배송비 (${SHIP_METHODS[method].label})`;
   document.getElementById("rcShip").textContent = fee.toLocaleString() + "원";
 
-  const id = document.getElementById("boardProduct").value;
-  const lens = curatedLenses.find(l=>l.id===id);
+  // 수령 방법에 따라 주소 라벨/placeholder 변경
+  const addrLabel = document.getElementById("bAddrLabel");
+  const addr = document.getElementById("bAddr");
+  if(addrLabel && addr){
+    if(method === "home"){
+      addrLabel.textContent = "배송지 도로명 주소 *";
+      addr.placeholder = "예) 서울시 마포구 와우산로 00, 000동 000호";
+    } else {
+      addrLabel.textContent = "수령 편의점 주소 *";
+      addr.placeholder = "예) GS25 홍대입구역점 / CU 강남터미널점";
+    }
+  }
+
+  const lens = curatedLenses.find(l=>l.id===document.getElementById("boardProduct").value);
   const goodsEl = document.getElementById("rcGoods");
   const totalEl = document.getElementById("rcTotal");
   if(!lens){
@@ -1364,106 +1349,31 @@ function updateReceipt(){
     totalEl.textContent = "-";
   } else {
     const goods = lens.price * YEN_TO_KRW;   // 상품가(원화) = 엔화 × 9
-    const total = goods + fee;                // 최종 = 상품가 + 배송비
     goodsEl.textContent = goods.toLocaleString() + "원";
-    totalEl.textContent = total.toLocaleString() + "원";
+    totalEl.textContent = (goods + fee).toLocaleString() + "원";
   }
   updateBoardBtn();
 }
 
-// 노쇼 동의 + 상품 선택 시에만 제출 버튼 활성화
-function updateBoardBtn(){
+// 전화: 숫자 10~11자리
+function vPhone(v){ return /^\d{10,11}$/.test(String(v).replace(/[^0-9]/g,"")); }
+
+// 원스텝 폼 전 항목 + 동의 통과 시에만 제출 활성화
+function boardFormValid(){
+  const lens   = document.getElementById("boardProduct").value;
+  const power  = document.getElementById("boardPower").value.trim();
+  const payer  = document.getElementById("bPayer").value.trim();
+  const name   = document.getElementById("bName").value.trim();
+  const addr   = document.getElementById("bAddr").value.trim();
   const agreed = document.getElementById("boardAgree").checked;
-  const hasLens = !!document.getElementById("boardProduct").value;
+  return !!lens && power.length>=1 && payer.length>=2 && name.length>=2
+    && vPhone(document.getElementById("bPhone").value) && addr.length>=2 && agreed;
+}
+function updateBoardBtn(){
+  const ok = boardFormValid();
   const btn = document.getElementById("boardSubmitBtn");
-  const on = agreed && hasLens;
-  btn.disabled = !on;
-  btn.style.opacity = on ? "1" : "0.45";
-}
-
-// STEP1 → STEP2 로 넘길 탑승 정보 임시 보관
-let _pendingRide = null;
-
-function submitBoard(e){
-  e.preventDefault();
-  const id = document.getElementById("boardProduct").value;
-  const lens = curatedLenses.find(l=>l.id===id);
-  const power = document.getElementById("boardPower").value.trim();
-  if(!lens) return;
-  // 탑승 수수료 300P 검사 (Mock) — 부족 시 차단
-  const userPoints = getPoints();
-  if(userPoints < 300){ alert("포인트가 부족합니다. 매일 로그인하여 포인트를 모아보세요!"); return; }
-  spendPoints(300);
-  const method = getShipMethod();
-  const fee = getShipFee(method);
-  _pendingRide = {
-    busId: _boardBusId,
-    lensId: id,
-    power: power,
-    method: method,
-    amount: lens.price * YEN_TO_KRW + fee,
-  };
-  closeBoard();
-  alert("탑승이 완료되었습니다! 300P가 차감되었습니다.");
-  // STEP2: 선 탑승, 후 배송지 입력 — 즉시 배송지 모달 오픈
-  openDelivery();
-}
-
-/* ═══════════════════════════════════
-   STEP 2 — 배송지 + 입금자명 (유효성 검사)
-═══════════════════════════════════ */
-function openDelivery(){
-  const f = document.getElementById("deliveryForm");
-  if(f) f.reset();
-  // 수령 방법에 따라 주소 라벨/placeholder 변경
-  const method = _pendingRide ? _pendingRide.method : "conv";
-  const label = document.getElementById("dvAddrLabel");
-  const addr  = document.getElementById("dvStore");
-  if(method === "conv"){
-    label.textContent = "수령 편의점 주소 *";
-    addr.placeholder = "예) GS25 홍대입구역점 / CU 강남터미널점";
-  } else {
-    label.textContent = "배송지 도로명 주소 *";
-    addr.placeholder = "예) 서울시 마포구 와우산로 00, 000동 000호";
-  }
-  document.getElementById("dvError").style.display = "none";
-  validateDelivery();
-  document.getElementById("deliveryOverlay").style.display = "flex";
-  document.body.style.overflow = "hidden";
-}
-function closeDelivery(){
-  document.getElementById("deliveryOverlay").style.display = "none";
-  document.body.style.overflow = "";
-}
-
-/* ── 유효성 검사 헬퍼 ──
-   - 전화: 숫자 10~11자리만
-   - 이름/입금자명: 한글 2~5자 (ㅋㅋㅋ·asdf 류 컷)
-   - 주소: 5자 이상 + 한글 2자 이상, 같은 글자 반복 컷 */
-function vPhone(v){ return /^\d{10,11}$/.test(v.replace(/[^0-9]/g,"")); }
-function vName(v){ const s=v.trim(); return /^[가-힣]{2,5}$/.test(s) && !/^(.)\1+$/.test(s); }
-function vAddr(v){
-  const s=v.trim();
-  const hangul=(s.match(/[가-힣]/g)||[]).length;
-  return s.length>=5 && hangul>=2 && !/^(.)\1+$/.test(s.replace(/\s/g,""));
-}
-
-function deliveryValid(){
-  return vName(document.getElementById("dvName").value)
-    && vPhone(document.getElementById("dvPhone").value)
-    && vAddr(document.getElementById("dvStore").value)
-    && vName(document.getElementById("dvPayer").value);
-}
-
-function validateDelivery(){
-  const ok = deliveryValid();
-  const btn = document.getElementById("dvSubmitBtn");
   btn.disabled = !ok;
   btn.style.opacity = ok ? "1" : "0.45";
-  // 입력이 하나라도 있는데 아직 무효면 에러문구 노출
-  const touched = ["dvName","dvPhone","dvStore","dvPayer"].some(id=>document.getElementById(id).value.trim());
-  document.getElementById("dvError").style.display = (!ok && touched) ? "block" : "none";
-  return ok;
 }
 
 // 현재 로그인 유저의 표시 닉네임(없으면 '나')
@@ -1472,51 +1382,38 @@ function _myNick(){
     (authUser.nickname || authUser.display_name || authUser.name)) || "나";
 }
 
-// 임시 탑승 정보를 해당 버스 장부에 추가 (hasAddr = 주소 입력 여부)
-function _commitRide(extra, hasAddr){
-  if(!_pendingRide) return null;
-  const bus = BUSES.find(b=>b.id===_pendingRide.busId);
-  if(!bus) return null;
+function submitBoard(e){
+  e.preventDefault();
+  if(!boardFormValid()) return;
+  const lens = curatedLenses.find(l=>l.id===document.getElementById("boardProduct").value);
+  const bus  = BUSES.find(b=>b.id===_boardBusId);
+  if(!lens || !bus) return;
+  // 탑승 수수료 300P 검사 (Mock)
+  if(getPoints() < 300){ alert("포인트가 부족합니다. 매일 로그인하여 포인트를 모아보세요!"); return; }
+
+  const method = getShipMethod();
+  const fee = getShipFee(method);
   if(!bus.riders) bus.riders = [];
   bus.riders.push({
     nick: _myNick(),
-    lensId: _pendingRide.lensId,
-    power: _pendingRide.power,
-    method: _pendingRide.method,
-    amount: _pendingRide.amount,
+    lensId: lens.id,
+    power: document.getElementById("boardPower").value.trim(),
+    method: method,
+    amount: lens.price * YEN_TO_KRW + fee,
     paid: false,
-    realName: extra.realName || "",
-    phone: extra.phone || "",
-    store: extra.store || "",
-    payer: extra.payer || "",
-    hasAddr: !!hasAddr,
+    realName: document.getElementById("bName").value.trim(),
+    phone: document.getElementById("bPhone").value.replace(/[^0-9]/g,""),
+    store: document.getElementById("bAddr").value.trim(),
+    payer: document.getElementById("bPayer").value.trim(),
+    hasAddr: true,
     me: true,
   });
+  spendPoints(300);
   const bid = bus.id;
-  _pendingRide = null;
-  return bid;
-}
-
-function saveDelivery(e){
-  e.preventDefault();
-  if(!validateDelivery()){
-    document.getElementById("dvError").style.display = "block";
-    return;
-  }
-  const realName = document.getElementById("dvName").value.trim();
-  const phone    = document.getElementById("dvPhone").value.trim();
-  const store    = document.getElementById("dvStore").value.trim();
-  const payer    = document.getElementById("dvPayer").value.trim();
-  const bid = _commitRide({ realName, phone, store, payer }, true);
-  closeDelivery();
-  if(bid) openBusRoom(bid);
-}
-
-// 나중에 입력: 주소 없이 장부에만 올리고 공구방으로 이동
-function skipDelivery(){
-  const bid = _commitRide({}, false);
-  closeDelivery();
-  if(bid) openBusRoom(bid);
+  closeBoard();
+  alert("탑승이 완료되었습니다! 방장의 입금 안내를 확인해주세요.");
+  drawBus();              // 카드(탑승 인원) 갱신
+  openBusRoom(bid);       // 장부에 즉시 반영된 공구방으로 이동
 }
 
 /* ═══════════════════════════════════
