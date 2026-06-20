@@ -512,9 +512,13 @@
       <input id="cbTitle" required maxlength="40" placeholder="ex. 밤비 아몬드 무배 버스 타실 분!"
         style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:16px"/>
 
-      <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">목표 금액 *</label>
-      <input id="cbGoal" required type="number" min="1" inputmode="numeric" placeholder="목표 엔화 (ex. 10000)"
-        style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:16px"/>
+      <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">목표 금액 * <span style="background:#FFF3D6;color:#B8860B;font-size:11px;font-weight:800;padding:2px 8px;border-radius:100px;margin-left:4px">💴 엔(¥) 단위</span></label>
+      <div style="position:relative;margin-bottom:16px">
+        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;font-weight:800;color:#C41055;pointer-events:none">¥</span>
+        <input id="cbGoal" required type="number" min="1" inputmode="numeric" placeholder="예) 10000  (엔화 기준)"
+          style="width:100%;padding:13px 36px 13px 32px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box"/>
+        <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:800;color:#8D7B80;pointer-events:none">엔</span>
+      </div>
 
       <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:8px;font-family:'M PLUS Rounded 1c',sans-serif">마감 시간 *</label>
       <div class="flex gap-2 mb-4">
