@@ -197,6 +197,11 @@
   .cap-step__desc{ font-size:11px; color:#8D7B80; margin-top:2px; line-height:1.45; }
   .cap-step__btn{ flex-shrink:0; border:none; cursor:pointer; font-family:'M PLUS Rounded 1c',sans-serif; font-weight:800; font-size:12px; color:#fff; background:linear-gradient(135deg,#FF6FA8,#C41055); padding:10px 12px; border-radius:12px; white-space:nowrap; }
   .cap-step__btn:disabled{ background:#C9BFC4; cursor:default; }
+  /* 상품 자동 불러오기: 스피너 + 채워짐 하이라이트 */
+  @keyframes cbSpin{ to{ transform:rotate(360deg); } }
+  .cb-spin{ display:inline-block; animation:cbSpin .9s linear infinite; }
+  @keyframes cbFlash{ 0%{ box-shadow:0 0 0 0 rgba(168,85,247,.55); background:#FBEFFF; } 100%{ box-shadow:0 0 0 10px rgba(168,85,247,0); background:transparent; } }
+  .cb-flash{ animation:cbFlash 1.1s ease-out; border-radius:12px; }
 </style>
 </head>
 <body class="flex justify-center min-h-screen">
@@ -629,6 +634,20 @@
     <form id="createBusForm" onsubmit="submitCreateBus(event)" style="padding:24px 24px 36px">
       <h2 style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:22px;color:#4A4A4A;margin:8px 0 4px">🚌 공구방 개설</h2>
       <p style="font-size:12px;color:#8D7B80;margin:0 0 18px">새로운 렌즈 버스를 출발시켜 보세요!</p>
+
+      <!-- 🔗 상품 링크 자동 불러오기 -->
+      <div class="rounded-xl p-3 mb-4" style="background:linear-gradient(120deg,#F5E0FF,#FFE0EE);border:1.5px solid #EBC9F5">
+        <label style="display:block;font-size:12px;font-weight:800;color:#7733BB;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">🔗 상품 링크(URL) 입력</label>
+        <input id="cbUrl" type="url" inputmode="url" placeholder="렌즈라라 등 상품 페이지 주소 붙여넣기"
+          style="width:100%;padding:11px 13px;border:1.5px solid #E3C7F0;border-radius:12px;font-size:13px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:8px"/>
+        <button type="button" id="cbFetchBtn" onclick="autofillFromUrl()"
+          style="width:100%;padding:12px;border:none;border-radius:12px;cursor:pointer;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:13px;background:linear-gradient(135deg,#A855F7,#EC4899);box-shadow:0 8px 18px -8px rgba(168,85,247,.7)">✨ 링크로 자동 불러오기</button>
+        <!-- 이미지 미리보기 썸네일 -->
+        <div id="cbImgWrap" style="display:none;margin-top:10px;text-align:center">
+          <img id="cbImgPreview" alt="상품 미리보기" style="max-width:100%;max-height:160px;border-radius:12px;border:1.5px solid #EBC9F5;background:#fff" onerror="this.parentElement.style.display='none'"/>
+        </div>
+        <input id="cbImage" type="hidden"/>
+      </div>
 
       <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">플랫폼 선택 *</label>
       <select id="cbPlatform" required
@@ -1634,6 +1653,51 @@ function syncDeadlineUI(){
       chip.style.color = "#6B5B60";
     }
   });
+}
+
+// 채워짐 하이라이트 효과
+function _cbFlash(el){
+  if(!el) return;
+  el.classList.remove("cb-flash");
+  void el.offsetWidth;            // 리플로우로 애니메이션 재시작
+  el.classList.add("cb-flash");
+  setTimeout(function(){ el.classList.remove("cb-flash"); }, 1200);
+}
+
+// 🔗 상품 링크 → 상품명/이미지/가격 자동 채우기
+async function autofillFromUrl(){
+  const url = document.getElementById("cbUrl").value.trim();
+  const btn = document.getElementById("cbFetchBtn");
+  if(!url){ showToast("상품 링크(URL)를 입력해 주세요"); return; }
+  if(typeof CoopCore === "undefined" || !CoopCore.fetchProductDataFromUrl){
+    showToast("불러오기 모듈을 로드하지 못했어요. 수동으로 입력해 주세요."); return;
+  }
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.style.opacity = "0.85";
+  btn.innerHTML = '<span class="cb-spin">⏳</span> 정보를 불러오는 중…';
+  try{
+    const data = await CoopCore.fetchProductDataFromUrl(url);   // 잘못된 URL 만 throw
+    if(!data || !data.ok){
+      showToast("자동 불러오기에 실패했습니다. 수동으로 입력해 주세요.");
+    } else {
+      let filled = 0;
+      if(data.title){ const t=document.getElementById("cbTitle"); t.value=data.title; _cbFlash(t); filled++; }
+      if(data.imageUrl){
+        const img=document.getElementById("cbImgPreview"); img.src=data.imageUrl;
+        const wrap=document.getElementById("cbImgWrap"); wrap.style.display="block";
+        document.getElementById("cbImage").value=data.imageUrl; _cbFlash(wrap); filled++;
+      }
+      if(data.price && data.price>0){ const g=document.getElementById("cbGoal"); g.value=data.price; _cbFlash(g.parentElement||g); filled++; }
+      showToast(filled ? "상품 정보를 불러왔어요 ✨ 확인 후 수정하세요" : "불러올 정보가 없어요. 수동으로 입력해 주세요.");
+    }
+  }catch(e){
+    showToast("자동 불러오기에 실패했습니다. 수동으로 입력해 주세요.");
+  }finally{
+    btn.disabled = false;
+    btn.style.opacity = "1";
+    btn.innerHTML = orig;
+  }
 }
 
 function submitCreateBus(e){
