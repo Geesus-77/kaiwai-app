@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script src="coop-core.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <!-- 소셜 로그인 전부 Supabase Auth 로 통일 (카카오/구글/네이버 SDK 모두 제거) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -336,6 +337,27 @@
   style="display:none;position:fixed;bottom:96px;right:max(16px,calc(50% - 199px));z-index:30;border:none;cursor:pointer;display:none;align-items:center;gap:7px;padding:14px 18px;border-radius:100px;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:14px;background:linear-gradient(135deg,#FF6FA8,#C41055);box-shadow:0 12px 26px -8px rgba(196,16,85,.7)">
   <span style="font-size:16px">➕</span> 공구 열기
 </button>
+
+<!-- ══ God Mode 디버그 FAB (관리자 전용 · 기본 숨김) ══ -->
+<button id="godFab" onclick="openGodPanel()" title="God Mode 디버그" style="display:none;position:fixed;left:max(12px,calc(50% - 207px));bottom:84px;z-index:40;width:46px;height:46px;border-radius:50%;border:2px solid #7BE8A8;background:#1B1430;color:#7BE8A8;font-size:18px;cursor:pointer;box-shadow:0 0 16px rgba(123,232,168,.5);animation:godPulse 2.4s ease-in-out infinite">🐞</button>
+<style>@keyframes godPulse{0%,100%{box-shadow:0 0 10px rgba(123,232,168,.4)}50%{box-shadow:0 0 22px rgba(123,232,168,.8)}}</style>
+
+<div id="godOverlay" onclick="if(event.target===this)closeGodPanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:61;align-items:center;justify-content:center;padding:22px">
+  <div onclick="event.stopPropagation()" style="width:100%;max-width:340px;background:#14101F;border:1.5px solid #2F5A2C;border-radius:20px;padding:20px;box-shadow:0 0 30px rgba(123,232,168,.35)">
+    <div class="flex items-center justify-between" style="margin-bottom:12px">
+      <span style="font-size:15px;font-weight:800;color:#7BE8A8;font-family:'M PLUS Rounded 1c',sans-serif">🐞 God Mode 디버그</span>
+      <button onclick="closeGodPanel()" style="width:28px;height:28px;border-radius:50%;border:none;background:#2A2440;color:#9A8FB5;cursor:pointer;font-size:12px">✕</button>
+    </div>
+    <pre id="godState" style="font-size:11px;color:#B6E6CA;background:#0C0916;border:1px solid #241C38;border-radius:10px;padding:10px;max-height:170px;overflow:auto;white-space:pre-wrap;margin:0 0 12px;font-family:ui-monospace,monospace"></pre>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="godToggleVerified()" style="border:none;cursor:pointer;border-radius:12px;padding:11px;font-size:12px;font-weight:800;color:#1B1430;background:#7BE8A8;font-family:'M PLUS Rounded 1c',sans-serif">🛡️ 총대 인증 토글</button>
+      <button onclick="godAddPoints()" style="border:none;cursor:pointer;border-radius:12px;padding:11px;font-size:12px;font-weight:800;color:#1B1430;background:#FFD166;font-family:'M PLUS Rounded 1c',sans-serif">🪙 +1000P</button>
+      <button onclick="godRunTest()" style="border:none;cursor:pointer;border-radius:12px;padding:11px;font-size:12px;font-weight:800;color:#fff;background:#2D6FE0;font-family:'M PLUS Rounded 1c',sans-serif">🧪 로직 자동테스트</button>
+      <button onclick="location.reload()" style="border:1px solid #3A3458;cursor:pointer;border-radius:12px;padding:11px;font-size:12px;font-weight:800;color:#B6AAD0;background:transparent;font-family:'M PLUS Rounded 1c',sans-serif">♻️ 새로고침</button>
+    </div>
+    <p style="font-size:10px;color:#6B6486;margin-top:10px;line-height:1.5">관리자(God Mode) 계정에만 노출되는 디버깅 패널입니다.</p>
+  </div>
+</div>
 </div>
 
 <!-- ══ 브랜드 모달 ══ -->
@@ -714,8 +736,14 @@
       <option>롯데택배</option>
       <option>로젠택배</option>
     </select>
-    <label style="display:block;font-size:12px;font-weight:800;color:#2D6FE0;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">운송장 번호 *</label>
-    <input id="trkNum" inputmode="numeric" placeholder="'-' 없이 숫자만" style="width:100%;padding:12px 14px;border:1.5px solid #DBEAFE;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:18px"/>
+    <label style="display:block;font-size:12px;font-weight:800;color:#2D6FE0;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">운송장 번호 * <span style="color:#8D7B80;font-weight:600">📷 사진으로 스캔</span></label>
+    <div style="display:flex;gap:8px;margin-bottom:6px">
+      <input id="trkNum" inputmode="numeric" placeholder="'-' 없이 숫자만 / 📷 스캔" style="flex:1;min-width:0;padding:12px 14px;border:1.5px solid #DBEAFE;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box"/>
+      <button type="button" onclick="document.getElementById('trkScanFile').click()" title="운송장 사진 스마트 스캔" style="flex-shrink:0;width:48px;border:1.5px solid #2D6FE0;background:#EFF6FF;border-radius:14px;cursor:pointer;font-size:20px">📷</button>
+      <input id="trkScanFile" type="file" accept="image/*" capture="environment" style="display:none" onchange="scanTracking(event)"/>
+    </div>
+    <p id="trkScanStatus" style="display:none;font-size:11px;font-weight:700;color:#2D6FE0;margin:0 0 14px"></p>
+    <div style="height:4px"></div>
     <div class="flex gap-2">
       <button onclick="closeTracking()" class="flex-1 rounded-xl py-3" style="border:1.5px solid #E2DCE0;background:#fff;color:#8D7B80;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800">취소</button>
       <button onclick="saveTracking()" class="flex-1 rounded-xl py-3" style="border:none;background:#2D6FE0;color:#fff;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800">등록 완료</button>
@@ -1467,6 +1495,58 @@ function goVerifyHost(){
   // 공구 탭 내에서 바로 총대 안심 인증 모달 열기
   closeHostVerify();
   openCaptainVerify();
+}
+
+/* ═══════════════════════════════════
+   God Mode 디버그 패널 (관리자 전용)
+═══════════════════════════════════ */
+function showGodFab(){
+  const fab = document.getElementById("godFab");
+  if(fab) fab.style.display = isAdminUser() ? "block" : "none";
+}
+function renderGodState(){
+  const el = document.getElementById("godState");
+  if(!el) return;
+  const ridersMine = BUSES.filter(b=>b.ownerId && authUser && b.ownerId===authUser.id).length;
+  const state = {
+    email: (authUser&&authUser.email) || "(비로그인)",
+    isAdmin: isAdminUser(),
+    isVerifiedHost: isVerifiedHost,
+    points: (typeof getPoints==="function"?getPoints():0),
+    buses: BUSES.length,
+    myHostedBuses: ridersMine,
+    coopCore: (typeof CoopCore!=="undefined"),
+  };
+  el.textContent = JSON.stringify(state, null, 2);
+}
+function openGodPanel(){
+  if(!isAdminUser()){ showToast("관리자 전용 기능이에요"); return; }
+  renderGodState();
+  document.getElementById("godOverlay").style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
+function closeGodPanel(){
+  document.getElementById("godOverlay").style.display = "none";
+  document.body.style.overflow = "";
+}
+function godToggleVerified(){
+  isVerifiedHost = !isVerifiedHost;
+  try{ localStorage.setItem("kaiwai_verified_host", isVerifiedHost?"1":"0"); }catch(_){}
+  showToast("총대 인증: " + (isVerifiedHost?"ON ✅":"OFF"));
+  renderGodState();
+}
+function godAddPoints(){
+  const k = (typeof _pointsKey==="function") ? _pointsKey() : null;
+  if(!k){ showToast("로그인 후 사용하세요"); return; }
+  const o = _pointsObj(); o.points = (o.points||0) + 1000;
+  localStorage.setItem(k, JSON.stringify(o));
+  renderPoints(); renderGodState();
+  showToast("🪙 +1000P 지급 (누적 " + o.points.toLocaleString() + "P)");
+}
+function godRunTest(){
+  if(typeof runCoopAutoTest!=="function"){ showToast("테스트 모듈 미로드"); return; }
+  const r = runCoopAutoTest();   // 콘솔에 상세 출력
+  showToast("🧪 자동테스트: ✅ " + r.passed + " / ❌ " + r.failed + " (콘솔 확인)");
 }
 
 /* ═══════════════════════════════════
@@ -2272,13 +2352,45 @@ function saveTracking(){
   const r = b && b.riders && b.riders[_trkTarget.idx];
   if(!r){ closeTracking(); return; }
   const courier = document.getElementById("trkCourier").value;
-  const num = document.getElementById("trkNum").value.replace(/[^0-9A-Za-z]/g,"").trim();
-  if(!num){ alert("운송장 번호를 입력해 주세요"); return; }
+  const num = document.getElementById("trkNum").value.replace(/[\s-]/g,"");
+  // 검증 실패는 alert 대신 Toast (요구사항: catch → 커스텀 Toast)
+  if(!/^\d+$/.test(num)){ showToast("운송장 번호는 숫자만 입력할 수 있어요 📦"); return; }
+  if(num.length < 6){ showToast("운송장 번호 6자리 이상 입력해 주세요"); return; }
   r.courierName = courier;
   r.trackingNumber = num;
   closeTracking();
   renderBusRoom(b);
   sendNotification(r.nick, "택배가 발송되었습니다! 📦", `${courier} 운송장 번호: ${num}로 상품이 발송되었습니다. 확인해주세요!`);
+}
+// 📷 운송장 스마트 스캔 — Tesseract.js 로 사진에서 숫자 추출
+async function scanTracking(e){
+  const file = e.target.files && e.target.files[0];
+  e.target.value = "";   // 같은 파일 재선택 허용
+  if(!file) return;
+  const st = document.getElementById("trkScanStatus");
+  const show = (msg)=>{ if(st){ st.style.display="block"; st.textContent=msg; } };
+  if(typeof Tesseract === "undefined"){ showToast("스캔 모듈을 불러오지 못했어요. 직접 입력해 주세요."); return; }
+  try{
+    show("🔎 운송장 인식 중… 잠시만요");
+    const { data } = await Tesseract.recognize(file, "eng");
+    const text = (data && data.text) || "";
+    // 인식 텍스트에서 가장 긴 숫자열(공백·하이픈 허용) 추출
+    const groups = (text.replace(/[^0-9\s-]/g," ").match(/[0-9][0-9\s-]{5,}[0-9]/g) || [])
+      .map(s=>s.replace(/[\s-]/g,"")).filter(s=>s.length>=8);
+    groups.sort((a,b)=>b.length-a.length);
+    if(groups.length){
+      document.getElementById("trkNum").value = groups[0];
+      show("✅ 인식 완료: " + groups[0] + " (확인 후 등록하세요)");
+      showToast("운송장 번호를 인식했어요 📦");
+    } else {
+      show("❌ 숫자를 찾지 못했어요. 더 또렷한 사진으로 다시 시도하거나 직접 입력해 주세요.");
+      showToast("운송장 숫자를 찾지 못했어요 😢");
+    }
+  }catch(err){
+    console.warn("OCR 실패:", err && err.message);
+    show("❌ 스캔 실패 — 직접 입력해 주세요.");
+    showToast("스캔에 실패했어요. 직접 입력해 주세요.");
+  }
 }
 // 운송장 조회 — 택배사+번호로 검색
 function trackQuery(busId, idx){
@@ -4075,7 +4187,7 @@ function _checkMonthlyLikeReset(){
 ═══════════════════════════════════ */
 _checkMonthlyLikeReset();
 drawFilter(); drawBanner(); drawBrands(); drawRanking(); go("home"); updateAuthBtn();
-renderPoints(); renderNotifBadge(); if(authUser) checkDailyAttendance();
+renderPoints(); renderNotifBadge(); showGodFab(); if(authUser) checkDailyAttendance();
 
 /* ═══════════════════════════════════
    Supabase 세션 → authUser 브리지
