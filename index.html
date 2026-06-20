@@ -288,7 +288,7 @@
 <div id="tCal" style="display:none" class="flex-col flex-1">
   <div class="px-4 pt-7 pb-5" style="background:linear-gradient(to bottom,#FFF0F5 60%,transparent)">
     <h1 class="font-bold text-lg" style="color:#4A4A4A;font-family:'M PLUS Rounded 1c',sans-serif">🗓️ 신상 캘린더</h1>
-    <p style="color:#8D7B80;font-size:10px;margin-top:2px">2026년 발매 · 수주 · 팝업 일정</p>
+    <p style="color:#8D7B80;font-size:10px;margin-top:2px">온라인 발매 · 예약 일정 (오프라인 제외)</p>
   </div>
   <div id="calList" class="px-4 pb-28 flex flex-col gap-3"></div>
 </div>
@@ -3051,6 +3051,12 @@ function dedupCal(list){
   }
   return [...map.values()];
 }
+// 온라인 일정만 통과 — 오프라인(일본 매장 행사/팝업/오프라인 전용 발매)은 제외
+function _isOnlineEvent(it){
+  const txt = ((it.d||"") + " " + (it.e||"") + " " + (it.tp||"") + " " + (it.br||""));
+  return !/(팝업|팝업\s*스토어|POP[\s-]?UP|오프라인|매장\s*한정|매장\s*전용|점포\s*한정|오프라인\s*한정|오프라인\s*전용|매장\s*행사|매장\s*이벤트|입점\s*행사|오프\s*전용)/i.test(txt);
+}
+
 function drawCal(){
   const el = document.getElementById("calList");
   if (!CAL.length) {
@@ -3069,7 +3075,19 @@ function drawCal(){
     "팝업":{bg:"#F0E0FF",c:"#7733BB"},
     "이벤트":{bg:"#FFF0F5",c:"#8D7B80"}
   };
-  const sorted=dedupCal(CAL).sort((a,b)=>(a.dt+"T"+(a.tm||"00:00")).localeCompare(b.dt+"T"+(b.tm||"00:00")));
+  // ① 지난 날짜 제외(매 렌더마다 오늘 기준) ② 오프라인(매장행사/팝업/오프라인발매) 제외 → 온라인만
+  const today = _todayStr();
+  const sorted=dedupCal(CAL)
+    .filter(it => (it.dt||"") >= today && _isOnlineEvent(it))
+    .sort((a,b)=>(a.dt+"T"+(a.tm||"00:00")).localeCompare(b.dt+"T"+(b.tm||"00:00")));
+  if(!sorted.length){
+    el.innerHTML = `<div style="text-align:center;padding:64px 20px">
+      <div class="kw-float" style="font-size:44px;margin-bottom:12px">🗓️</div>
+      <p style="font-size:14px;font-weight:700;color:#8D7B80;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">예정된 온라인 일정이 없어요</p>
+      <p style="font-size:12px;color:#C4A8B0;line-height:1.8">온라인 발매·예약 공지가 올라오면<br>자동으로 여기에 표시돼요 🎀</p>
+    </div>`;
+    return;
+  }
   document.getElementById("calList").innerHTML=sorted.map((it,i)=>{
     const d=new Date(it.dt+"T00:00:00"), mm=d.getMonth()+1, dd=d.getDate(), dw=DOW[d.getDay()];
     const tp=it.tp||"이벤트";
