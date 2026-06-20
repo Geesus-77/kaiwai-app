@@ -1581,9 +1581,12 @@ function renderBusRoom(b){
     ? `<span style="font-size:10px;font-weight:800;color:#2D6FE0;background:#E5EEFC;border:1px solid #C2D6F7;padding:3px 8px;border-radius:100px">주소 입력완료</span>`
     : `<span style="font-size:10px;font-weight:800;color:#9A8D93;background:#F0ECEE;border:1px solid #E2DCE0;padding:3px 8px;border-radius:100px">주소 미입력</span>`;
   const issueText = (r)=> r.issue==="etc" ? ("🚨 " + (r.issueText||"기타")) : (ISSUE_LABEL[r.issue] || "🚨 확인요망");
-  const issueTag = (r)=> r.issue
-    ? `<span style="font-size:10px;font-weight:800;color:#fff;background:#E5484D;border:1px solid #C73B3F;padding:3px 8px;border-radius:100px">${_esc(issueText(r))}</span>`
-    : "";
+  // 장부 상태 태그 (문제 처리중 / 노쇼 경고중)
+  const STATUS_TAG = {
+    problem: { t:"🚨 문제 처리중", bg:"#E5484D", bd:"#C73B3F" },
+    noshow:  { t:"⏰ 노쇼 경고중", bg:"#C77800", bd:"#A66400" },
+  };
+  const statusTag = (r)=>{ const s=STATUS_TAG[r.status]; return s ? `<span style="font-size:10px;font-weight:800;color:#fff;background:${s.bg};border:1px solid ${s.bd};padding:3px 8px;border-radius:100px">${s.t}</span>` : ""; };
 
   // A. 투명 장부 (개인정보 숨김, 닉네임/수령방법/금액/상태만)
   const ledger = riders.length ? riders.map((r,i)=>`
@@ -1593,7 +1596,7 @@ function renderBusRoom(b){
         <span style="font-size:13px;font-weight:800;color:#C41055;font-family:'M PLUS Rounded 1c',sans-serif">${r.amount.toLocaleString()}원</span>
       </div>
       <p style="font-size:11px;color:#8D7B80;margin-top:3px">${lensName(r.lensId)} · ${r.power||"도수 미입력"} · <b style="color:#6B5B60">${methodShort(r.method)}</b></p>
-      <div class="flex items-center gap-1.5 mt-2" style="flex-wrap:wrap">${issueTag(r)}${payTag(r.paid)}${addrTag(r.hasAddr)}</div>
+      <div class="flex items-center gap-1.5 mt-2" style="flex-wrap:wrap">${statusTag(r)}${payTag(r.paid)}${addrTag(r.hasAddr)}</div>
       ${ r.me ? (locked
         ? `<div class="mt-2" style="font-size:11px;font-weight:700;color:#9A8D93">🔒 주문이 시작되어 수정·취소가 잠겼어요</div>`
         : `<div class="flex gap-1.5 mt-2">
@@ -1806,6 +1809,18 @@ function approvePay(busId, idx){
 
 // ── 문제 발생(Issue) 처리 ──
 let _issueTarget = { busId:null, idx:null };
+
+// 참여자별 알림 쿨다운 { "busId:nick": { problem:ts, noshow:ts } }
+const coopCooldowns = {};
+function _cdKey(busId, r){ return busId + ":" + (r && r.nick || ""); }
+// 참여자 상태값 업데이트 + UI 동기화
+function updateParticipantStatus(busId, idx, status){
+  const b = BUSES.find(x=>x.id===busId);
+  const r = b && b.riders && b.riders[idx];
+  if(!r) return;
+  r.status = status;
+  renderBusRoom(b);
+}
 function onIssueReasonChange(){
   const sel = document.querySelector('input[name="issueReason"]:checked');
   document.getElementById("issueEtcText").style.display = (sel && sel.value==="etc") ? "block" : "none";
@@ -1831,13 +1846,24 @@ function saveIssue(){
   if(sel.value === "etc"){
     const t = document.getElementById("issueEtcText").value.trim();
     if(!t){ alert("기타 사유를 입력해 주세요"); return; }
-    r.issue = "etc"; r.issueText = t; reasonText = t;
+    reasonText = t;
   } else {
-    r.issue = sel.value; r.issueText = ""; reasonText = ISSUE_REASON_TEXT[sel.value] || "확인요망";
+    reasonText = ISSUE_REASON_TEXT[sel.value] || "확인요망";
   }
+  // 알림 쿨다운 (문제: 60분) — 관리자도 동일 적용
+  const key = _cdKey(b.id, r);
+  const now = Date.now();
+  if(now - ((coopCooldowns[key]||{}).problem || 0) < 60*60*1000){
+    closeIssue();
+    showToast("이미 알림을 보냈습니다. 1시간 뒤에 다시 시도해주세요.");
+    return;
+  }
+  // 사유 + 상태 갱신
+  r.issue = sel.value; r.issueText = sel.value==="etc" ? reasonText : "";
+  r.status = "problem";                                    // 장부 태그: 문제 처리중
+  coopCooldowns[key] = { ...coopCooldowns[key], problem: now };
   closeIssue();
   renderBusRoom(b);
-  // 알림 발송: 해당 파티원에게 문제 사유 전달
   sendNotification(r.nick, "공구 주문에 문제가 발생했어요 ⚠️", "방장님이 적은 사유: " + reasonText);
 }
 
@@ -1882,12 +1908,22 @@ function registerTracking(busId){
   renderBusRoom(b);
 }
 
-// ── 방장: 노쇼(미입금) 사전 경고 → 보증금 차감 전 알림 ──
+// ── 방장: 노쇼(미입금) 사전 경고 → 보증금 차감 전 알림 (쿨다운 10분) ──
 function noshowWarn(busId, idx){
   const b = BUSES.find(x=>x.id===busId);
   const r = b && b.riders && b.riders[idx];
   if(!r) return;
+  // 알림 쿨다운 (노쇼: 10분)
+  const key = _cdKey(b.id, r);
+  const now = Date.now();
+  if(now - ((coopCooldowns[key]||{}).noshow || 0) < 10*60*1000){
+    showToast("10분 뒤에 다시 경고 알림을 보낼 수 있습니다.");
+    return;
+  }
   if(!confirm(`'${r.payer||r.nick}' 님에게 미입금 경고를 보낼까요?`)) return;
+  r.status = "noshow";                                     // 장부 태그: 노쇼 경고중
+  coopCooldowns[key] = { ...coopCooldowns[key], noshow: now };
+  renderBusRoom(b);
   sendNotification(r.nick, "⏰ 미입금 경고", "기한 내 미입금 시 보증금 300P 차감 + 3진 아웃제가 적용돼요. 빠른 입금 부탁드려요!");
 }
 
