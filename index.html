@@ -1688,9 +1688,11 @@ function _mapRider(row, priv){
   };
 }
 
-// buses DB row → 렌더 shape. localId = UI용 정수(기존 onclick 유지), current 는 장부 합산.
+// buses DB row → 렌더 shape. localId = UI용 정수(기존 onclick 유지).
+// current = 총대 본인 물품가(product_price) + 모든 탑승자 장부 합산(yen×qty). (총대는 bus_riders 에 없으므로 별도 합산)
 function _mapBus(row, localId, riders){
-  const cur = (riders || []).reduce((s, r)=> s + (r.yen || 0) * (r.qty || 1), 0);
+  const ridersSum = (riders || []).reduce((s, r)=> s + (r.yen || 0) * (r.qty || 1), 0);
+  const cur = (row.product_price || 0) + ridersSum;
   return {
     id: localId,
     dbId: row.id,
