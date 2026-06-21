@@ -2652,9 +2652,31 @@ function renderBusRoom(b){
   };
   const statusTag = (r)=>{ const s=STATUS_TAG[r.status]; return s ? `<span style="font-size:10px;font-weight:800;color:#fff;background:${s.bg};border:1px solid ${s.bd};padding:3px 8px;border-radius:100px">${s.t}</span>` : ""; };
 
-  // A. 투명 장부 (개인정보 숨김, 닉네임/수령방법/금액/상태만)
-  const ledger = riders.length ? riders.map((r,i)=>`
-    <div class="rounded-xl p-3" style="background:${r.issue?'#FFF5F5':'#fff'};border:1.5px solid ${r.issue?'#F7C9CB':'#FFE0EE'}">
+  // 장부 행 배경 — 내 주문은 핑크로 강조해 한눈에 구분, 문제 행은 적색, 그 외 흰색
+  const rowStyle = (isMe, hasIssue)=> hasIssue
+    ? "background:#FFF5F5;border:1.5px solid #F7C9CB"
+    : isMe
+      ? "background:#FFF0F7;border:2px solid #FF9ECB"
+      : "background:#fff;border:1.5px solid #FFE0EE";
+
+  // 방장(총대) 본인 주문도 투명하게 노출 — 총대는 bus_riders 에 없고 buses.product_* 에 저장돼
+  // 그동안 장부에서 빠져 탑승자가 못 봤음. 항상 장부 최상단에 표시.
+  const meHost = isBusOwner(b);
+  const hostPower = (b.hostPowerL || b.hostPowerR)
+    ? `좌 ${_esc(b.hostPowerL||"-")} / 우 ${_esc(b.hostPowerR||"-")}`
+    : "도수 미입력";
+  const hostLine = `
+    <div class="rounded-xl p-3" style="${rowStyle(meHost, false)}">
+      <div class="flex items-center justify-between">
+        <span style="font-size:13px;font-weight:800;color:#3A2B30">👑 ${_esc(b.captain||"총대")} <span style="font-size:10px;font-weight:800;color:#B8860B;background:#FFF3D6;border:1px solid #F2D788;padding:2px 7px;border-radius:100px">총대</span>${meHost?` <span style="font-size:10px;color:#C41055">(나)</span>`:""}</span>
+        <span style="font-size:13px;font-weight:800;color:#C41055;font-family:'M PLUS Rounded 1c',sans-serif">${Math.round((b.productPrice||0)*YEN_TO_KRW).toLocaleString()}원</span>
+      </div>
+      <p style="font-size:11px;color:#8D7B80;margin-top:3px">${_esc(b.productName||"상품 미입력")} · ${hostPower} · <b style="color:#6B5B60">총대 본인 물품</b></p>
+    </div>`;
+
+  // A. 투명 장부 (개인정보 숨김, 닉네임/수령방법/금액/상태만) — 방장 + 전 탑승자
+  const riderLines = riders.length ? riders.map((r,i)=>`
+    <div class="rounded-xl p-3" style="${rowStyle(r.me, r.issue)}">
       <div class="flex items-center justify-between">
         <span style="font-size:13px;font-weight:800;color:#3A2B30">${r.trackingNumber?"🚚 ":""}${r.nick}${r.me?` <span style="font-size:10px;color:#C41055">(나)</span>`:""}</span>
         <span style="font-size:13px;font-weight:800;color:#C41055;font-family:'M PLUS Rounded 1c',sans-serif">${r.amount.toLocaleString()}원</span>
@@ -2676,7 +2698,8 @@ function renderBusRoom(b){
              </div>
            </div>`
         : `<div class="mt-2" style="font-size:11px;font-weight:700;color:#9A8D93">🚚 운송장 등록 대기 중</div>`) : "" }
-    </div>`).join("") : `<p style="text-align:center;color:#C4A8B0;font-size:12px;padding:24px 0">아직 탑승객이 없어요</p>`;
+    </div>`).join("") : `<p style="text-align:center;color:#C4A8B0;font-size:12px;padding:18px 0">아직 다른 탑승객이 없어요</p>`;
+  const ledger = hostLine + riderLines;
 
   // B. 방장 전용 관리자 패널 (조건부) — 입금자명 + 입금 승인 액션
   const adminRows = riders.map((r,i)=>`
