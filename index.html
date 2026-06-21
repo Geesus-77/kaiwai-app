@@ -2073,20 +2073,29 @@ function syncManualPreview(){
 }
 
 // 🔗 상품 링크 → 상품명/이미지/가격 자동 채우기 (실패 시 수동 폼을 빈 채로 펼침)
+// 상품 URL 스크래핑 — 서버 Edge Function(scrape-product, 브라우저 UA) 경유.
+// 어떤 실패든 throw 하지 않고 { ok:false } 반환 → 호출부가 우아한 폴백 처리.
+async function scrapeProduct(url){
+  const valid = (typeof CoopCore!=="undefined" && CoopCore.validateUrl) ? CoopCore.validateUrl(url) : (url||"").trim();
+  if(!valid) return { ok:false, reason:"invalid-url", title:"", imageUrl:"", price:0 };
+  if(!window.sb) return { ok:false, reason:"no-sb", title:"", imageUrl:"", price:0 };
+  try{
+    const { data, error } = await window.sb.functions.invoke("scrape-product", { body:{ url: valid } });
+    if(error || !data) return { ok:false, reason:"edge-error", title:"", imageUrl:"", price:0 };
+    return { ok: !!data.ok, title: data.title||"", imageUrl: data.imageUrl||"", price: data.price||0, reason: data.reason||"" };
+  }catch(e){ return { ok:false, reason:"exception", title:"", imageUrl:"", price:0 }; }
+}
 async function autofillFromUrl(){
   const url = document.getElementById("cbUrl").value.trim();
   const btn = document.getElementById("cbFetchBtn");
   if(!url){ showToast("상품 링크(URL)를 입력해 주세요"); toggleManualForm(true); return; }
-  if(typeof CoopCore === "undefined" || !CoopCore.fetchProductDataFromUrl){
-    showToast("불러오기 모듈을 로드하지 못했어요. 직접 입력해 주세요."); toggleManualForm(true); return;
-  }
   const orig = btn.innerHTML;
   btn.disabled = true;
   btn.style.opacity = "0.85";
   btn.innerHTML = '<span class="cb-spin">⏳</span> 정보를 불러오는 중…';
   try{
-    const data = await CoopCore.fetchProductDataFromUrl(url);   // 잘못된 URL 만 throw
-    // 성공/실패 모두 수동 폼을 펼쳐 사용자가 확인·수정할 수 있게 함 (실패해도 에러 토스트 없음)
+    const data = await scrapeProduct(url);
+    // 성공/실패 모두 수동 폼을 펼쳐 사용자가 확인·수정할 수 있게 함
     toggleManualForm(true);
     const nameEl  = document.getElementById("cbProdName");
     const imgEl   = document.getElementById("cbProdImg");
@@ -2097,15 +2106,13 @@ async function autofillFromUrl(){
       if(data.imageUrl){ imgEl.value = data.imageUrl; _cbFlash(imgEl); filled++; }
       if(data.price && data.price>0){ priceEl.value = data.price; _cbFlash(priceEl); filled++; }
       syncManualPreview();
-      showToast(filled ? "상품 정보를 불러왔어요 ✨ 확인 후 수정하세요" : "불러올 정보가 없어요. 아래에 직접 입력해 주세요.");
+      showToast(filled ? "상품 정보를 불러왔어요 ✨ 확인 후 수정하세요" : "링크 파싱에 실패했습니다. 상품명과 가격을 직접 입력해 주세요");
     } else {
-      // 실패: 빈 수동 폼만 노출 (에러 토스트 대신 안내)
-      showToast("자동 불러오기에 실패했어요. 아래에 직접 입력해 주세요 ✍️");
+      showToast("링크 파싱에 실패했습니다. 상품명과 가격을 직접 입력해 주세요");
     }
   }catch(e){
-    // 잘못된 URL 등 → 수동 폼만 펼침
     toggleManualForm(true);
-    showToast("자동 불러오기에 실패했어요. 아래에 직접 입력해 주세요 ✍️");
+    showToast("링크 파싱에 실패했습니다. 상품명과 가격을 직접 입력해 주세요");
   }finally{
     btn.disabled = false;
     btn.style.opacity = "1";
@@ -2320,14 +2327,11 @@ async function autofillBoardFromUrl(){
   const url = document.getElementById("boardUrl").value.trim();
   const btn = document.getElementById("boardFetchBtn");
   if(!url){ showToast("렌즈 링크(URL)를 입력해 주세요"); return; }
-  if(typeof CoopCore === "undefined" || !CoopCore.fetchProductDataFromUrl){
-    showToast("불러오기 모듈을 로드하지 못했어요. 아래에 직접 입력해 주세요."); return;
-  }
   const orig = btn.innerHTML;
   btn.disabled = true; btn.style.opacity = "0.85";
   btn.innerHTML = '<span class="cb-spin">⏳</span> 불러오는 중…';
   try{
-    const data = await CoopCore.fetchProductDataFromUrl(url);
+    const data = await scrapeProduct(url);
     const nameEl  = document.getElementById("boardProdName");
     const priceEl = document.getElementById("boardProdPrice");
     if(data && data.ok){
@@ -2339,12 +2343,12 @@ async function autofillBoardFromUrl(){
         document.getElementById("boardImgWrap").style.display = "block"; filled++;
       }
       updateReceipt();
-      showToast(filled ? "렌즈 정보를 불러왔어요 ✨ 확인 후 수정하세요" : "불러올 정보가 없어요. 직접 입력해 주세요.");
+      showToast(filled ? "렌즈 정보를 불러왔어요 ✨ 확인 후 수정하세요" : "링크 파싱에 실패했습니다. 상품명과 가격을 직접 입력해 주세요");
     } else {
-      showToast("자동 불러오기에 실패했어요. 아래에 직접 입력해 주세요 ✍️");
+      showToast("링크 파싱에 실패했습니다. 상품명과 가격을 직접 입력해 주세요");
     }
   }catch(e){
-    showToast("자동 불러오기에 실패했어요. 아래에 직접 입력해 주세요 ✍️");
+    showToast("링크 파싱에 실패했습니다. 상품명과 가격을 직접 입력해 주세요");
   }finally{
     btn.disabled = false; btn.style.opacity = "1"; btn.innerHTML = orig;
   }
