@@ -1387,7 +1387,7 @@ function go(t) {
   const busFab = document.getElementById("busFab");
   if(busFab) busFab.style.display = (t==="bus") ? "flex" : "none";
   if(t==="map")  drawMap();
-  if(t==="bus")  drawBus();
+  if(t==="bus")  loadBuses();
   if(t==="feed") loadFeed();
   if(t==="fav")  drawFav();
   if(t==="cal")  drawCal();
@@ -1416,47 +1416,9 @@ function goHome() {
    공구(렌즈 버스) — MVP 더미 렌더링
    추후 Supabase 'buses' 테이블로 교체 예정
 ═══════════════════════════════════ */
-const BUSES = [
-  {
-    id: 1,
-    title: "[출발 임박🔥] 렌즈라라 밤비/플러리 무배 버스 타실 분!",
-    captain: "코코아맛젤리",
-    tier: "pro",          // 프로 총대
-    goal: 10000,
-    current: 8500,
-    productName: "Bambi Series 원데이 (아몬드)",
-    productImg: "",
-    productPrice: 1760,
-    ownerId: "demo-host-1",   // 더미 방장(가상 유저) — 실제 로그인 유저와 불일치 → 일반 유저엔 패널 미노출
-    notice: "오늘 밤 10시까지 입금 부탁드려요! 🌙 내일 오전 일괄 주문합니다.",
-    ordered: false,
-    hostAccount: { bankName:"신한은행", accountNumber:"110-234-567890", realName:"박서연" },
-    riders: [
-      { nick:"마카롱공주", lensId:"L01", power:"좌 -2.00 / 우 -2.25", method:"conv", amount:17640, paid:true,  realName:"김민지", phone:"010-1234-5678", store:"GS25 홍대입구역점", payer:"김민지", hasAddr:true },
-      { nick:"블랙로즈",   lensId:"L06", power:"좌 -4.50 / 우 -4.50", method:"home", amount:17900, paid:false, realName:"이수아", phone:"010-2222-3333", store:"서울시 강남구 테헤란로 00, 000호", payer:"이수아", hasAddr:true },
-      { nick:"우유푸딩",   lensId:"L03", power:"좌 0.00 / 우 0.00",   method:"conv", amount:17640, paid:true,  realName:"", phone:"", store:"", payer:"", hasAddr:false },
-    ],
-  },
-  {
-    id: 2,
-    title: "[천천히 모아요] 지뢰계 렌즈 3명 구함",
-    captain: "우울한밤토끼",
-    tier: "beginner",     // 비기너 총대
-    goal: 10000,
-    current: 3000,
-    productName: "Majolica Majorca (지뢰계 블랙)",
-    productImg: "",
-    productPrice: 1600,
-    ownerId: "demo-host-2",   // 더미 방장(가상 유저) — 실제 로그인 유저와 불일치 → 일반 유저엔 패널 미노출
-    notice: "현재 일본에서 배송 시작되었습니다! 조금만 기다려주세요 ✈️",
-    ordered: false,
-    hostAccount: { bankName:"국민은행", accountNumber:"123456-78-901234", realName:"김지수" },
-    riders: [
-      { nick:"딸기소다", lensId:"L02", power:"좌 -1.50 / 우 -1.75", method:"conv", amount:13680, paid:true,  realName:"정하늘", phone:"010-7777-1234", store:"GS25 신촌오거리점", payer:"정하늘", hasAddr:true },
-      { nick:"네온키티", lensId:"L05", power:"좌 -3.00 / 우 -3.00", method:"home", amount:18845, paid:false, realName:"", phone:"", store:"", payer:"", hasAddr:false },
-    ],
-  },
-];
+// 공구방 목록 — Supabase 'buses' 에서 loadBuses() 로 채워짐 (더미 제거됨).
+// 각 항목은 UI용 정수 id + DB uuid(dbId) + riders[] 배열 shape 유지.
+let BUSES = [];
 
 // 이름 마스킹: 첫 글자 + 마지막 글자만, 가운데는 * (2글자는 '김*')
 function maskName(name){
@@ -1528,6 +1490,132 @@ function drawBus() {
 }
 
 /* ═══════════════════════════════════
+   Supabase 연동 — 공구방 로딩/매핑
+═══════════════════════════════════ */
+function _busUid(){ return (typeof authUser !== "undefined" && authUser && authUser.id) || null; }
+
+// DB 에러 → 사용자 친화 메시지
+function _busDbError(err, fallback){
+  const code = err && err.code;
+  if(code === "42501") return "권한이 없어요. 총대 인증이 필요하거나 마감된 공구일 수 있어요.";
+  if(err && /Failed to fetch|NetworkError|fetch/i.test(err.message || "")) return "네트워크 연결을 확인해 주세요.";
+  return fallback || "처리 중 오류가 발생했어요.";
+}
+
+function _busErrCard(msg){
+  return `<div style="text-align:center;padding:48px 24px"><div style="font-size:40px;margin-bottom:10px">😢</div><p style="font-size:13px;font-weight:700;color:#8D7B80;font-family:'M PLUS Rounded 1c',sans-serif">${msg}</p><button onclick="loadBuses()" style="margin-top:14px;border:1.5px solid #FFD6E8;background:#fff;color:#C41055;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:12px;font-weight:800;padding:8px 16px;border-radius:100px">다시 시도</button></div>`;
+}
+
+// bus_riders DB row → 렌더가 기대하는 rider shape (PII 는 RLS 로 본인/방장만 옴)
+function _mapRider(row, priv){
+  const p = priv || {};
+  return {
+    id: row.id,                       // bus_riders uuid (DB 업데이트용)
+    user_id: row.user_id,
+    nick: row.nick,
+    productName: row.product_name,
+    yen: row.yen,
+    qty: row.qty,
+    power: row.power,
+    method: row.method,
+    amount: row.amount,
+    paid: row.paid,
+    issue: row.issue,
+    hasAddr: row.has_addr,
+    memo: row.memo,
+    me: !!(_busUid() && row.user_id === _busUid()),
+    realName: p.real_name || "",
+    phone: p.phone || "",
+    store: p.address || "",
+    payer: p.payer || "",
+  };
+}
+
+// buses DB row → 렌더 shape. localId = UI용 정수(기존 onclick 유지), current 는 장부 합산.
+function _mapBus(row, localId, riders){
+  const cur = (riders || []).reduce((s, r)=> s + (r.yen || 0) * (r.qty || 1), 0);
+  return {
+    id: localId,
+    dbId: row.id,
+    title: row.title,
+    captain: row.captain,
+    tier: row.tier || "beginner",
+    goal: row.goal,
+    current: cur,
+    productName: row.product_name,
+    productImg: row.product_img,
+    productPrice: row.product_price,
+    ownerId: row.owner_id,
+    notice: row.notice || "",
+    ordered: row.ordered,
+    hostAccount: row.host_account || null,
+    riders: riders || [],
+  };
+}
+
+// 공구 탭 진입 시: buses + 장부(+ 방장/본인이면 PII) 로드 후 렌더
+async function loadBuses(){
+  const el = document.getElementById("busList");
+  if(!window.sb){ if(el) el.innerHTML = _busErrCard("공구 목록을 불러올 수 없어요"); return; }
+  try{
+    const { data: buses, error } = await window.sb
+      .from("buses").select("*").order("created_at", { ascending:false });
+    if(error) throw error;
+    const ids = (buses || []).map(b=>b.id);
+    let riderRows = [], privRows = [];
+    if(ids.length){
+      const { data: rr, error: re } = await window.sb
+        .from("bus_riders").select("*").in("bus_id", ids).order("created_at", { ascending:true });
+      if(re) throw re;
+      riderRows = rr || [];
+      // PII: RLS 로 본인 또는 방장 행만 반환됨 (그 외엔 비어서 옴)
+      const { data: pr } = await window.sb
+        .from("bus_rider_private").select("*").in("bus_id", ids);
+      privRows = pr || [];
+    }
+    const privByRider = {};
+    privRows.forEach(p=>{ privByRider[p.rider_id] = p; });
+    BUSES = (buses || []).map((row, i)=>{
+      const rs = riderRows.filter(r=>r.bus_id === row.id).map(r=>_mapRider(r, privByRider[r.id]));
+      return _mapBus(row, i + 1, rs);
+    });
+    drawBus();
+  }catch(err){
+    if(el) el.innerHTML = _busErrCard("공구 목록을 불러오지 못했어요");
+  }
+}
+
+// 단일 공구방 최신 상태 재로딩 (방장이면 PII JOIN, 파티원이면 장부만)
+async function reloadBusRoom(localId){
+  let b = BUSES.find(x=>x.id === localId);
+  if(!b || !window.sb) return b;
+  try{
+    const { data: row } = await window.sb.from("buses").select("*").eq("id", b.dbId).maybeSingle();
+    if(!row) return b;
+    const { data: rr } = await window.sb
+      .from("bus_riders").select("*").eq("bus_id", b.dbId).order("created_at", { ascending:true });
+    const privByRider = {};
+    if(row.owner_id === _busUid()){   // 방장만 PII 조회
+      const { data: pr } = await window.sb.from("bus_rider_private").select("*").eq("bus_id", b.dbId);
+      (pr || []).forEach(p=>{ privByRider[p.rider_id] = p; });
+    }
+    const rs = (rr || []).map(r=>_mapRider(r, privByRider[r.id]));
+    Object.assign(b, _mapBus(row, localId, rs));
+  }catch(_){ /* 네트워크 오류 시 캐시 유지 */ }
+  return b;
+}
+
+// 현재 로그인 유저의 총대 인증 상태를 DB(profiles.verified_host)에서 갱신
+async function refreshVerifiedHost(){
+  try{
+    if(!window.sb || !_busUid()){ isVerifiedHost = false; return false; }
+    const { data } = await window.sb.from("profiles").select("verified_host").eq("id", _busUid()).maybeSingle();
+    isVerifiedHost = !!(data && data.verified_host);
+  }catch(_){ /* 오류 시 캐시 유지 */ }
+  return isVerifiedHost;
+}
+
+/* ═══════════════════════════════════
    안심 공구 3대 철칙 안내 모달
 ═══════════════════════════════════ */
 function openRuleModal(){
@@ -1542,16 +1630,18 @@ function closeRuleModal(){
 /* ═══════════════════════════════════
    공구방 개설 (FAB → 인증분기 → 폼)
 ═══════════════════════════════════ */
-// 총대(방장) 인증 여부 — 마이페이지 2단계 인증 완료 시 localStorage 에 저장됨
-// (추후 Supabase 본인인증 결과로 교체)
-let isVerifiedHost = (function(){ try { return localStorage.getItem("kaiwai_verified_host") === "1"; } catch(_) { return false; } })();
+// 총대(방장) 인증 여부 — Supabase profiles.verified_host 가 진실 소스.
+// 이 변수는 캐시일 뿐이며, refreshVerifiedHost() 로 DB 에서 갱신된다.
+// 게이트(openCreateBus)·개설(INSERT RLS) 모두 DB 값을 기준으로 동작.
+let isVerifiedHost = false;
 
 // 보상(총대 수고비/리워드) 노출 플래그.
 // 300P 탑승 수수료 → 총대 수고비 지급 구조가 부활하여 true (관련 안내 노출).
 const REWARDS_ENABLED = true;
 
-function openCreateBus(){
-  if(!isVerifiedHost && !isAdminUser()){   // 관리자(God Mode)는 인증 없이 개설 가능
+async function openCreateBus(){
+  await refreshVerifiedHost();              // DB(profiles.verified_host) 기준으로 게이트
+  if(!isVerifiedHost && !isAdminUser()){    // 관리자(God Mode)는 폼 열기만 우회(INSERT 는 여전히 DB RLS 검증)
     document.getElementById("hostVerifyOverlay").style.display = "flex";
     document.body.style.overflow = "hidden";
     return;
@@ -1614,10 +1704,13 @@ function closeGodPanel(){
   document.getElementById("godOverlay").style.display = "none";
   document.body.style.overflow = "";
 }
-function godToggleVerified(){
+async function godToggleVerified(){
+  // God Mode: 켤 때는 실제로 DB 승격(RPC)까지 해야 개설 INSERT 가 RLS 를 통과함
   isVerifiedHost = !isVerifiedHost;
-  try{ localStorage.setItem("kaiwai_verified_host", isVerifiedHost?"1":"0"); }catch(_){}
-  showToast("총대 인증: " + (isVerifiedHost?"ON ✅":"OFF"));
+  if(isVerifiedHost && window.sb && _busUid()){
+    try{ await window.sb.rpc("verify_host_securely"); }catch(_){}
+  }
+  showToast("총대 인증: " + (isVerifiedHost ? "ON ✅ (DB 승격됨)" : "OFF (로컬 캐시만)"));
   renderGodState();
 }
 function godAddPoints(){
@@ -1694,12 +1787,22 @@ function capBankVerify(){
   document.getElementById("capStep2").classList.add("cap-step--done");
   updateCapFinal();
 }
-// 최종: 즉시 총대 권한 부여
-function capSubmit(e){
+// 최종: SECURITY DEFINER RPC 로 안전하게 총대 권한 승격 (셀프 UPDATE 불가)
+async function capSubmit(e){
   e.preventDefault();
   if(!(_capPhoneDone && _capBankDone && document.getElementById("capAgree").checked)) return;
+  if(!window.sb || !_busUid()){ alert("로그인이 필요해요. 다시 로그인 후 시도해 주세요."); return; }
+  const btn = e.target && e.target.querySelector('button[type="submit"]');
+  if(btn) btn.disabled = true;
+  try{
+    const { error } = await window.sb.rpc("verify_host_securely");
+    if(error) throw error;
+  }catch(err){
+    if(btn) btn.disabled = false;
+    alert(_busDbError(err, "총대 인증 처리 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요."));
+    return;
+  }
   isVerifiedHost = true;
-  try { localStorage.setItem("kaiwai_verified_host", "1"); } catch(_) {}
   closeCaptainVerify();
   alert("축하합니다! 총대 권한이 자동 승인되었습니다.");
 }
@@ -1788,13 +1891,10 @@ async function autofillFromUrl(){
   }
 }
 
-function submitCreateBus(e){
+async function submitCreateBus(e){
   e.preventDefault();
-  const platform = document.getElementById("cbPlatform").value || "렌즈라라";
   const title = document.getElementById("cbTitle").value.trim();
   const goal = parseInt(document.getElementById("cbGoal").value, 10);
-  const dlEl = document.querySelector('input[name="cbDeadline"]:checked');
-  const deadlineH = dlEl ? parseInt(dlEl.value, 10) : 24;
 
   // 물품 정보 (상품명/이미지/가격) — 자동 또는 수동
   const prodName  = (document.getElementById("cbProdName").value || "").trim();
@@ -1807,29 +1907,33 @@ function submitCreateBus(e){
     return;
   }
   if(!title || !goal || goal < 1){ alert("버스 제목과 목표 금액을 확인해 주세요"); return; }
+  if(!window.sb || !_busUid()){ alert("로그인이 필요해요. 다시 로그인 후 시도해 주세요."); return; }
 
-  // 새 공구방을 BUSES 맨 앞에 추가 (내가 연 방 → 방장 패널 노출)
-  const newId = BUSES.reduce((m,b)=>Math.max(m, b.id), 0) + 1;
-  BUSES.unshift({
-    id: newId,
-    title: title,
-    captain: _myNick(),
-    tier: "beginner",
-    platform: platform,
-    goal: goal,
-    current: 0,
-    deadlineH: deadlineH,
-    productName: prodName,             // 물품명
-    productImg: prodImg,               // 물품 이미지 URL
-    productPrice: prodPrice,           // 물품 가격(엔)
-    ownerId: (typeof authUser !== "undefined" && authUser && authUser.id) || "me",   // 개설자 = 방장
-    notice: document.getElementById("cbNotice").value.trim(),  // 방장 공지
-    ordered: false,                    // 렌즈라라 주문 완료 여부(수정 잠금 트리거)
-    hostAccount: getMyHostAccount(),   // 방장 인증 계좌 자동 연동
-    riders: [],
-  });
+  const btn = e.target && e.target.querySelector('button[type="submit"]');
+  if(btn) btn.disabled = true;
+  try{
+    // 개설 = buses INSERT. RLS 가 owner_id=본인 + profiles.verified_host=true 를 강제.
+    const { error } = await window.sb.from("buses").insert({
+      owner_id: _busUid(),
+      captain: _myNick(),
+      tier: "beginner",
+      title: title,
+      notice: document.getElementById("cbNotice").value.trim() || null,
+      goal: goal,
+      product_name: prodName,
+      product_img: prodImg,
+      product_price: prodPrice,
+      host_account: getMyHostAccount(),   // 방장 인증 계좌 자동 연동
+      ordered: false,
+    });
+    if(error) throw error;
+  }catch(err){
+    if(btn) btn.disabled = false;
+    alert(_busDbError(err, "공구방 개설에 실패했어요. 총대 인증 상태를 확인해 주세요."));
+    return;
+  }
   closeCreateBus();
-  drawBus();                          // 공구 탭 목록 즉시 갱신
+  await loadBuses();                   // DB 에서 다시 불러와 목록 갱신
   const list = document.getElementById("busList");
   if(list) list.scrollIntoView({ behavior:"smooth", block:"start" });
   alert("공구방이 성공적으로 개설되었습니다!");
@@ -2054,48 +2158,61 @@ function _myNick(){
     (authUser.nickname || authUser.display_name || authUser.name)) || "나";
 }
 
-function submitBoard(e){
+async function submitBoard(e){
   e.preventDefault();
   if(!boardFormValid()){ alert("렌즈 정보(상품명·가격·수량)와 배송 정보를 정확히 입력해주세요."); return; }
   const bus  = BUSES.find(b=>b.id===_boardBusId);
   if(!bus) return;
+  if(!window.sb || !_busUid()){ alert("로그인이 필요해요. 다시 로그인 후 시도해 주세요."); return; }
   // 상품 정보 (자동/수동)
   let prodName = document.getElementById("boardProdName").value.trim();
   let yen = _boardYen();
   const qty = _boardQty();
   if(isAdminUser() && (!prodName || !yen)){ prodName = prodName || (bus.productName || "테스트 렌즈"); yen = yen || (bus.productPrice || 1000); }
-  // 탑승 수수료 300P 검사 (Mock) — 관리자는 우회
+  // 탑승 수수료 300P 검사 (로컬 유지) — 관리자는 우회. 실제 차감은 DB 저장 성공 후에만.
   if(!isAdminUser() && getPoints() < 300){ alert("포인트가 부족합니다. 매일 로그인하여 포인트를 모아보세요!"); return; }
 
   const method = getShipMethod();
   const fee = getShipFee(method);
   const goods = yen * qty * YEN_TO_KRW;   // 상품가(원화) = 엔화 × 수량 × 9
-  if(!bus.riders) bus.riders = [];
-  bus.riders.push({
-    nick: _myNick(),
-    productName: prodName,
-    yen: yen,
-    qty: qty,
-    power: `좌 ${document.getElementById("boardPowerL").value} / 우 ${document.getElementById("boardPowerR").value}`,
-    method: method,
-    goods: goods,
-    amount: goods + fee,
-    paid: false,
-    issue: null,
-    realName: document.getElementById("bName").value.trim(),
-    phone: document.getElementById("bPhone").value.replace(/[^0-9]/g,""),
-    store: _boardAddr(),
-    payer: document.getElementById("bPayer").value.trim(),
-    memo: document.getElementById("boardMemo").value.trim(),
-    hasAddr: true,
-    me: true,
-  });
-  if(!isAdminUser()) spendPoints(300);   // 관리자는 보증금 차감 없음
-  const bid = bus.id;
+
+  const btn = e.target && e.target.querySelector('button[type="submit"]');
+  if(btn) btn.disabled = true;
+
+  // ── 원자적 탑승 + 롤백 방어 ──
+  // 장부+개인정보를 한 RPC(join_coop_bus)로 원자적 INSERT (HTTP 2회 분리 = 좀비데이터 위험 제거).
+  // RPC 성공이 확정된 뒤에만 localStorage 300P 차감 → 실패 시 포인트 절대 미차감.
+  try{
+    const { error } = await window.sb.rpc("join_coop_bus", {
+      p_bus_id:       bus.dbId,
+      p_nick:         _myNick(),
+      p_product_name: prodName,
+      p_qty:          qty,
+      p_yen:          yen,
+      p_power:        `좌 ${document.getElementById("boardPowerL").value} / 우 ${document.getElementById("boardPowerR").value}`,
+      p_method:       method,
+      p_amount:       goods + fee,
+      p_real_name:    document.getElementById("bName").value.trim(),
+      p_phone:        document.getElementById("bPhone").value.replace(/[^0-9]/g,""),
+      p_address:      _boardAddr(),
+      p_payer:        document.getElementById("bPayer").value.trim(),
+      p_memo:         document.getElementById("boardMemo").value.trim() || null,
+    });
+    if(error) throw error;
+  }catch(err){
+    if(btn) btn.disabled = false;
+    alert(_busDbError(err, "탑승에 실패했어요. 포인트는 차감되지 않았습니다."));
+    return;
+  }
+
+  // 여기 도달 = DB 저장 확정. 이제서야 포인트 차감.
+  if(!isAdminUser()) spendPoints(300);
+  const dbId = bus.dbId;
   closeBoard();
   alert("탑승이 완료되었습니다! 방장의 입금 안내를 확인해주세요.");
-  drawBus();              // 카드(탑승 인원) 갱신
-  openBusRoom(bid);       // 장부에 즉시 반영된 공구방으로 이동
+  await loadBuses();                          // 카드(탑승 인원)·장부 갱신
+  const nb = BUSES.find(x=>x.dbId === dbId);  // 재로딩 후 새 정수 id 로 방 열기
+  if(nb) openBusRoom(nb.id);
 }
 
 /* ═══════════════════════════════════
@@ -2110,14 +2227,16 @@ function isBusOwner(b){
   return (typeof authUser !== "undefined" && authUser && b.ownerId && authUser.id === b.ownerId);
 }
 
-function openBusRoom(id){
-  const b = BUSES.find(x=>x.id===id);
+async function openBusRoom(id){
+  let b = BUSES.find(x=>x.id===id);
   if(!b) return;
   _roomBusId = id;
-  renderBusRoom(b);
   document.getElementById("busRoomOverlay").style.display = "block";
   document.getElementById("busRoomOverlay").scrollTop = 0;
   document.body.style.overflow = "hidden";
+  renderBusRoom(b);                  // 캐시로 즉시 렌더
+  b = await reloadBusRoom(id);       // DB 에서 최신 상태(방장이면 PII)로 갱신
+  if(_roomBusId === id) renderBusRoom(b);
 }
 function closeBusRoom(){
   document.getElementById("busRoomOverlay").style.display = "none";
@@ -2395,12 +2514,20 @@ function closeNotifs(){ document.getElementById("notifOverlay").style.display = 
 function clearNotifs(){ if(!confirm("알림을 모두 지울까요?")) return; _saveNotifs([]); renderNotifBadge(); openNotifs(); }
 
 // 방장 주도 입금 승인 → 파티원에게 알림
-function approvePay(busId, idx){
+async function approvePay(busId, idx){
   const b = BUSES.find(x=>x.id===busId);
   if(!b || !b.riders || !b.riders[idx]) return;
   const r = b.riders[idx];
   if(r.paid) return;
   if(!confirm(`'${r.payer||r.nick}' 님의 입금을 확인하셨나요?\n승인하면 장부가 [입금완료]로 바뀝니다.`)) return;
+  if(!window.sb){ alert("연결 오류로 승인하지 못했어요."); return; }
+  try{
+    // paid 변경은 방장만 가능(RLS + 트리거 guard_bus_rider_update 가 이중 통제)
+    const { error } = await window.sb.from("bus_riders").update({ paid:true }).eq("id", r.id);
+    if(error) throw error;
+  }catch(err){
+    alert(_busDbError(err, "입금 승인에 실패했어요.")); return;
+  }
   r.paid = true;
   sendNotification(r.nick, "입금 확인 완료 💖", "입금이 확인됐어요! 이제 마음 놓으세요 💖 곧 일괄 주문이 진행됩니다.");
   renderBusRoom(b);
