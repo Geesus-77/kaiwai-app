@@ -16,7 +16,8 @@
      (소셜 로그인은 이메일이 제공자마다 다르거나 비어있을 수 있어 id 로 식별).
      새 관리자 추가 시 해당 Supabase 계정 id 를 배열에 넣으면 됨. */
   const ADMIN_IDS = [
-    '4a612066-9a5d-4da1-905f-fe276fb73908',   // jisulee83@naver.com
+    '8eb7bdd7-e50f-4683-9b41-94b882a2ac5a',   // jisulee83@naver.com (이메일/카카오 연동)
+    'c3f8e50f-f858-457e-80f2-44a58ceb045d',   // 네이버 로그인(verify-naver, noreply 이메일)
     '82feb4b1-5365-4ff9-b68b-ce1b0805a2b2',   // noitaloiv@gmail.com
     '6b2482ab-ddde-46a2-bb71-f26880619fd2',   // rmfjwlak114@gmail.com (운영자)
   ];

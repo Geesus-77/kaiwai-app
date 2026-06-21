@@ -4435,8 +4435,16 @@ const ADMIN_EMAILS = [
   "contact@kaiwai.kr",       // 일반 계정
   "luffylove04@naver.com",   // 추가 관리자
 ];
+// 계정 UUID 기준 관리자 — 소셜 로그인은 이메일이 비거나 noreply(@users.noreply.kaiwai)라
+// 이메일만으론 못 잡으므로 id 로도 식별. profile.js 의 ADMIN_IDS 와 반드시 동일하게 유지.
+const ADMIN_IDS = [
+  "8eb7bdd7-e50f-4683-9b41-94b882a2ac5a",  // jisulee83@naver.com (이메일/카카오 연동)
+  "c3f8e50f-f858-457e-80f2-44a58ceb045d",  // 네이버 로그인(verify-naver, noreply 이메일)
+  "82feb4b1-5365-4ff9-b68b-ce1b0805a2b2",  // noitaloiv@gmail.com
+  "6b2482ab-ddde-46a2-bb71-f26880619fd2",  // rmfjwlak114@gmail.com (운영자)
+];
 const isAdmin = (email) => !!email && ADMIN_EMAILS.includes(String(email).trim().toLowerCase());
-function isAdminUser(){ return !!(typeof authUser !== "undefined" && authUser && isAdmin(authUser.email)); }
+function isAdminUser(){ return !!(typeof authUser !== "undefined" && authUser && (ADMIN_IDS.includes(authUser.id) || isAdmin(authUser.email))); }
 // 고정 닉네임(이메일별) — 앱 전역에서 이 닉네임으로 강제 표시
 const FIXED_NICK = { "luffylove04@naver.com": "KAIWAI디자이너" };
 function fixedNickFor(email){ return email ? (FIXED_NICK[String(email).trim().toLowerCase()] || null) : null; }
@@ -5301,6 +5309,7 @@ async function applySupabaseUser(user){
   };
   localStorage.setItem("kaiwai_user", JSON.stringify(authUser));
   updateAuthBtn();
+  showGodFab();                          // 소셜 로그인 등 비동기 로그인 후 God Mode FAB 갱신
   currentUserId = user.id;
   checkDailyAttendance();                 // 하루 첫 접속 → 출석 포인트 + 칩 갱신
   fetchUserFavorites();                  // 로그인 → DB 즐겨찾기 동기화
