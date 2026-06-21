@@ -438,8 +438,9 @@
         <p style="font-size:12px;font-weight:800;color:#3A2B30;margin:0 0 10px;font-family:'M PLUS Rounded 1c',sans-serif">🛍️ 상품 · 배송 방법</p>
 
         <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">🔗 구매할 렌즈 링크 입력 <span style="color:#8D7B80;font-weight:600">(선택)</span></label>
-        <input id="boardUrl" placeholder="렌즈 상품 페이지 주소를 붙여넣으세요"
+        <input id="boardUrl" placeholder="렌즈 상품 페이지 주소를 붙여넣으세요" oninput="checkBoardDomain()"
           style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:8px;background:#fff"/>
+        <p id="boardDomainWarn" style="display:none;font-size:11px;font-weight:700;color:#E5484D;line-height:1.5;margin:0 0 8px"></p>
         <button type="button" id="boardFetchBtn" onclick="autofillBoardFromUrl()"
           style="width:100%;padding:12px;border:none;border-radius:12px;cursor:pointer;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:13px;background:linear-gradient(135deg,#A855F7,#EC4899);box-shadow:0 8px 18px -8px rgba(168,85,247,.7);margin-bottom:10px">✨ 내 렌즈 불러오기</button>
 
@@ -526,12 +527,12 @@
           style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:16px"/>
 
         <div id="bAddrConvWrap">
-          <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">수령 편의점 주소 * <span style="color:#8D7B80;font-weight:600">(편의점 반택)</span></label>
+          <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">수령 편의점 주소 *</label>
           <input id="bAddr" oninput="updateBoardBtn()" onclick="openAddrSearch('bAddr')" placeholder="클릭 → 주소 검색 후 점포명 추가"
             style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:8px;cursor:pointer"/>
         </div>
         <div id="bAddrHomeWrap">
-          <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">일반택배 배송지 주소 * <span style="color:#8D7B80;font-weight:600">(자택/기타택배)</span></label>
+          <label id="bAddrHomeLabel" style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">일반 자택 배송지 주소 *</label>
           <input id="bAddrHome" oninput="updateBoardBtn()" onclick="openAddrSearch('bAddrHome')" placeholder="클릭 → 도로명 주소 검색"
             style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:8px;cursor:pointer"/>
           <input id="bAddrHomeDetail" oninput="updateBoardBtn()" placeholder="상세주소 (동, 호수)"
@@ -723,7 +724,7 @@
         <label style="display:block;font-size:11px;font-weight:700;color:#8D7B80;margin-bottom:4px">상품명 *</label>
         <input id="cbProdName" maxlength="60" placeholder="예) Bambi Series 원데이 (아몬드)"
           style="width:100%;padding:11px 12px;border:1.5px solid #FFD6E8;border-radius:12px;font-size:13px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:10px;background:#fff"/>
-        <label style="display:block;font-size:11px;font-weight:700;color:#8D7B80;margin-bottom:4px">상품 이미지 주소(URL) *</label>
+        <label style="display:block;font-size:11px;font-weight:700;color:#8D7B80;margin-bottom:4px">상품주소(URL) *</label>
         <input id="cbProdImg" placeholder="https://...jpg" oninput="syncManualPreview()"
           style="width:100%;padding:11px 12px;border:1.5px solid #FFD6E8;border-radius:12px;font-size:13px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:10px;background:#fff"/>
         <label style="display:block;font-size:11px;font-weight:700;color:#8D7B80;margin-bottom:4px">가격 (엔 ¥) *</label>
@@ -863,13 +864,34 @@
 </div>
 
 <!-- ══ 파티원 본인 정보 수정 모달 (Slice 3) ══ -->
+<!-- ══ 수정 요청 승인 모달 (총대 전용) ══ -->
+<div id="modReqOverlay" onclick="closeModRequests()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:61;align-items:flex-end;justify-content:center">
+  <div onclick="event.stopPropagation()" style="position:relative;width:100%;max-width:430px;background:#fff;border-radius:28px 28px 0 0;overflow-y:auto;max-height:92vh">
+    <div style="width:44px;height:4px;background:#FFD6E8;border-radius:100px;margin:12px auto 0"></div>
+    <button onclick="closeModRequests()" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:#FFF0F5;border:none;color:#8D7B80;cursor:pointer;font-size:13px;z-index:10;display:flex;align-items:center;justify-content:center">✕</button>
+    <div style="padding:20px 22px 28px">
+      <h2 style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:19px;color:#3A2B30;margin:4px 0 4px">🚨 정보 수정 요청</h2>
+      <p style="font-size:12px;color:#8D7B80;margin:0 0 16px">파티원이 요청한 변경 내역이에요. 확인 후 <b style="color:#1A9E5E">승인</b>하면 장부에 반영됩니다.</p>
+      <div id="modReqBody"></div>
+    </div>
+  </div>
+</div>
+
 <div id="editMyInfoOverlay" onclick="closeEditMyInfo()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;align-items:flex-end;justify-content:center">
   <div onclick="event.stopPropagation()" style="position:relative;width:100%;max-width:430px;background:#fff;border-radius:28px 28px 0 0;overflow-y:auto;max-height:92vh">
     <div style="width:44px;height:4px;background:#FFD6E8;border-radius:100px;margin:12px auto 0"></div>
     <button onclick="closeEditMyInfo()" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:#FFF0F5;border:none;color:#8D7B80;cursor:pointer;font-size:13px;z-index:10;display:flex;align-items:center;justify-content:center">✕</button>
     <div style="padding:20px 22px 28px">
       <h2 style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:19px;color:#3A2B30;margin:4px 0 4px">✏️ 내 정보 수정</h2>
-      <p style="font-size:12px;color:#8D7B80;margin:0 0 16px">주문 시작 전까지만 수정할 수 있어요. 상품·금액은 변경할 수 없습니다.</p>
+      <p style="font-size:12px;color:#8D7B80;margin:0 0 16px">주문 시작 전까지만 수정할 수 있어요. <b style="color:#C41055">수량·도수·수령방법</b> 변경은 <b style="color:#C41055">총대 승인 후</b> 반영됩니다.</p>
+
+      <!-- 수량 (변경 시 총대 승인 필요) -->
+      <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">수량 *</label>
+      <div class="flex items-center gap-3" style="margin-bottom:16px">
+        <button type="button" onclick="changeEmQty(-1)" style="width:42px;height:42px;border-radius:12px;border:1.5px solid #FFD6E8;background:#fff;color:#C41055;font-size:20px;font-weight:800;cursor:pointer;flex-shrink:0">−</button>
+        <input id="emQty" type="number" min="1" value="1" inputmode="numeric" readonly style="flex:1;text-align:center;padding:11px;border:1.5px solid #FFD6E8;border-radius:12px;font-size:16px;font-weight:800;color:#4A4A4A;outline:none;font-family:'M PLUS Rounded 1c',sans-serif;box-sizing:border-box;background:#fff"/>
+        <button type="button" onclick="changeEmQty(1)" style="width:42px;height:42px;border-radius:12px;border:1.5px solid #FFD6E8;background:#fff;color:#C41055;font-size:20px;font-weight:800;cursor:pointer;flex-shrink:0">+</button>
+      </div>
 
       <!-- 도수 -->
       <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">도수 (좌 / 우) *</label>
@@ -1697,6 +1719,7 @@ function _mapRider(row, priv){
     courierName: row.courier_name || "",
     hasAddr: row.has_addr,
     memo: row.memo,
+    modRequest: row.mod_request || null,   // 승인 대기 수정안(비-PII)
     me: !!(_busUid() && row.user_id === _busUid()),
     realName: p.real_name || "",
     phone: p.phone || "",
@@ -1724,6 +1747,7 @@ function _mapBus(row, localId, riders){
     platform: row.platform || "렌즈라라",
     hostPowerL: row.host_power_l || null,
     hostPowerR: row.host_power_r || null,
+    targetDomain: row.target_domain || null,   // 구매처 도메인 락
     ownerId: row.owner_id,
     notice: row.notice || "",
     ordered: row.ordered,
@@ -2180,6 +2204,8 @@ async function submitCreateBus(e){
   const platform  = (document.getElementById("cbPlatform").value || "렌즈라라");
   const powerL    = (document.getElementById("cbPowerL").value || "0.00");
   const powerR    = (document.getElementById("cbPowerR").value || "0.00");
+  // 구매처 도메인 락 — 개설 시 입력한 첫 링크의 호스트(플랫폼 무관). 미입력이면 null(제한 없음).
+  const targetDomain = _domainOf(document.getElementById("cbUrl").value) || null;
   // 방어: 상품명/가격은 필수(이미지는 선택 — 스크래핑 실패/누락 허용)
   if(!prodName || !prodPrice || prodPrice < 1){
     alert("상품명과 가격을 정확히 입력해주세요.");
@@ -2206,6 +2232,7 @@ async function submitCreateBus(e){
       platform: platform,
       host_power_l: (platform === "렌즈라라") ? powerL : null,
       host_power_r: (platform === "렌즈라라") ? powerR : null,
+      target_domain: targetDomain,
       ordered: false,
       // 계좌 스냅샷은 서버 트리거(_snapshot_bus_host_account)가 host_accounts 에서 복사 — 클라 미전송
     });
@@ -2334,7 +2361,9 @@ function boardBus(id){
   document.getElementById("boardForm").reset();
   renderLensPicker();   // 추천 렌즈 픽커 갱신(SWR 로 로드된 최신 카탈로그)
   // 링크/미리보기 초기화
-  document.getElementById("boardUrl").value = "";
+  const urlEl = document.getElementById("boardUrl");
+  urlEl.value = ""; urlEl.style.borderColor = "#FFD6E8"; urlEl.style.background = "#fff";
+  const dw = document.getElementById("boardDomainWarn"); if(dw) dw.style.display = "none";
   const biw = document.getElementById("boardImgWrap"); if(biw) biw.style.display = "none";
   // 상품 정보는 방장이 등록한 메인 물품으로 기본 채움 (탑승자가 수정 가능)
   document.getElementById("boardProdName").value  = b.productName || "";
@@ -2429,6 +2458,9 @@ function updateReceipt(){
   // 상세주소(동/호)는 '일반택배(home)' 선택 시에만 노출
   const detailEl = document.getElementById("bAddrHomeDetail");
   if(detailEl) detailEl.style.display = (method === "home") ? "block" : "none";
+  // 배송지 라벨 동적화: 편의점→편의점 주소 / 일반 자택→자택 배송지 / 기타택배→배송지 주소
+  const homeLabel = document.getElementById("bAddrHomeLabel");
+  if(homeLabel) homeLabel.textContent = (method === "home") ? "일반 자택 배송지 주소 *" : "배송지 주소 *";
 
   const yen = _boardYen();
   const qty = _boardQty();
@@ -2480,9 +2512,44 @@ function openAddrSearch(targetId){
   }).open();
 }
 
+// URL → 호스트명(소문자, www 제거). 프로토콜 없으면 https:// 가정. 실패 시 "".
+function _domainOf(url){
+  let s = String(url == null ? "" : url).trim();
+  if(!s) return "";
+  if(!/^https?:\/\//i.test(s)) s = "https://" + s;
+  try{ return new URL(s).hostname.replace(/^www\./i, "").toLowerCase(); }
+  catch(_){ return ""; }
+}
+// 현재 버스의 구매처 도메인 락과 입력 링크가 일치하는지. (잠금 없음/URL 미입력이면 통과)
+function _boardDomainOk(){
+  const bus = BUSES.find(b=>b.id===_boardBusId);
+  if(!bus || !bus.targetDomain) return true;
+  const u = (document.getElementById("boardUrl").value || "").trim();
+  if(!u) return true;                       // 링크는 선택 입력 → 미입력은 막지 않음
+  return _domainOf(u) === bus.targetDomain;
+}
+// boardUrl 입력 시 도메인 검사 → 불일치면 테두리 빨강 + 경고 + 제출 잠금
+function checkBoardDomain(){
+  const bus   = BUSES.find(b=>b.id===_boardBusId);
+  const input = document.getElementById("boardUrl");
+  const warn  = document.getElementById("boardDomainWarn");
+  if(!input) return;
+  const u = (input.value || "").trim();
+  const mismatch = !!(bus && bus.targetDomain && u && _domainOf(u) !== bus.targetDomain);
+  if(mismatch){
+    input.style.borderColor = "#E5484D"; input.style.background = "#FFF5F5";
+    if(warn){ warn.textContent = `⚠️ 해당 공구는 ${bus.targetDomain} 사이트의 상품만 구매할 수 있어요.`; warn.style.display = "block"; }
+  } else {
+    input.style.borderColor = "#FFD6E8"; input.style.background = "#fff";
+    if(warn) warn.style.display = "none";
+  }
+  updateBoardBtn();
+}
+
 // 원스텝 폼 전 항목 + 동의 통과 시에만 제출 활성화
 function boardFormValid(){
-  if(isAdminUser()) return true;   // 관리자(God Mode): 검증 우회 → 버튼 항상 활성
+  if(!_boardDomainOk()) return false;   // 구매처 도메인 락 위반은 관리자도 차단(데이터 정합성)
+  if(isAdminUser()) return true;   // 관리자(God Mode): 그 외 검증 우회 → 버튼 항상 활성
   const prodName = _noSpaceLen(document.getElementById("boardProdName").value) >= 1;
   const prodOk   = prodName && _boardYen() >= 1 && _boardQty() >= 1;
   const agreed = document.getElementById("boardAgree").checked;
@@ -2682,7 +2749,7 @@ function renderBusRoom(b){
         <span style="font-size:13px;font-weight:800;color:#C41055;font-family:'M PLUS Rounded 1c',sans-serif">${r.amount.toLocaleString()}원</span>
       </div>
       <p style="font-size:11px;color:#8D7B80;margin-top:3px">${riderProduct(r)} · ${r.power||"도수 미입력"} · <b style="color:#6B5B60">${methodShort(r.method)}</b></p>
-      <div class="flex items-center gap-1.5 mt-2" style="flex-wrap:wrap">${statusTag(r)}${payTag(r.paid)}${addrTag(r.hasAddr)}${ (owner && riderNeedsCheck(r)) ? `<span style="font-size:10px;font-weight:800;color:#fff;background:#E5484D;border:1px solid #C73B3F;padding:3px 8px;border-radius:100px">⚠️ 정보 확인 필요</span>` : "" }</div>
+      <div class="flex items-center gap-1.5 mt-2" style="flex-wrap:wrap">${statusTag(r)}${payTag(r.paid)}${addrTag(r.hasAddr)}${ r.modRequest ? `<span style="font-size:10px;font-weight:800;color:#fff;background:#C77800;border:1px solid #A66400;padding:3px 8px;border-radius:100px">⏳ 수정 승인 대기중</span>` : "" }${ (owner && riderNeedsCheck(r)) ? `<span style="font-size:10px;font-weight:800;color:#fff;background:#E5484D;border:1px solid #C73B3F;padding:3px 8px;border-radius:100px">⚠️ 정보 확인 필요</span>` : "" }</div>
       ${ r.me ? (locked
         ? `<div class="mt-2" style="font-size:11px;font-weight:700;color:#9A8D93">🔒 주문이 시작되어 수정·취소가 잠겼어요</div>`
         : `<div class="flex gap-1.5 mt-2">
@@ -2725,6 +2792,13 @@ function renderBusRoom(b){
       </td>
     </tr>`).join("");
 
+  // 정보 수정 요청(mod_request) 대기 건수 → 붉은 배너
+  const modReqCount = riders.filter(r=>r.modRequest).length;
+  const modReqBanner = modReqCount ? `
+      <button onclick="openModRequests(${b.id})" style="width:100%;text-align:left;cursor:pointer;background:#7A1020;border:1.5px solid #FF6B6B;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-family:'M PLUS Rounded 1c',sans-serif">
+        <span style="font-size:12px;font-weight:800;color:#fff">🚨 ${modReqCount}건의 정보 수정 요청이 있습니다. 확인해주세요.</span>
+      </button>` : "";
+
   const adminPanel = canMng ? `
     <div class="rounded-2xl p-4 mt-5" style="background:#2B2330;border:1.5px solid #3E3447">
       <div class="flex items-center gap-2 mb-1">
@@ -2732,6 +2806,7 @@ function renderBusRoom(b){
         <span style="font-size:10px;font-weight:700;color:#FFB3CC;background:rgba(255,111,168,.18);padding:2px 8px;border-radius:100px">총대 전용</span>
       </div>
       <p style="font-size:11px;color:#B6AAB0;margin-bottom:12px">은행 앱에서 <b style="color:#FFD166">입금자명</b>을 확인하고 <b style="color:#7BE8A8">[입금 승인]</b>을 눌러주세요. 정보 외부 유출 주의!</p>
+      ${modReqBanner}
       <div style="overflow-x:auto;border-radius:12px;background:#fff">
         <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:680px">
           <thead><tr style="background:#FBEFF4">
@@ -3239,6 +3314,12 @@ async function updateNotice(busId){
 let _editTarget = { busId:null, idx:null };
 
 // 일반택배 선택 시에만 상세주소 칸 노출
+function changeEmQty(d){
+  const el = document.getElementById("emQty");
+  let q = parseInt(el.value, 10);
+  if(isNaN(q)) q = 1;
+  el.value = Math.max(1, Math.min(100, q + d));
+}
 function _emToggleShip(){
   const m = (document.querySelector('input[name="emShip"]:checked')||{}).value || "conv";
   const d = document.getElementById("emAddrDetail");
@@ -3275,6 +3356,10 @@ async function editMyInfo(busId, idx){
   const pm = /좌\s*(\S+)\s*\/\s*우\s*(\S+)/.exec(r.power || "");
   document.getElementById("emPowerL").value = (pm && POWER_OPTIONS.includes(pm[1])) ? pm[1] : "0.00";
   document.getElementById("emPowerR").value = (pm && POWER_OPTIONS.includes(pm[2])) ? pm[2] : "0.00";
+
+  // 수량 — 승인 대기 중(mod_request)이면 그 값, 아니면 현재 장부 값
+  const pendQty = r.modRequest && r.modRequest.qty;
+  document.getElementById("emQty").value = pendQty || r.qty || 1;
 
   // 수령방법 (etc 는 모달에 없으므로 home 으로 취급)
   const method = (r.method === "home" || r.method === "etc") ? "home" : "conv";
@@ -3323,33 +3408,117 @@ async function saveEditMyInfo(){
   }
   const method = (document.querySelector('input[name="emShip"]:checked')||{}).value || "conv";
   const power  = `좌 ${document.getElementById("emPowerL").value} / 우 ${document.getElementById("emPowerR").value}`;
+  const qty    = Math.max(1, Math.min(100, parseInt(document.getElementById("emQty").value, 10) || 1));
   const memo   = document.getElementById("emMemo").value.trim() || null;
+
+  // 주문에 영향 주는 필드(수량·도수·수령방법) 변경 여부 → 변경 시 총대 승인 필요(mod_request).
+  // (DB 트리거가 파티원의 qty/amount 직접수정을 막으므로 승인 워크플로우로 우회)
+  const orderChanged = (qty !== (r.qty || 1)) || (power !== (r.power || "")) || (method !== (r.method || "conv"));
 
   const btn = document.getElementById("emSaveBtn");
   if(btn) btn.disabled = true;
   let piiSaved = true;
   try{
-    // ① 장부: power/method/memo (트리거가 본인 power/method 허용, amount/qty/yen 동결)
-    const { error: e1 } = await window.sb.from("bus_riders")
-      .update({ power, method, memo }).eq("id", r.id);
-    if(e1) throw e1;
-    // ② 개인정보: RLS 잠금(ordered=false AND 본인 paid=false) 통과 시에만 반영
+    // ① 개인정보(PII)는 즉시 반영 — bus_rider_private RLS(ordered=false AND 본인 paid=false) 통과 시.
     const { data: pd, error: e2 } = await window.sb.from("bus_rider_private")
       .update({ real_name:name, phone:phoneD, address:addr, payer }).eq("rider_id", r.id).select("rider_id");
     if(e2) throw e2;
     piiSaved = !!(pd && pd.length);
+    // ② 메모는 즉시 반영. 주문 영향 필드는 직접 쓰지 않고 mod_request(비-PII)에 담아 승인 대기.
+    //    ⚠️ mod_request 는 공개 SELECT 테이블이므로 PII 를 절대 담지 않는다(qty/power/method 만).
+    const upd = { memo };
+    if(orderChanged){
+      upd.mod_request = { qty, power, method, requested_at: new Date().toISOString() };
+    }
+    const { error: e1 } = await window.sb.from("bus_riders").update(upd).eq("id", r.id);
+    if(e1) throw e1;
   }catch(err){
     if(btn) btn.disabled = false;
     showToast(_busDbError(err, "정보 수정에 실패했어요.")); return;
   }
   if(btn) btn.disabled = false;
 
-  // 클라 즉시 반영
-  r.power = power; r.method = method; r.memo = memo;
+  // 클라 즉시 반영 — 메모/PII 만(주문 영향 필드는 승인 전까지 장부값 유지, 대기 표시).
+  r.memo = memo;
   if(piiSaved){ r.realName = name; r.phone = phoneD; r.store = addr; r.payer = payer; }
+  if(orderChanged){ r.modRequest = { qty, power, method }; }
   closeEditMyInfo();
-  showToast(piiSaved ? "내 정보를 수정했어요 ✏️" : "입금 완료 후엔 배송정보가 잠겨 도수/메모만 변경했어요.");
+  showToast(orderChanged
+    ? "총대님께 수정 요청을 보냈습니다. 승인 후 반영됩니다 ✅"
+    : (piiSaved ? "내 정보를 수정했어요 ✏️" : "입금 완료 후엔 배송정보가 잠겨 메모만 변경했어요."));
   renderBusRoom(b);
+}
+
+/* ── 수정 요청 승인/거절 (총대 전용) ───────────────────── */
+// AS-IS vs TO-BE 비교 + 승인/거절 버튼
+function openModRequests(busId){
+  const b = BUSES.find(x=>x.id===busId);
+  if(!b) return;
+  if(!isBusOwner(b) && !isAdminUser()){ showToast("방장만 확인할 수 있어요"); return; }
+  const reqs = (b.riders || []).filter(r=>r.modRequest);
+  const body = document.getElementById("modReqBody");
+  if(!reqs.length){
+    body.innerHTML = `<p style="text-align:center;color:#C4A8B0;font-size:13px;padding:40px 0">대기 중인 수정 요청이 없어요 ✨</p>`;
+  } else {
+    body.innerHTML = reqs.map(r=>{
+      const req = r.modRequest || {};
+      const nq = req.qty || 1, np = req.power || "도수 미입력", nm = req.method || "conv";
+      const fee = nm === "home" ? 3500 : nm === "conv" ? 1800 : 0;
+      const newAmount = (r.yen || 0) * nq * YEN_TO_KRW + fee;
+      const cell = (asv, tov, changed)=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <span style="flex:1;font-size:12px;color:#9A8D93;text-decoration:line-through">${_esc(String(asv))}</span>
+          <span style="color:#C4A8B0;font-size:12px">→</span>
+          <span style="flex:1;font-size:12px;font-weight:800;color:${changed?'#C41055':'#3A2B30'}">${_esc(String(tov))}</span>
+        </div>`;
+      return `<div class="rounded-2xl p-4 mb-3" style="background:#FFF5F8;border:1.5px solid #FFD6E8">
+        <p style="font-size:13px;font-weight:800;color:#3A2B30;margin-bottom:6px">🙋 ${_esc(r.nick)} <span style="font-size:11px;color:#C41055">님의 수정 요청</span></p>
+        <div style="display:flex;font-size:10px;font-weight:800;color:#8D7B80"><span style="flex:1">AS-IS</span><span style="width:18px"></span><span style="flex:1">TO-BE</span></div>
+        ${cell("수량 "+(r.qty||1)+"개", "수량 "+nq+"개", nq!==(r.qty||1))}
+        ${cell(r.power||"도수 미입력", np, np!==(r.power||""))}
+        ${cell(methodShort(r.method), methodShort(nm), nm!==(r.method||"conv"))}
+        ${cell((r.amount||0).toLocaleString()+"원", newAmount.toLocaleString()+"원", newAmount!==(r.amount||0))}
+        <div class="flex gap-2 mt-3">
+          <button onclick="approveModRequest('${r.id}',${busId})" class="flex-1 rounded-xl py-2.5" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#fff;background:#1A9E5E">✅ 승인</button>
+          <button onclick="rejectModRequest('${r.id}',${busId})" class="flex-1 rounded-xl py-2.5" style="border:1.5px solid #E2DCE0;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#8D7B80;background:#fff">거절</button>
+        </div>
+      </div>`;
+    }).join("");
+  }
+  document.getElementById("modReqOverlay").style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
+function closeModRequests(){
+  document.getElementById("modReqOverlay").style.display = "none";
+  document.body.style.overflow = "";
+}
+async function approveModRequest(riderId, busId){
+  if(!window.sb){ showToast("연결 오류로 처리하지 못했어요."); return; }
+  try{
+    const { error } = await window.sb.rpc("approve_mod_request", { p_rider_id: riderId });
+    if(error) throw error;
+  }catch(err){ showToast(_busDbError(err, "승인에 실패했어요.")); return; }
+  const b = BUSES.find(x=>x.id===busId);
+  const r = b && (b.riders || []).find(x=>x.id===riderId);
+  if(r) sendNotification(r.nick, "수정 요청이 승인됐어요 ✅", "총대가 수량/도수 변경을 승인했어요. 변경된 금액을 확인해주세요!");
+  showToast("수정 요청을 승인했어요 ✅");
+  const nb = await reloadBusRoom(busId);
+  if(_roomBusId === busId) renderBusRoom(nb || b);
+  openModRequests(busId);   // 모달 목록 갱신(남은 요청 표시)
+}
+async function rejectModRequest(riderId, busId){
+  if(!window.sb){ showToast("연결 오류로 처리하지 못했어요."); return; }
+  try{
+    const { error } = await window.sb.rpc("reject_mod_request", { p_rider_id: riderId });
+    if(error) throw error;
+  }catch(err){ showToast(_busDbError(err, "거절 처리에 실패했어요.")); return; }
+  const b = BUSES.find(x=>x.id===busId);
+  const r = b && (b.riders || []).find(x=>x.id===riderId);
+  if(r) sendNotification(r.nick, "수정 요청이 반려됐어요", "총대가 수정 요청을 반려했어요. 기존 정보가 유지됩니다.");
+  showToast("수정 요청을 거절했어요");
+  const nb = await reloadBusRoom(busId);
+  if(_roomBusId === busId) renderBusRoom(nb || b);
+  openModRequests(busId);
 }
 
 // 📋 주소록 복사 — 국내 편의점 택배 양식
