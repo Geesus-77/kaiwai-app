@@ -3976,6 +3976,12 @@ function _isOnlineEvent(it){
   return !/(팝업|팝업\s*스토어|POP[\s-]?UP|오프라인|매장\s*한정|매장\s*전용|점포\s*한정|오프라인\s*한정|오프라인\s*전용|매장\s*행사|매장\s*이벤트|입점\s*행사|오프\s*전용)/i.test(txt);
 }
 
+// 오늘 날짜 (KST, YYYY-MM-DD) — 캘린더 dt 비교용. (미정의로 drawCal 이 멈추던 버그 수정)
+function _todayStr(){
+  const k = new Date(new Date().toLocaleString("en-US", { timeZone:"Asia/Seoul" }));
+  const p = n => String(n).padStart(2,"0");
+  return k.getFullYear() + "-" + p(k.getMonth()+1) + "-" + p(k.getDate());
+}
 function drawCal(){
   const el = document.getElementById("calList");
   if (!CAL.length) {
