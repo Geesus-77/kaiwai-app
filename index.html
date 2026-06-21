@@ -4021,7 +4021,15 @@ function drawCal(){
     // id 가 잡히면 클릭 시 openM(bid) 로 디렉토리 상세 모달을 앱 내에서 바로 띄운다.
     const bid = (it.bid!=null) ? it.bid : (B.find(x=>x.n===it.br)||{}).id;
     const clickable = bid!=null;
-    return `<div class="fu" ${clickable?`onclick="openM(${bid})" role="button" tabindex="0" aria-label="${it.br} 브랜드 상세 보기"`:""} style="animation-delay:${i*.04}s;display:flex;gap:10px;align-items:stretch;${clickable?"cursor:pointer":""}">
+    // 날짜가 바뀌는 첫 항목 앞에 '핑크 리본 가로선' 구분선 삽입 (같은 날짜끼리 묶임)
+    const newDay = (i===0) || (sorted[i-1].dt !== it.dt);
+    const ribbon = `<span style="flex:1;height:0;border-top:2px dashed #FF9EC7;opacity:.9"></span>`;
+    const daySep = newDay ? `<div style="display:flex;align-items:center;gap:8px;margin:${i===0?"2px":"16px"} 2px 12px">
+      ${ribbon}
+      <span style="font-size:11px;font-weight:800;color:#C41055;font-family:'M PLUS Rounded 1c',sans-serif;white-space:nowrap;letter-spacing:.3px">🎀 ${mm}월 ${dd}일 (${dw})</span>
+      ${ribbon}
+    </div>` : "";
+    return daySep + `<div class="fu" ${clickable?`onclick="openM(${bid})" role="button" tabindex="0" aria-label="${it.br} 브랜드 상세 보기"`:""} style="animation-delay:${i*.04}s;display:flex;gap:10px;align-items:stretch;margin-bottom:10px;${clickable?"cursor:pointer":""}">
       <div style="width:50px;flex-shrink:0;background:#fff;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;gap:1px;box-shadow:0 3px 12px rgba(255,150,180,.12)">
         <span style="font-size:9px;color:#C4A8B0;font-weight:500">${mm}월</span>
         <span style="font-size:22px;font-weight:800;color:#4A4A4A;line-height:1;font-family:'M PLUS Rounded 1c',sans-serif">${dd}</span>
