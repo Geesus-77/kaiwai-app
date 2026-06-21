@@ -1544,6 +1544,9 @@ function _mapRider(row, priv){
     amount: row.amount,
     paid: row.paid,
     issue: row.issue,
+    issueText: row.issue_text || "",
+    trackingNumber: row.tracking_number || null,
+    courierName: row.courier_name || "",
     hasAddr: row.has_addr,
     memo: row.memo,
     me: !!(_busUid() && row.user_id === _busUid()),
@@ -2518,25 +2521,28 @@ function methodShort(m){
 }
 
 // 공구방 취소/삭제 (방장 전용) — 입금자 있으면 차단
-function cancelBus(busId){
+async function cancelBus(busId){
   const b = BUSES.find(x=>x.id===busId);
   if(!b) return;
   const riders = b.riders || [];
-  if(riders.some(r=>r.paid) && !isAdminUser()){   // 관리자(God Mode)는 강제 삭제 가능
+  // 클라 사전 안내 (최종 차단은 DB RLS: 미주문 + 입금자 0명)
+  if(riders.some(r=>r.paid)){
     alert("입금자가 발생하여 임의 취소가 불가능합니다. (사고 발생 시 고객센터 문의)");
     return;
   }
-  if(riders.length === 0){
-    if(!confirm("공구방을 삭제할까요?")) return;
-    alert("공구방이 삭제되었습니다.");
-  } else {
-    if(!confirm("공구를 취소할까요? 파티원들에게 300P가 환불됩니다.")) return;
-    alert("공구가 취소되며, 파티원들에게 300P가 환불됩니다.");
-  }
-  const idx = BUSES.findIndex(x=>x.id===busId);
-  if(idx >= 0) BUSES.splice(idx, 1);
+  if(!confirm(riders.length ? "공구를 취소/삭제할까요?" : "공구방을 삭제할까요?")) return;
+  if(!window.sb){ alert("연결 오류로 삭제하지 못했어요."); return; }
+  try{
+    // RLS: owner + ordered=false + 입금자 0명 일 때만 삭제됨(0행이면 차단). riders/private 는 cascade.
+    const { data, error } = await window.sb.from("buses").delete().eq("id", b.dbId).select("id");
+    if(error) throw error;
+    if(!data || !data.length){
+      showToast("이미 입금한 파티원이 있거나 주문이 시작되어 삭제할 수 없습니다."); return;
+    }
+  }catch(err){ showToast(_busDbError(err, "공구방 삭제에 실패했어요.")); return; }
+  alert("방이 삭제되었습니다.");
   closeBusRoom();
-  drawBus();
+  await loadBuses();   // 공구 홈으로
 }
 
 // HTML 이스케이프 (방장 공지·파티원 메모 등 사용자 입력 표시용)
@@ -2651,7 +2657,7 @@ function closeIssue(){
   document.getElementById("issueOverlay").style.display = "none";
   document.body.style.overflow = "";
 }
-function saveIssue(){
+async function saveIssue(){
   const sel = document.querySelector('input[name="issueReason"]:checked');
   if(!sel){ alert("사유를 선택해 주세요"); return; }
   const b = BUSES.find(x=>x.id===_issueTarget.busId);
@@ -2673,9 +2679,17 @@ function saveIssue(){
     showToast("이미 알림을 보냈습니다. 1시간 뒤에 다시 시도해주세요.");
     return;
   }
-  // 사유 + 상태 갱신
-  r.issue = sel.value; r.issueText = sel.value==="etc" ? reasonText : "";
-  r.status = "problem-processing";                         // 장부 태그: 문제 처리중
+  if(!window.sb){ alert("연결 오류로 문제를 등록하지 못했어요."); return; }
+  const etcText = sel.value==="etc" ? reasonText : null;
+  try{
+    // issue/issue_text 는 방장만 변경 가능(RLS + guard 트리거 이중 통제)
+    const { error } = await window.sb.from("bus_riders")
+      .update({ issue: sel.value, issue_text: etcText }).eq("id", r.id);
+    if(error) throw error;
+  }catch(err){ alert(_busDbError(err, "문제 등록에 실패했어요.")); return; }
+  // 사유 + 상태 갱신 (status='problem-processing' 는 클라 전용 전송 태그)
+  r.issue = sel.value; r.issueText = etcText || "";
+  r.status = "problem-processing";
   coopCooldowns[key] = { ...coopCooldowns[key], problem: now };
   closeIssue();
   renderBusRoom(b);
@@ -2722,33 +2736,43 @@ function closeOrderProcess(){
   document.body.style.overflow = "";
 }
 // 렌즈라라 바로가기 + 주문 완료 처리(정보 잠금 + 전체 알림)를 한 번에
-function goOrderAndFinalize(){
+async function goOrderAndFinalize(){
   const b = BUSES.find(x=>x.id===_orderProcBusId);
   if(!b) return;
   if(!confirm("렌즈라라로 이동하며 주문을 완료 처리할까요?\n참여자 정보가 잠기고 모든 참여자에게 알림이 발송됩니다.")) return;
+  if(!window.sb){ alert("연결 오류로 주문 완료 처리를 못했어요."); return; }
+  try{
+    // ordered=true 로 잠금 (RLS: 방장만). 이후 신규 탑승·PII 수정이 DB 단에서 차단됨.
+    const { error } = await window.sb.from("buses").update({ ordered:true }).eq("id", b.dbId);
+    if(error) throw error;
+  }catch(err){ alert(_busDbError(err, "주문 완료 처리에 실패했어요.")); return; }
   window.open(platformUrl(b), "_blank", "noopener");   // 렌즈라라 바로가기
-  b.ordered = true;                                    // 정보 잠금
+  b.ordered = true;                                    // 클라 즉시 반영
   (b.riders||[]).forEach(r=> sendNotification(r.nick, "버스 출발! 🚀 주문이 시작됐어요", "렌즈라라 일괄 주문이 시작됐어요! 이제 정보 수정/취소가 불가하며, 곧 일본에서 발송됩니다 ✈️"));
   closeOrderProcess();
+  alert("주문이 완료 처리되었습니다! 파티원 정보가 잠겼어요 🔒");
   renderBusRoom(b);
 }
 
-// ── 파티원: 탑승 취소 (주문 시작 전까지만) ──
-function cancelMyRide(busId, idx){
+// ── 파티원: 탑승 취소 (주문 시작 전 + 미입금일 때만, 300P 환불 없음) ──
+async function cancelMyRide(busId, idx){
   const b = BUSES.find(x=>x.id===busId);
-  if(!b || (b.ordered && !isAdminUser())){ alert("주문이 시작되어 더 이상 취소할 수 없어요."); return; }
-  const r = b.riders && b.riders[idx];
+  const r = b && b.riders && b.riders[idx];
   if(!r) return;
-  if(!confirm("탑승을 취소할까요? 차감된 300P는 환불됩니다.")) return;
-  b.riders.splice(idx, 1);
-  if(typeof spendPoints === "function" && typeof getPoints === "function"){
-    // 보증금 300P 환불 (Mock)
-    const k = _pointsKey && _pointsKey();
-    if(k){ const o=_pointsObj(); o.points=(o.points||0)+300; localStorage.setItem(k, JSON.stringify(o)); renderPoints(); }
-  }
-  alert("탑승이 취소되었습니다. 보증금 300P가 환불되었어요.");
-  drawBus();
-  renderBusRoom(b);
+  if(!confirm("정말 취소하시겠습니까? 보증금 300P는 돌려받을 수 없습니다.")) return;
+  if(!window.sb){ alert("연결 오류로 취소하지 못했어요."); return; }
+  try{
+    // RLS: 본인 + 부모버스 ordered=false + 본인 paid=false 일 때만 삭제됨.
+    // (조건 미충족 시 0행 삭제 → 차단된 것으로 판단). private 는 cascade 삭제.
+    const { data, error } = await window.sb.from("bus_riders").delete().eq("id", r.id).select("id");
+    if(error) throw error;
+    if(!data || !data.length){
+      showToast("이미 입금했거나 주문이 시작되어 취소할 수 없어요."); return;
+    }
+  }catch(err){ showToast(_busDbError(err, "탑승 취소에 실패했어요.")); return; }
+  alert("탑승이 취소되었습니다.");
+  closeBusRoom();
+  await loadBuses();   // 공구 홈 목록 갱신
 }
 
 // ── 방장: 개별 운송장 등록 → 해당 파티원에게 발송 알림 ──
@@ -2768,7 +2792,7 @@ function closeTracking(){
   document.getElementById("trackingOverlay").style.display = "none";
   document.body.style.overflow = "";
 }
-function saveTracking(){
+async function saveTracking(){
   const b = BUSES.find(x=>x.id===_trkTarget.busId);
   const r = b && b.riders && b.riders[_trkTarget.idx];
   if(!r){ closeTracking(); return; }
@@ -2777,6 +2801,13 @@ function saveTracking(){
   // 검증 실패는 alert 대신 Toast (요구사항: catch → 커스텀 Toast)
   if(!/^\d+$/.test(num)){ showToast("운송장 번호는 숫자만 입력할 수 있어요 📦"); return; }
   if(num.length < 6){ showToast("운송장 번호 6자리 이상 입력해 주세요"); return; }
+  if(!window.sb){ showToast("연결 오류로 운송장을 저장하지 못했어요."); return; }
+  try{
+    // 운송장은 방장만 등록(RLS + guard 트리거)
+    const { error } = await window.sb.from("bus_riders")
+      .update({ tracking_number: num, courier_name: courier }).eq("id", r.id);
+    if(error) throw error;
+  }catch(err){ showToast(_busDbError(err, "운송장 저장에 실패했어요.")); return; }
   r.courierName = courier;
   r.trackingNumber = num;
   closeTracking();
@@ -2842,11 +2873,16 @@ function noshowWarn(busId, idx){
 }
 
 // ── 방장: 실시간 공지 업데이트 ──
-function updateNotice(busId){
+async function updateNotice(busId){
   const b = BUSES.find(x=>x.id===busId);
   if(!b) return;
   const v = prompt("파티원에게 보여줄 공지를 입력하세요:", b.notice || "");
   if(v === null) return;
+  if(!window.sb){ alert("연결 오류로 공지를 저장하지 못했어요."); return; }
+  try{
+    const { error } = await window.sb.from("buses").update({ notice: v.trim() || null }).eq("id", b.dbId);
+    if(error) throw error;
+  }catch(err){ alert(_busDbError(err, "공지 저장에 실패했어요.")); return; }
   b.notice = v.trim();
   renderBusRoom(b);
 }
