@@ -1527,6 +1527,47 @@ const BUS_TIER = {
   beginner: { label: "🐣 비기너 총대", bg: "#E3F6EC", fg: "#1A9E5E", bd: "#B6E6CA" },
 };
 
+/* 총대 신뢰 뱃지 — 서버 RPC(get_host_trust_score)로 받은 실제 trust_score 기반.
+   loadBuses/_attachTrustScores 가 b.trustScore·b.hostSuspended 를 채워 둠.
+   점수가 아직 없으면(RPC 실패/비로그인) 기존 Mock tier 로 안전 폴백. */
+function _trustBadge(b){
+  if(b && b.hostSuspended)
+    return { label:"⛔ 정지된 총대", bg:"#FDE2E2", fg:"#C0392B", bd:"#F5B7B1", score:(typeof b.trustScore==="number"?b.trustScore:null) };
+  const sc = (b && typeof b.trustScore === "number") ? b.trustScore : null;
+  if(sc === null){
+    const t = BUS_TIER[(b && b.tier)] || BUS_TIER.beginner;
+    return { label:t.label, bg:t.bg, fg:t.fg, bd:t.bd, score:null };
+  }
+  if(sc >= 90) return { label:"👑 프로 총대",   bg:"#FFF3D6", fg:"#B8860B", bd:"#F2D788", score:sc };
+  if(sc >= 70) return { label:"🌱 신뢰 총대",   bg:"#E3F6EC", fg:"#1A9E5E", bd:"#B6E6CA", score:sc };
+  return         { label:"⚠️ 주의 총대",   bg:"#FFF1E0", fg:"#D2691E", bd:"#F5CBA7", score:sc };
+}
+function _trustBadgeHtml(b){
+  const t = _trustBadge(b);
+  const scoreTag = (t.score != null) ? ` <b style="opacity:.65;font-weight:800">${t.score}</b>` : "";
+  return `<span style="display:inline-flex;align-items:center;font-size:10px;font-weight:800;padding:3px 8px;border-radius:100px;background:${t.bg};color:${t.fg};border:1px solid ${t.bd}">${t.label}${scoreTag}</span>`;
+}
+
+/* 공구 카드/방의 총대 신뢰점수를 owner_id 별로 한 번에 조회해 BUSES 에 부착.
+   get_host_trust_score 는 trust_score·is_host_suspended 만 노출(자산/PII 비공개). */
+async function _attachTrustScores(){
+  if(!window.sb || !BUSES.length) return;
+  const owners = Array.from(new Set(BUSES.map(b=>b.ownerId).filter(Boolean)));
+  if(!owners.length) return;
+  try{
+    const pairs = await Promise.all(owners.map(async (oid)=>{
+      try{ const { data } = await window.sb.rpc("get_host_trust_score", { p_host_id: oid }); return [oid, data]; }
+      catch(_){ return [oid, null]; }
+    }));
+    const map = {};
+    pairs.forEach(([oid, d])=>{ if(d) map[oid] = d; });
+    BUSES.forEach(b=>{
+      const d = map[b.ownerId];
+      if(d){ b.trustScore = d.trust_score; b.hostSuspended = !!d.is_host_suspended; }
+    });
+  }catch(_){ /* 신뢰점수 조회 실패는 치명적이지 않음 — Mock tier 폴백 */ }
+}
+
 function drawBus() {
   const el = document.getElementById("busList");
   if(!el) return;
@@ -1536,7 +1577,6 @@ function drawBus() {
   }
   el.innerHTML = BUSES.map((b)=>{
     const pct = Math.min(100, Math.max(0, Math.round((b.current / b.goal) * 100)));
-    const t = BUS_TIER[b.tier] || BUS_TIER.beginner;
     const riders = b.riders ? b.riders.length : 0;
     const isMyRoom = isBusOwner(b);                     // 접속 유저가 이 방의 총대인가
     const amBoarded = (b.riders || []).some(r=>r.me);   // 내가 이미 탑승했는가 (중복 탑승 방지)
@@ -1551,7 +1591,7 @@ function drawBus() {
 
       <div class="flex items-center gap-1.5 mt-2.5">
         <span style="font-size:12px;font-weight:700;color:#6B5B60">${b.captain}</span>
-        <span style="display:inline-flex;align-items:center;font-size:10px;font-weight:800;padding:3px 8px;border-radius:100px;background:${t.bg};color:${t.fg};border:1px solid ${t.bd}">${t.label}</span>
+        ${_trustBadgeHtml(b)}
         <span style="margin-left:auto;font-size:11px;color:#C4A8B0">👥 ${riders}명 탑승 · 공구방 보기 ›</span>
       </div>
 
@@ -1664,6 +1704,7 @@ async function loadBuses(){
       const rs = riderRows.filter(r=>r.bus_id === row.id).map(r=>_mapRider(r, privByRider[r.id]));
       return _mapBus(row, i + 1, rs);
     });
+    await _attachTrustScores();   // 총대 신뢰점수(서버 RPC) 부착 후 렌더
     drawBus();
   }catch(err){
     if(el) el.innerHTML = _busErrCard("공구 목록을 불러오지 못했어요");
@@ -1686,6 +1727,11 @@ async function reloadBusRoom(localId){
     }
     const rs = (rr || []).map(r=>_mapRider(r, privByRider[r.id]));
     Object.assign(b, _mapBus(row, localId, rs));
+    // _mapBus 가 trustScore 를 덮어쓰므로 단일 총대 신뢰점수 재부착
+    try{
+      const { data: ts } = await window.sb.rpc("get_host_trust_score", { p_host_id: b.ownerId });
+      if(ts){ b.trustScore = ts.trust_score; b.hostSuspended = !!ts.is_host_suspended; }
+    }catch(_){ /* 신뢰점수 조회 실패 무시 */ }
   }catch(_){ /* 네트워크 오류 시 캐시 유지 */ }
   return b;
 }
@@ -2368,7 +2414,6 @@ function closeBusRoom(){
 
 function renderBusRoom(b){
   const pct = Math.min(100, Math.max(0, Math.round((b.current / b.goal) * 100)));
-  const t = BUS_TIER[b.tier] || BUS_TIER.beginner;
   const riders = b.riders || [];
   const owner = isBusOwner(b);
   const canMng = owner;                    // 방장 패널은 '실제 방장(개설자)'에게만 — 탑승자/일반 관리자에겐 숨김
@@ -2514,7 +2559,7 @@ function renderBusRoom(b){
       <h2 style="font-size:18px;font-weight:800;line-height:1.4;color:#3A2B30;font-family:'M PLUS Rounded 1c',sans-serif">${b.title}</h2>
       <div class="flex items-center gap-1.5 mt-2" style="flex-wrap:wrap">
         <span style="font-size:12px;font-weight:700;color:#6B5B60">${b.captain}</span>
-        <span style="display:inline-flex;align-items:center;font-size:10px;font-weight:800;padding:3px 8px;border-radius:100px;background:${t.bg};color:${t.fg};border:1px solid ${t.bd}">${t.label}</span>
+        ${_trustBadgeHtml(b)}
         ${ b.ordered ? `<span style="display:inline-flex;align-items:center;font-size:10px;font-weight:800;padding:3px 8px;border-radius:100px;background:#1E3A5F;color:#fff">🔒 주문 진행 중 (수정 불가)</span>` : "" }
       </div>
       <div class="mt-3">
@@ -4755,22 +4800,17 @@ function updMFav(id){
    · 헤더 포인트 칩에 현재 포인트 표시 (비로그인 시 숨김)
    · DB 연동 시: profiles.points 컬럼 + 출석 RPC 로 이전 가능(아래 SQL 제안 참고)
 ═══════════════════════════════════ */
-function _pointsKey(){ return authUser?.id ? "kaiwai_points_"+authUser.id : null; }
-function _pointsObj(){ const k=_pointsKey(); if(!k) return {points:0}; try{ return JSON.parse(localStorage.getItem(k)||"{}"); }catch(e){ return {points:0}; } }
-function getPoints(){ return _pointsObj().points || 0; }
+let _serverPoints = 0;
+function getPoints(){ return _serverPoints; }
 function spendPoints(n){
-  const k=_pointsKey(); if(!k) return false;
-  const o=_pointsObj();
-  if((o.points||0) < n) return false;
-  o.points = (o.points||0) - n;
-  localStorage.setItem(k, JSON.stringify(o));
+  // 프론트에서는 낙관적 UI 업데이트 용도로만 사용 (실제 차감은 DB RPC 내부에서)
+  _serverPoints = Math.max(0, _serverPoints - n);
   renderPoints();
   return true;
 }
-function _todayStr(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function renderPoints(){
   const show = !!authUser;
-  const html = `<span style="font-size:13px">🪙</span> ${getPoints().toLocaleString()}P`;
+  const html = `<span style="font-size:13px">🪙</span> ${_serverPoints.toLocaleString()}P`;
   // 헤더 칩 + 공구 탭 칩 동시 갱신 (둘 다 비로그인 시 숨김)
   ["pointChip","busPointChip"].forEach(id=>{
     const el=document.getElementById(id);
@@ -4779,20 +4819,33 @@ function renderPoints(){
     if(show) el.innerHTML = html;
   });
 }
+async function fetchServerPoints() {
+  if (!window.sb || !authUser) return;
+  const k = "kaiwai_points_" + authUser.id;
+  try {
+    const localStr = localStorage.getItem(k);
+    if (localStr) {
+      const o = JSON.parse(localStr);
+      if (o.points > 0) {
+        // 기존 localStorage 잔액 1회 동기화
+        await window.sb.rpc('sync_local_points', { p_points: o.points });
+      }
+      localStorage.removeItem(k); // 동기화 완료 후 파기
+    }
+  } catch (e) { console.warn("Local points migration error:", e); }
+
+  try {
+    const { data, error } = await window.sb.from('user_wallets').select('balance').eq('user_id', authUser.id).maybeSingle();
+    if (!error && data) {
+      _serverPoints = data.balance || 0;
+      renderPoints();
+    }
+  } catch(e) { console.warn("Wallet fetch error:", e); }
+}
 function checkDailyAttendance(){
-  const k=_pointsKey(); if(!k){ renderPoints(); return; }
-  const o=_pointsObj();
-  const today=_todayStr();
-  if(o.lastAttend!==today){
-    o.points=(o.points||0)+50;
-    o.lastAttend=today;
-    localStorage.setItem(k, JSON.stringify(o));
-    renderPoints();
-    // 포인트 지급 알림 (시스템)
-    sendNotification("나", "출석 완료! 🎀 +50P 적립", `오늘 출석하고 +50P 받으셨어요! 누적 ${(o.points||0).toLocaleString()}P 💰`);
-  } else {
-    renderPoints();
-  }
+  // 출석 체크(포인트 지급)는 추후 서버 RPC 연동으로 완전히 이관될 예정입니다.
+  // 여기서는 로그인 후 서버 지갑 잔액을 가져오는 로직을 실행합니다.
+  fetchServerPoints();
 }
 
 /* ═══════════════════════════════════

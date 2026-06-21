@@ -223,7 +223,8 @@
       addUser: function (u) { if (!u || !u.id) throw new Error("유저 객체가 올바르지 않습니다."); _users.set(u.id, u); return true; },
       getRider: function (uid) { return _rider(uid) || null; },
 
-      /* 탑승: 300P 차감 + 라이더 추가 */
+      /* 탑승: 300P 차감 로직은 DB(Supabase) 서버 사이드로 완전 이관됨.
+         순수 코어에서는 상태 변경(라이더 추가)만 담당. */
       joinCoop: function (userId, deposit) {
         const dep = (deposit == null) ? DEPOSIT : deposit;
         const u = _user(userId);
@@ -231,12 +232,11 @@
         if (coop.isOrderStarted) throw new Error("이미 주문이 시작되어 탑승할 수 없습니다.");
         if (userId === coop.hostId) throw new Error("방장은 자신의 공구에 탑승할 수 없습니다.");
         if (_rider(userId)) throw new Error("이미 탑승한 유저입니다.");
-        if (!u.isAdmin && u.points < dep) throw new Error("포인트가 부족합니다. (필요 " + dep + "P, 보유 " + u.points + "P)");
-        const charged = u.isAdmin ? 0 : dep;     // 관리자(God Mode)는 보증금 면제
-        if (charged) u.points -= charged;
+        
+        // 포인트 부족 예외 및 차감 로직 삭제됨 (RPC가 담당)
         coop.riders.push({
           userId: userId,
-          deposit: charged,
+          deposit: dep,
           status: RIDER_STATUS.JOINED,
           paid: false,
           lensId: null, power: null,
@@ -455,9 +455,8 @@
     const coop = createCoop({ id: "qa", hostId: "host", goalYen: 10000, platform: "렌즈라라" });
     const sys = createCoopSystem(coop, [host, u1, u2], { now: now });
 
-    // ── 1) 파티원 탑승 (300P 차감) ──
-    check("1) 파티원 탑승 + 300P 차감", function () { return sys.joinCoop("u1", 300) === true && u1.points === 200; });
-    expectThrow("1-2) 포인트 부족 탑승 차단", function () { sys.joinCoop("u2", 300); }, "부족");
+    // ── 1) 파티원 탑승 ──
+    check("1) 파티원 탑승", function () { return sys.joinCoop("u1", 300) === true; });
 
     // ── 2) 방장의 주문 시작 (Lock) ──
     check("2) 방장 주문 시작 → Lock 작동", function () { return sys.startOrder("host") === true && coop.isOrderStarted === true; });
