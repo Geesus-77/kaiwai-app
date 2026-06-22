@@ -1729,7 +1729,7 @@ function drawBus() {
       ? `<button onclick="event.stopPropagation();openBusRoom(${b.id})" class="w-full mt-3.5 rounded-xl py-3" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(120deg,#9AA0A6,#6B7280);box-shadow:0 8px 18px -8px rgba(107,114,128,.5)">🚌 내가 탑승한 버스 입장</button>`
       : `<button onclick="event.stopPropagation();boardBus(${b.id})" class="w-full mt-3.5 rounded-xl py-3" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(120deg,#FF6FA8,#C41055);box-shadow:0 8px 18px -8px rgba(196,16,85,.7)">🚀 지금 탑승하기 (300P)</button>`;
     return `
-    <div onclick="openBusRoom(${b.id})" class="bg-white rounded-2xl shadow-md p-4" style="border:1.5px solid #FFE0EE;cursor:pointer">
+    <div onclick="enterBusRoom(${b.id})" class="bg-white rounded-2xl shadow-md p-4" style="border:1.5px solid #FFE0EE;cursor:pointer">
       <h3 style="font-size:15px;font-weight:800;line-height:1.45;color:#3A2B30;font-family:'M PLUS Rounded 1c',sans-serif">${b.title}</h3>
 
       <div class="flex items-center gap-1.5 mt-2.5">
@@ -2792,9 +2792,25 @@ function isBusOwner(b){
   return (typeof authUser !== "undefined" && authUser && b.ownerId && authUser.id === b.ownerId);
 }
 
+// 공구방 진입 게이트 — 총대/탑승자 본인만 방을 열람. 미참여자는 탑승 폼으로 안내.
+function _amBusMember(b){
+  return !!b && (isBusOwner(b) || (b.riders || []).some(r=>r.me));
+}
+function enterBusRoom(id){
+  const b = BUSES.find(x=>x.id===id);
+  if(!b) return;
+  if(_amBusMember(b) || isAdminUser()){ openBusRoom(id); }
+  else { boardBus(id); }   // 미참여자는 방 열람 차단 → 탑승하기로 유도
+}
+
 async function openBusRoom(id){
   let b = BUSES.find(x=>x.id===id);
   if(!b) return;
+  // 열람 권한 게이트(방어): 총대/탑승자(또는 관리자)가 아니면 방을 열지 않음
+  if(!_amBusMember(b) && !isAdminUser()){
+    showToast("탑승한 공구방만 열람할 수 있어요 🚌 먼저 탑승해 주세요!");
+    return;
+  }
   _roomBusId = id;
   document.getElementById("busRoomOverlay").style.display = "block";
   document.getElementById("busRoomOverlay").scrollTop = 0;

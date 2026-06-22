@@ -14,3 +14,5 @@ __pycache__/
 # 수집 이미지 (git 미추적 — repo 경량화. 배포 시 Supabase Storage 사용)
 logos/
 backgrounds/
+
+.vercel

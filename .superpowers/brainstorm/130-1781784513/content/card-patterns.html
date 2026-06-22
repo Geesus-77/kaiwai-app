@@ -1,0 +1,101 @@
+<h2>브랜드 카드 반투명 문양 — 3가지 방향</h2>
+<p class="subtitle">각 방향을 양산형(밝은 핑크)·지뢰계(회색 다크) 카드에 입혀봤습니다. 문양은 모두 반투명·반복 타일이고, 기존 점선 테두리·소프트 섀도우는 그대로입니다. 마음에 드는 방향을 클릭하세요.</p>
+
+<style>
+  .pp-card{
+    position:relative; overflow:hidden;
+    border:2px dashed #FFC9DD; border-radius:22px;
+    box-shadow:0 8px 24px rgba(255,182,193,.4);
+    padding:13px 14px; display:flex; align-items:center; gap:11px;
+    margin-bottom:11px; font-family:'Noto Sans KR',sans-serif;
+  }
+  .pp-card .pp-top{position:absolute;top:0;left:0;right:0;height:4px;z-index:3}
+  .pp-yangsan{background:#FDF2F8}
+  .pp-jiroe{background:#52525B; border-color:#FFC9DD}
+  .pp-logo{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;flex-shrink:0;position:relative;z-index:2}
+  .pp-body{flex:1;min-width:0;position:relative;z-index:2}
+  .pp-name{font-weight:700;font-size:14px;margin-bottom:5px;font-family:'M PLUS Rounded 1c',sans-serif}
+  .pp-chips{display:flex;gap:4px;flex-wrap:wrap}
+  .pp-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px}
+  /* 문양 레이어 (카드 위에 깔림) */
+  .pat{position:absolute;inset:0;z-index:1;pointer-events:none}
+  /* ── 방향 A: 카테고리 이모지 타일 ── */
+  .pat-emoji{overflow:hidden;font-size:30px;line-height:42px;letter-spacing:18px;
+    white-space:pre-wrap;word-break:break-all;transform:rotate(-18deg) scale(1.5);transform-origin:center}
+  .pat-emoji.light{opacity:.10}
+  .pat-emoji.dark{opacity:.16}
+  /* ── 방향 B: 전용 심볼(SVG) 타일 ── */
+  .pat-heart{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='38' height='38' viewBox='0 0 24 24'%3E%3Cpath fill='%23E5468A' d='M12 21s-7-4.4-9.5-8.4C.7 9.6 2.3 5.5 6 5.5c2 0 3.3 1.2 4 2.4 .7-1.2 2-2.4 4-2.4 3.7 0 5.3 4.1 3.5 7.1C19 16.6 12 21 12 21z'/%3E%3C/svg%3E");background-size:38px 38px;opacity:.12}
+  .pat-star{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 24 24'%3E%3Cpath fill='%23ffffff' d='M12 2l2.4 6.9H22l-6 4.5 2.3 7-6.3-4.6L5.7 20l2.3-7-6-4.5h7.6z'/%3E%3C/svg%3E");background-size:34px 34px;opacity:.16}
+  /* ── 방향 C: 추상 텍스처 ── */
+  .pat-dots{background-image:radial-gradient(circle, #E5468A 1.6px, transparent 1.7px);background-size:16px 16px;opacity:.16}
+  .pat-stripe{background-image:repeating-linear-gradient(45deg, #ffffff 0 2px, transparent 2px 13px);opacity:.08}
+
+  .pp-dirhead{font-weight:800;font-size:15px;color:#4A4A4A;margin:4px 0 10px;font-family:'M PLUS Rounded 1c',sans-serif;display:flex;align-items:center;gap:7px}
+  .pp-note{font-size:11.5px;color:#8D7B80;margin:2px 0 14px;line-height:1.6}
+  .cards .card{padding:18px 18px 8px}
+</style>
+
+<div class="cards">
+
+  <!-- 방향 A -->
+  <div class="card" data-choice="A" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <div class="pp-dirhead">A · 카테고리 이모지 타일 🎀</div>
+      <div class="pp-note">CM에 이미 있는 카테고리 이모지(🎀🖤⚡🌿🌹🌸👜)를 비스듬히 반복. 가장 직관적이고 산리오 톤. 다크 카드는 이모지 색이 고정이라 살짝 묻힐 수 있음.</div>
+      <div class="pp-card pp-yangsan">
+        <div class="pp-top" style="background:#E5468A"></div>
+        <div class="pat pat-emoji light">🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀 🎀</div>
+        <div class="pp-logo" style="background:#E5468A">LL</div>
+        <div class="pp-body"><div class="pp-name" style="color:#4A4A4A">LIZ LISA</div><div class="pp-chips"><span class="pp-chip" style="background:#E5468A18;color:#E5468A;border:1px solid #E5468A33">양산형</span><span class="pp-chip" style="background:#E0FFF5;color:#009966">✓ 면세</span></div></div>
+      </div>
+      <div class="pp-card pp-jiroe">
+        <div class="pp-top" style="background:#7E3AA8"></div>
+        <div class="pat pat-emoji dark">🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤 🖤</div>
+        <div class="pp-logo" style="background:#7E3AA8">RJ</div>
+        <div class="pp-body"><div class="pp-name" style="color:#fff">ROJITA</div><div class="pp-chips"><span class="pp-chip" style="background:rgba(255,255,255,.14);color:#EBD7FF;border:1px solid rgba(255,255,255,.22)">지뢰계</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 방향 B -->
+  <div class="card" data-choice="B" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <div class="pp-dirhead">B · 전용 미니 심볼(SVG) 타일 ✦</div>
+      <div class="pp-note">카테고리별 전용 모티프(양산형=하트, 지뢰계=별/십자, 서브컬쳐=번개, 스나계=잎, 비쥬얼계=장미…)를 색·투명도 자유 조절. 가장 세련되고 다크 카드에서도 또렷함.</div>
+      <div class="pp-card pp-yangsan">
+        <div class="pp-top" style="background:#E5468A"></div>
+        <div class="pat pat-heart"></div>
+        <div class="pp-logo" style="background:#E5468A">LL</div>
+        <div class="pp-body"><div class="pp-name" style="color:#4A4A4A">LIZ LISA</div><div class="pp-chips"><span class="pp-chip" style="background:#E5468A18;color:#E5468A;border:1px solid #E5468A33">양산형</span><span class="pp-chip" style="background:#E0FFF5;color:#009966">✓ 면세</span></div></div>
+      </div>
+      <div class="pp-card pp-jiroe">
+        <div class="pp-top" style="background:#7E3AA8"></div>
+        <div class="pat pat-star"></div>
+        <div class="pp-logo" style="background:#7E3AA8">RJ</div>
+        <div class="pp-body"><div class="pp-name" style="color:#fff">ROJITA</div><div class="pp-chips"><span class="pp-chip" style="background:rgba(255,255,255,.14);color:#EBD7FF;border:1px solid rgba(255,255,255,.22)">지뢰계</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 방향 C -->
+  <div class="card" data-choice="C" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <div class="pp-dirhead">C · 추상 텍스처 (도트·사선) ·</div>
+      <div class="pp-note">심볼 없이 카테고리 색의 도트/사선 패턴만 은은하게. 가장 미니멀하고 고급스러움 — 색만으로 무드를 구분.</div>
+      <div class="pp-card pp-yangsan">
+        <div class="pp-top" style="background:#E5468A"></div>
+        <div class="pat pat-dots"></div>
+        <div class="pp-logo" style="background:#E5468A">LL</div>
+        <div class="pp-body"><div class="pp-name" style="color:#4A4A4A">LIZ LISA</div><div class="pp-chips"><span class="pp-chip" style="background:#E5468A18;color:#E5468A;border:1px solid #E5468A33">양산형</span><span class="pp-chip" style="background:#E0FFF5;color:#009966">✓ 면세</span></div></div>
+      </div>
+      <div class="pp-card pp-jiroe">
+        <div class="pp-top" style="background:#7E3AA8"></div>
+        <div class="pat pat-stripe"></div>
+        <div class="pp-logo" style="background:#7E3AA8">RJ</div>
+        <div class="pp-body"><div class="pp-name" style="color:#fff">ROJITA</div><div class="pp-chips"><span class="pp-chip" style="background:rgba(255,255,255,.14);color:#EBD7FF;border:1px solid rgba(255,255,255,.22)">지뢰계</span></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>

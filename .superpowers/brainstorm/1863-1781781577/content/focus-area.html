@@ -1,0 +1,98 @@
+<h2>어느 화면을 집중적으로 다듬을까요?</h2>
+<p class="subtitle">현재 산리오 파스텔 디자인을 미니 목업으로 재현했습니다. 손보고 싶은 영역을 클릭하세요. (여러 개 선택 가능)</p>
+
+<style>
+  .kw-phones{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;margin-top:8px}
+  .kw-phone{
+    width:172px;background:#FFF0F5;border-radius:22px;overflow:hidden;cursor:pointer;
+    border:2px solid transparent;transition:transform .25s cubic-bezier(.175,.885,.32,1.275),border-color .2s,box-shadow .2s;
+    box-shadow:0 8px 24px rgba(255,182,193,.4);font-family:'Noto Sans KR',sans-serif;
+  }
+  .kw-phone:hover{transform:translateY(-5px) scale(1.03);border-color:#FF6FA8;box-shadow:0 16px 34px rgba(255,182,193,.55)}
+  .kw-phone.selected{border-color:#FF6FA8;box-shadow:0 0 0 3px rgba(255,111,168,.25),0 16px 34px rgba(255,182,193,.55)}
+  .kw-scr{height:300px;padding:12px 11px;position:relative;overflow:hidden}
+  .kw-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .kw-logo{font-weight:800;font-size:17px;color:#4A4A4A}
+  .kw-pill{background:#fff;border:1.5px solid #FFD6E8;border-radius:100px;font-size:8px;color:#FF6FA8;padding:4px 9px;font-weight:700}
+  .kw-card{background:#fff;border:2px dashed #FFC9DD;border-radius:16px;box-shadow:0 4px 12px rgba(255,182,193,.3)}
+  .kw-chip{background:#fff;border:1.5px solid #FFD6E8;border-radius:100px;font-size:8px;color:#8D7B80;padding:3px 9px;display:inline-block}
+  .kw-chip.on{background:#FFE0EE;color:#C41055;border-color:#FFB3CC;font-weight:700}
+  .kw-name{padding:9px 7px 11px;text-align:center;font-weight:700;font-size:13px;color:#4A4A4A;border-top:1px solid #FFE0EE;background:#fff}
+  .kw-logobox{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;flex-shrink:0}
+  .kw-search{background:#fff;border:1.5px solid #FFD6E8;border-radius:100px;height:24px;display:flex;align-items:center;padding:0 10px;font-size:8px;color:#C4A8B0;margin-bottom:9px}
+  .kw-line{height:7px;background:#FFE8F0;border-radius:4px;margin:5px 0}
+  .kw-nav{display:flex;background:#fff;border-top:1.5px solid #FFD6E8;padding:7px 0}
+  .kw-nav span{flex:1;text-align:center;font-size:13px}
+</style>
+
+<div class="kw-phones cards" data-multiselect>
+
+  <!-- 홈 -->
+  <div class="kw-phone" data-choice="home" onclick="toggleSelect(this)">
+    <div class="kw-scr">
+      <div class="kw-top"><span class="kw-logo">KAIWAI 🎀</span><span class="kw-pill">로그인</span></div>
+      <div style="display:flex;gap:5px;margin-bottom:8px"><span class="kw-chip on">전체</span><span class="kw-chip">지뢰계</span><span class="kw-chip">하라주쿠</span></div>
+      <div class="kw-search">🔍 브랜드·스타일 검색…</div>
+      <div class="kw-card" style="height:60px;margin-bottom:9px;background:linear-gradient(135deg,#FFB6C1,#E6E6FA);border-style:solid"></div>
+      <div class="kw-card" style="display:flex;gap:9px;padding:9px;margin-bottom:8px"><div class="kw-logobox" style="background:#C41055">MM</div><div style="flex:1;padding-top:4px"><div class="kw-line" style="width:70%"></div><div class="kw-line" style="width:45%;background:#FFD6E8"></div></div></div>
+      <div class="kw-card" style="display:flex;gap:9px;padding:9px"><div class="kw-logobox" style="background:#B8A1E3">SN</div><div style="flex:1;padding-top:4px"><div class="kw-line" style="width:60%"></div><div class="kw-line" style="width:50%;background:#FFD6E8"></div></div></div>
+    </div>
+    <div class="kw-name">🏠 홈 — 브랜드 목록</div>
+  </div>
+
+  <!-- 쇼핑맵 -->
+  <div class="kw-phone" data-choice="map" onclick="toggleSelect(this)">
+    <div class="kw-scr">
+      <div class="kw-top"><span class="kw-logo" style="font-size:14px">🗺️ 쇼핑 맵</span><span class="kw-pill" style="background:#FFE8F0;color:#8D7B80;border:none">면세 ✓</span></div>
+      <div style="display:flex;gap:5px;margin-bottom:6px"><span class="kw-chip on">도쿄</span><span class="kw-chip">오사카</span></div>
+      <div style="display:flex;gap:5px;margin-bottom:10px"><span class="kw-chip">시부야</span><span class="kw-chip">하라주쿠</span></div>
+      <div class="kw-card" style="display:flex;gap:9px;padding:9px;margin-bottom:8px"><div class="kw-logobox" style="background:#FFB6C1">SH</div><div style="flex:1;padding-top:3px"><div class="kw-line" style="width:65%"></div><div class="kw-line" style="width:80%;background:#FFD6E8"></div></div></div>
+      <div class="kw-card" style="display:flex;gap:9px;padding:9px"><div class="kw-logobox" style="background:#B8A1E3">LB</div><div style="flex:1;padding-top:3px"><div class="kw-line" style="width:55%"></div><div class="kw-line" style="width:75%;background:#FFD6E8"></div></div></div>
+    </div>
+    <div class="kw-name">🗺️ 쇼핑맵 — 매장 가이드</div>
+  </div>
+
+  <!-- 피드 -->
+  <div class="kw-phone" data-choice="feed" onclick="toggleSelect(this)">
+    <div class="kw-scr">
+      <div class="kw-top"><span class="kw-logo" style="font-size:14px">📸 스타일 피드</span><span class="kw-pill" style="background:#FFE0EE;color:#C41055;border-color:#FFB3CC">+ 업로드</span></div>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+          <div class="kw-card" style="height:90px;background:linear-gradient(135deg,#FFD6E8,#E6E6FA);border-style:solid"></div>
+          <div class="kw-card" style="height:60px;background:linear-gradient(135deg,#FFB6C1,#FFE8F0);border-style:solid"></div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+          <div class="kw-card" style="height:60px;background:linear-gradient(135deg,#E6E6FA,#FFD6E8);border-style:solid"></div>
+          <div class="kw-card" style="height:90px;background:linear-gradient(135deg,#FFE8F0,#FFB6C1);border-style:solid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="kw-name">📸 피드 — OOTD 메이슨리</div>
+  </div>
+
+  <!-- 캘린더 -->
+  <div class="kw-phone" data-choice="cal" onclick="toggleSelect(this)">
+    <div class="kw-scr">
+      <div class="kw-top"><span class="kw-logo" style="font-size:14px">🗓️ 신상 캘린더</span></div>
+      <div class="kw-card" style="padding:9px;margin-bottom:8px"><div style="font-size:8px;color:#FF6FA8;font-weight:700;margin-bottom:5px">6월 18일 · 오늘</div><div style="display:flex;gap:6px;align-items:center"><span class="kw-chip on" style="font-size:7px">16:00</span><div class="kw-line" style="flex:1;width:auto"></div></div></div>
+      <div class="kw-card" style="padding:9px;margin-bottom:8px"><div style="font-size:8px;color:#8D7B80;font-weight:700;margin-bottom:5px">6월 19일</div><div style="display:flex;gap:6px;align-items:center"><span class="kw-chip" style="font-size:7px">08:00</span><div class="kw-line" style="flex:1;width:auto"></div></div></div>
+      <div class="kw-card" style="padding:9px"><div style="font-size:8px;color:#8D7B80;font-weight:700;margin-bottom:5px">6월 20일</div><div style="display:flex;gap:6px;align-items:center"><span class="kw-chip" style="font-size:7px">00:00</span><div class="kw-line" style="flex:1;width:auto"></div></div></div>
+    </div>
+    <div class="kw-name">🗓️ 캘린더 — 신상 일정</div>
+  </div>
+
+  <!-- 공통 컴포넌트 -->
+  <div class="kw-phone" data-choice="common" onclick="toggleSelect(this)">
+    <div class="kw-scr" style="display:flex;flex-direction:column;justify-content:center;gap:11px">
+      <div class="kw-card" style="padding:10px"><div style="font-size:9px;color:#4A4A4A;font-weight:700;margin-bottom:7px">모달 · 다이얼로그</div><div class="kw-line" style="width:90%"></div><div class="kw-line" style="width:60%;background:#FFD6E8"></div></div>
+      <div style="display:flex;gap:7px;justify-content:center">
+        <span class="kw-pill" style="font-size:9px;padding:6px 14px">로그인</span>
+        <span class="kw-pill" style="font-size:9px;padding:6px 14px;background:#FFE0EE;color:#C41055;border-color:#FFB3CC">업로드</span>
+      </div>
+      <div style="text-align:center;font-size:9px;color:#8D7B80">토스트 · 빈 상태 · 로딩 · 버튼</div>
+      <div class="kw-card" style="height:34px;background:#FFE8F0;border-style:solid;display:flex;align-items:center;justify-content:center;font-size:9px;color:#C4A8B0">🌸 아직 즐겨찾기가 없어요</div>
+    </div>
+    <div class="kw-name">🧩 공통 — 모달·토스트·버튼</div>
+  </div>
+
+</div>
