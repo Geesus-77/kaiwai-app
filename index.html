@@ -3792,7 +3792,7 @@ function logoEl(b, size, radius, shadow) {
   const fs = Math.floor(size * 0.28);
   const src = b.logo || (domain ? `https://logo.clearbit.com/${domain}` : '');
   const logoBg = b.logoBgColor || '#fff';
-  return `<div class="logo-wrapper" style="width:${size}px;height:${size}px;border-radius:${radius}px;background:${b.c};${sh}"><span style="font-weight:700;font-size:${fs}px;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif">${b.i}</span>${src?`<img src="${src}" alt="" onload="this.style.opacity=1" onerror="this.remove()" style="background:${logoBg}"/>`:''}</div>`;
+  return `<div class="logo-wrapper" style="width:${size}px;height:${size}px;border-radius:${radius}px;background:${b.c};${sh}"><span style="font-weight:700;font-size:${fs}px;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif">${b.i}</span>${src?`<img src="${src}" alt="" loading="lazy" decoding="async" onload="this.style.opacity=1" onerror="this.remove()" style="background:${logoBg}"/>`:''}</div>`;
 }
 
 function mHeader(b, fv, dark){
@@ -3801,7 +3801,7 @@ function mHeader(b, fv, dark){
   if(isImg(b.bgImg)){
     return `
 <div style="position:relative;height:280px;overflow:hidden;background:${b.c}18">
-  <img src="${b.bgImg}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center"/>
+  <img src="${b.bgImg}" alt="" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center"/>
   <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(255,255,255,1) 0%,rgba(255,255,255,.55) 50%,rgba(255,255,255,.1) 100%)"></div>
   <div style="position:absolute;bottom:0;left:0;right:0;padding:16px 20px 18px">
     <div style="display:flex;align-items:flex-end;gap:13px">
@@ -3983,7 +3983,7 @@ function card(b, delay){
   // 텍스트는 그 아래 흰 영역에 진한 글씨로.
   const hasImg = isImg(b.bgImg);
   const imgArea = hasImg
-    ? `<img src="${b.bgImg}" alt="${b.n}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.display='none'"/>`
+    ? `<img src="${b.bgImg}" alt="${b.n}" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.display='none'"/>`
     : `<div style="position:absolute;inset:0;background:linear-gradient(135deg,${b.c},${b.c}AA);display:flex;align-items:center;justify-content:center;font-size:42px;opacity:.55">🎀</div>`;
   return `<div class="fu kw-bcard overflow-hidden" style="animation-delay:${delay}s;overflow:hidden;cursor:pointer;position:relative;padding:${FRAME_BAND}px" onclick="openM(${b.id})">
     <!-- 일러스트 액자 프레임 (여백에 얇은 라인아트, 콘텐츠 아래·배경 위) -->
@@ -3996,7 +3996,7 @@ function card(b, delay){
       <div style="position:absolute;top:0;left:0;right:0;height:4px;background:${b.c}"></div>
       <div style="position:absolute;top:9px;right:9px;display:flex;align-items:center;gap:6px">
         <span id="lk-${b.id}" style="font-size:11px;font-weight:700;color:#fff;background:rgba(0,0,0,.42);padding:4px 9px;border-radius:100px;backdrop-filter:blur(3px);font-family:'M PLUS Rounded 1c',sans-serif;white-space:nowrap">💖 ${getBrandLikes(b.id).toLocaleString()}</span>
-        <button onclick="event.stopPropagation();tFav(${b.id})" style="font-size:18px;background:rgba(0,0,0,.34);border:none;border-radius:50%;width:34px;height:34px;cursor:pointer;backdrop-filter:blur(3px);transition:transform .1s;line-height:34px;padding:0" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='none'">${fv?"❤️":"🤍"}</button>
+        <button id="fav-${b.id}" onclick="event.stopPropagation();tFav(${b.id})" style="font-size:18px;background:rgba(0,0,0,.34);border:none;border-radius:50%;width:34px;height:34px;cursor:pointer;backdrop-filter:blur(3px);transition:transform .1s;line-height:34px;padding:0" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='none'">${fv?"❤️":"🤍"}</button>
       </div>
     </div>
     <!-- 텍스트 영역 (흰 배경, 진한 글씨) -->
@@ -4018,6 +4018,11 @@ function card(b, delay){
 /* ═══════════════════════════════════
    홈 — 브랜드 목록
 ═══════════════════════════════════ */
+// 트래픽 다이어트: 60+개 카드(각 배경+로고)를 한 번에 그리지 않고 배치로 점진 렌더(무한 스크롤).
+const BRAND_BATCH = 16;
+let _brandList = [];     // 현재 필터/검색이 적용된 전체 목록
+let _brandShown = 0;     // 지금까지 DOM 에 그린 개수
+let _brandIO = null;     // 하단 sentinel 관찰자
 function drawBrands(){
   const q = srch.trim().toLowerCase();
   let list = filt==="전체보기" ? B : B.filter(x=>x.s===filt);
@@ -4026,11 +4031,41 @@ function drawBrands(){
   if(wrap) wrap.innerHTML = q
     ? `<span style="color:#D63070;font-weight:700">${list.length}개</span> &nbsp;"${srch.trim()}" 검색 결과`
     : `<span style="color:#4A4A4A;font-weight:700">${list.length}개</span> 브랜드`;
-  document.getElementById("brandList").innerHTML = list.length
-    ? list.map((b,i)=>card(b,i*.05)).join("")
-    : `<div style="text-align:center;padding:64px 20px"><div class="kw-float" style="font-size:44px;margin-bottom:12px">🔍</div><p style="font-size:14px;font-weight:700;color:#8D7B80;margin-bottom:6px">검색 결과가 없어요</p><p style="font-size:12px;color:#C4A8B0;line-height:1.9">'<span style="color:#D63070">${srch.trim()}</span>'와 일치하는<br>브랜드를 찾을 수 없어요</p></div>`;
+  const el = document.getElementById("brandList");
+  // 페이지네이션 상태 초기화
+  _brandList = list; _brandShown = 0;
+  if(_brandIO){ _brandIO.disconnect(); _brandIO = null; }
+  if(!list.length){
+    el.innerHTML = `<div style="text-align:center;padding:64px 20px"><div class="kw-float" style="font-size:44px;margin-bottom:12px">🔍</div><p style="font-size:14px;font-weight:700;color:#8D7B80;margin-bottom:6px">검색 결과가 없어요</p><p style="font-size:12px;color:#C4A8B0;line-height:1.9">'<span style="color:#D63070">${srch.trim()}</span>'와 일치하는<br>브랜드를 찾을 수 없어요</p></div>`;
+  } else {
+    el.innerHTML = "";
+    _renderMoreBrands();   // 첫 배치(16개)만 렌더 → 스크롤 시 자동 추가
+  }
   // 검색 중에는 실시간 랭킹 숨김 (검색 결과에 집중)
   const rs=document.getElementById("rankSection"); if(rs) rs.style.display = q ? "none" : "";
+}
+// 다음 배치를 brandList 에 append + 남았으면 sentinel 재관찰
+function _renderMoreBrands(){
+  const el = document.getElementById("brandList");
+  if(!el) return;
+  const old = document.getElementById("brandSentinel"); if(old) old.remove();
+  const next = _brandList.slice(_brandShown, _brandShown + BRAND_BATCH);
+  el.insertAdjacentHTML("beforeend", next.map((b,i)=>card(b,(i%BRAND_BATCH)*.04)).join(""));
+  _brandShown += next.length;
+  if(_brandShown < _brandList.length){
+    el.insertAdjacentHTML("beforeend", `<div id="brandSentinel" style="grid-column:1 / -1;width:100%;height:1px"></div>`);
+    if(!_brandIO){
+      _brandIO = new IntersectionObserver((es)=>{ if(es.some(e=>e.isIntersecting)) _renderMoreBrands(); }, { rootMargin:"600px 0px" });
+    }
+    const s = document.getElementById("brandSentinel"); if(s) _brandIO.observe(s);
+  } else if(_brandIO){ _brandIO.disconnect(); _brandIO = null; }
+}
+// 좋아요 토글 시 전체 재렌더(페이지네이션 초기화) 대신 해당 카드만 부분 갱신
+function _updateBrandCardFav(id){
+  const fvb = document.getElementById("fav-"+id);
+  if(fvb) fvb.textContent = favs.includes(id) ? "❤️" : "🤍";
+  const lk = document.getElementById("lk-"+id);
+  if(lk) lk.textContent = "💖 " + getBrandLikes(id).toLocaleString();
 }
 
 /* ═══════════════════════════════════
@@ -4045,7 +4080,7 @@ function drawRanking(){
     const hasImg=isImg(b.bgImg);
     return `<div onclick="openM(${b.id})" class="pop" style="flex-shrink:0;width:128px;cursor:pointer;background:#fff;border:1.5px solid #FFE0EE;border-radius:18px;overflow:hidden;box-shadow:0 5px 16px rgba(255,150,180,.2)">
       <div style="height:96px;position:relative;background:${b.c}14">
-        ${hasImg?`<img src="${b.bgImg}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.display='none'"/>`:`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;opacity:.5">🎀</div>`}
+        ${hasImg?`<img src="${b.bgImg}" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.display='none'"/>`:`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;opacity:.5">🎀</div>`}
         <span style="position:absolute;top:6px;left:6px;min-width:24px;height:24px;padding:0 5px;border-radius:8px;background:${badgeBg};color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:'M PLUS Rounded 1c',sans-serif">${rank}</span>
       </div>
       <div style="padding:8px 9px 10px">
@@ -4152,7 +4187,7 @@ async function loadFeed(){
   grid.innerHTML=_feedSkeleton();
   await fetchMyLikes();                 // 내가 누른 하트 동기화 (하트 색상용)
   const { data, error } = await window.sb
-    .from("public_feed").select("*").order("created_at",{ascending:false}).limit(50);
+    .from("public_feed").select("*").order("created_at",{ascending:false}).limit(20);
   if(error){ console.warn("피드 조회 실패:", error.message); grid.innerHTML=_feedMsg("피드를 불러오지 못했어요 😢"); return; }
   FEED = data || [];
   drawFeed();
@@ -4197,7 +4232,7 @@ function drawFeed(){
     return `<div class="mitem fu" style="animation-delay:${i*.04}s">
       <div class="kawaii-card" style="overflow:hidden;cursor:pointer" onclick="openPostDetail('${p.id}')">
         <div style="position:relative;overflow:hidden;background:linear-gradient(135deg,#FFE0EC,#FFB3CC)">
-          ${img?`<img src="${escapeHtml(img)}" alt="OOTD" loading="lazy" style="width:100%;display:block"/>`:`<div style="height:180px;display:flex;align-items:center;justify-content:center;font-size:52px;opacity:.3">🎀</div>`}
+          ${img?`<img src="${escapeHtml(img)}" alt="OOTD" loading="lazy" decoding="async" style="width:100%;display:block"/>`:`<div style="height:180px;display:flex;align-items:center;justify-content:center;font-size:52px;opacity:.3">🎀</div>`}
         </div>
         <div style="padding:9px 11px">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
@@ -4966,6 +5001,32 @@ async function ensureProfile(user){
   if(error && error.code !== "23505") throw error;
 }
 
+// canvas.toBlob 프로미스 래퍼
+function _canvasBlob(canvas, type, q){ return new Promise(res=>canvas.toBlob(res, type, q)); }
+// 업로드 전 클라이언트 압축: 최대 1080px, WebP(미지원 시 JPEG), 목표 ≤300KB.
+// 트래픽 폭탄(원본 2~5MB) 방지의 핵심. 실패 시 원본 반환(graceful).
+async function compressImage(file, maxDim=1080, quality=0.72){
+  try{
+    if(!/^image\/(jpe?g|png|webp)$/i.test(file.type)) return file;   // gif/heic 등은 그대로
+    const dataUrl = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
+    const img = await new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=dataUrl; });
+    let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+    if(!w||!h) return file;
+    if(w>maxDim || h>maxDim){ const s=Math.min(maxDim/w, maxDim/h); w=Math.round(w*s); h=Math.round(h*s); }
+    const canvas=document.createElement("canvas"); canvas.width=w; canvas.height=h;
+    canvas.getContext("2d").drawImage(img,0,0,w,h);
+    const webpOk = canvas.toDataURL("image/webp").indexOf("data:image/webp")===0;
+    const type = webpOk ? "image/webp" : "image/jpeg";
+    let q=quality, blob=await _canvasBlob(canvas,type,q);
+    while(blob && blob.size>300*1024 && q>0.4){ q=Math.round((q-0.1)*100)/100; blob=await _canvasBlob(canvas,type,q); }   // 300KB 목표까지 품질 단계 하향
+    if(!blob) return file;
+    if(blob.size >= file.size) return file;   // 압축이 외려 커지면 원본 유지
+    const ext = webpOk ? "webp" : "jpg";
+    const base = (file.name||"ootd").replace(/\.[^.]+$/,"") || "ootd";
+    return new File([blob], base+"."+ext, { type });
+  }catch(_){ return file; }   // 어떤 실패든 원본 업로드로 폴백
+}
+
 async function submitPost(){
   const fileInput=document.getElementById("uploadFile");
   const file=fileInput && fileInput.files && fileInput.files[0];
@@ -5005,11 +5066,12 @@ async function submitPost(){
     //    username 은 트리거 폴백과 동일한 결정적 값(user_+uid 12자리)으로 형식·유일성 충족.
     await ensureProfile(session.user);
 
-    // 1) Storage 업로드 — 경로는 uid/타임스탬프.확장자 (RLS 폴더 규칙: 첫 폴더 = uid)
-    const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+    // 1) 클라이언트 압축(≤1080px·WebP·≤300KB) 후 Storage 업로드 — 트래픽/저장 절감
+    const upFile = await compressImage(file);
+    const ext=(upFile.name.split('.').pop()||'jpg').toLowerCase();
     const path=`${userId}/${Date.now()}.${ext}`;
     const { error: upErr } = await window.sb.storage.from("posts")
-      .upload(path, file, { contentType:file.type, cacheControl:"3600", upsert:false });
+      .upload(path, upFile, { contentType:upFile.type, cacheControl:"604800", upsert:false });   // 1주 캐시 → 재방문 egress 절감
     if(upErr) throw upErr;
 
     // 2) Public URL
@@ -5360,7 +5422,7 @@ async function tFav(id){
   if(adding) favs.push(id); else favs.splice(i,1);
   localStorage.setItem("zp_fav",JSON.stringify(favs));
   _setLikeDelta(id, adding ? 1 : -1);
-  drawBrands();
+  _updateBrandCardFav(id);                        // 해당 카드만 갱신(페이지네이션 유지)
   drawRanking();                                 // 실시간 랭킹 즉시 반영
   if(tab==="fav") drawFav();
   if(tab==="map") drawMap();
@@ -5379,7 +5441,7 @@ async function tFav(id){
     else      { if(j===-1) favs.push(id); }      // 삭제 취소
     localStorage.setItem("zp_fav",JSON.stringify(favs));
     _setLikeDelta(id, adding ? -1 : 1);          // 카운트도 원복
-    drawBrands();
+    _updateBrandCardFav(id);                      // 해당 카드만 갱신(페이지네이션 유지)
     drawRanking();
     if(tab==="fav") drawFav();
     if(tab==="map") drawMap();

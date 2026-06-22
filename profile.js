@@ -189,7 +189,7 @@
     const { data, error } = await sb
       .from("public_feed").select("*")
       .eq("author_id", currentUser.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }).limit(30);
     if (error) { console.warn("내 OOTD 조회 실패:", error.message); return []; }
     _myPosts = data || [];
     return _myPosts;
@@ -201,7 +201,7 @@
     if (lErr) { console.warn("좋아요 목록 조회 실패:", lErr.message); return []; }
     const ids = (likes || []).map((r) => r.post_id);
     if (!ids.length) { _likedPosts = []; return _likedPosts; }
-    const { data, error } = await sb.from("public_feed").select("*").in("id", ids);
+    const { data, error } = await sb.from("public_feed").select("*").in("id", ids).order("created_at", { ascending: false }).limit(30);
     if (error) { console.warn("좋아요 코디 조회 실패:", error.message); return []; }
     _likedPosts = (data || []).sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
     return _likedPosts;
@@ -219,7 +219,7 @@
     cell.setAttribute("tabindex", "0");
     cell.setAttribute("aria-label", "피드에서 이 게시물 보기");
     cell.innerHTML = img
-      ? `<img src="${img}" alt="OOTD" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/>`
+      ? `<img src="${img}" alt="OOTD" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/>`
       : `<span class="cell__ico">🎀</span>`;
     // 클릭 → 피드 탭의 해당 게시물 상세로 이동 (index.html 에서 ?post= 처리)
     const goToPost = () => { location.href = "index.html?post=" + encodeURIComponent(p.id); };
