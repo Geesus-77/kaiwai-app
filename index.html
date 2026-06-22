@@ -434,6 +434,12 @@
           <p id="boardBusCaptain" style="font-size:11px;color:#8D7B80;margin-top:3px"></p>
         </div>
 
+        <!-- 🛂 면세 한도 안내 (관부가세 폭탄 방지) -->
+        <div class="rounded-2xl px-4 py-3 mb-4" style="background:#FFF7E6;border:1.5px solid #FCE3A8">
+          <p style="font-size:12px;font-weight:800;color:#B8860B;font-family:'M PLUS Rounded 1c',sans-serif">🛂 남은 면세 한도 <span id="boardRemain" style="color:#C41055">-</span></p>
+          <p style="font-size:10px;color:#B6A06A;margin-top:3px;line-height:1.5">한도를 넘기면 관부가세가 부과돼요. 남은 한도 안에서만 담을 수 있어요.</p>
+        </div>
+
         <!-- 섹션 A: 상품 및 배송 방법 -->
         <p style="font-size:12px;font-weight:800;color:#3A2B30;margin:0 0 10px;font-family:'M PLUS Rounded 1c',sans-serif">🛍️ 상품 · 배송 방법</p>
 
@@ -478,6 +484,7 @@
           <button type="button" onclick="changeQty(1)"
             style="width:42px;height:42px;border-radius:12px;border:1.5px solid #FFD6E8;background:#fff;color:#C41055;font-size:20px;font-weight:800;cursor:pointer;flex-shrink:0">+</button>
         </div>
+        <p id="boardLimitWarn" style="display:none;font-size:11px;font-weight:800;color:#E5484D;line-height:1.5;margin:-8px 0 16px"></p>
 
         <label style="display:block;font-size:12px;font-weight:800;color:#C41055;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">도수 선택 * <span style="color:#8D7B80;font-weight:600">(무도수는 0.00)</span></label>
         <div class="flex gap-2" style="margin-bottom:16px">
@@ -2462,6 +2469,20 @@ function updateReceipt(){
   const homeLabel = document.getElementById("bAddrHomeLabel");
   if(homeLabel) homeLabel.textContent = (method === "home") ? "일반 자택 배송지 주소 *" : "배송지 주소 *";
 
+  // 🛂 면세 한도: 남은 한도 표시 + 초과 시 경고/제출잠금
+  const remaining = _boardRemaining();
+  const remainEl  = document.getElementById("boardRemain");
+  if(remainEl && isFinite(remaining)) remainEl.textContent = remaining.toLocaleString() + "엔";
+  const limitWarn = document.getElementById("boardLimitWarn");
+  if(limitWarn){
+    if(!_boardLimitOk() && isFinite(remaining)){
+      limitWarn.textContent = `⚠️ 남은 한도(${Math.max(0,remaining).toLocaleString()}엔)를 초과하여 담을 수 없습니다. 수량을 줄이거나 다른 공구를 이용해 주세요.`;
+      limitWarn.style.display = "block";
+    } else {
+      limitWarn.style.display = "none";
+    }
+  }
+
   const yen = _boardYen();
   const qty = _boardQty();
   const goodsEl = document.getElementById("rcGoods");
@@ -2546,9 +2567,21 @@ function checkBoardDomain(){
   updateBoardBtn();
 }
 
+// 남은 면세 한도(엔) = goal - current. (current = 총대 물품 + 기존 탑승자 yen*qty)
+function _boardRemaining(){
+  const bus = BUSES.find(b=>b.id===_boardBusId);
+  if(!bus) return Infinity;
+  return (bus.goal || 0) - (bus.current || 0);
+}
+// 이번에 담은 금액(yen*qty)이 남은 한도 이내인지. 한도 초과는 관부가세 위험 → 차단.
+function _boardLimitOk(){
+  return (_boardYen() * _boardQty()) <= _boardRemaining();
+}
+
 // 원스텝 폼 전 항목 + 동의 통과 시에만 제출 활성화
 function boardFormValid(){
   if(!_boardDomainOk()) return false;   // 구매처 도메인 락 위반은 관리자도 차단(데이터 정합성)
+  if(!_boardLimitOk())  return false;   // 면세 한도 초과는 관리자도 차단(관부가세 폭탄 방지)
   if(isAdminUser()) return true;   // 관리자(God Mode): 그 외 검증 우회 → 버튼 항상 활성
   const prodName = _noSpaceLen(document.getElementById("boardProdName").value) >= 1;
   const prodOk   = prodName && _boardYen() >= 1 && _boardQty() >= 1;
@@ -2641,6 +2674,10 @@ async function submitBoard(e){
   alert("탑승이 완료되었습니다! 방장의 입금 안내를 확인해주세요.");
   await loadBuses();                          // 카드(탑승 인원)·장부 갱신
   const nb = BUSES.find(x=>x.dbId === dbId);  // 재로딩 후 새 정수 id 로 방 열기
+  // 이번 탑승으로 100% 달성 → 서버가 자동 마감(ordered=true). 총대에게 마감 알림.
+  if(nb && nb.ordered){
+    sendNotification(nb.captain, "🎉 목표 금액 달성! 공구방이 자동으로 마감되었습니다.", "목표 금액 100% 달성으로 공구방이 자동 마감됐어요. 발주를 진행해 주세요.");
+  }
   if(nb) openBusRoom(nb.id);
 }
 
@@ -3499,10 +3536,15 @@ async function approveModRequest(riderId, busId){
     if(error) throw error;
   }catch(err){ showToast(_busDbError(err, "승인에 실패했어요.")); return; }
   const b = BUSES.find(x=>x.id===busId);
+  const wasOrdered = !!(b && b.ordered);
   const r = b && (b.riders || []).find(x=>x.id===riderId);
   if(r) sendNotification(r.nick, "수정 요청이 승인됐어요 ✅", "총대가 수량/도수 변경을 승인했어요. 변경된 금액을 확인해주세요!");
   showToast("수정 요청을 승인했어요 ✅");
   const nb = await reloadBusRoom(busId);
+  // 이 승인으로 100% 달성 → 서버 자동 마감. 총대(본인)에게 마감 알림.
+  if(nb && nb.ordered && !wasOrdered){
+    sendNotification(nb.captain, "🎉 목표 금액 달성! 공구방이 자동으로 마감되었습니다.", "목표 금액 100% 달성으로 공구방이 자동 마감됐어요. 발주를 진행해 주세요.");
+  }
   if(_roomBusId === busId) renderBusRoom(nb || b);
   openModRequests(busId);   // 모달 목록 갱신(남은 요청 표시)
 }
