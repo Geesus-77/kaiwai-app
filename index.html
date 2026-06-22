@@ -321,11 +321,8 @@
       <span style="font-size:13px;font-weight:800;color:#B8860B;line-height:1.35">📖 카이와이 안심 공구 가이드 <span style="color:#C41055">(필독)</span></span>
       <span style="flex-shrink:0;font-size:11px;font-weight:800;color:#B8860B;background:rgba(184,134,11,.12);border:1px solid #F2D27A;padding:6px 11px;border-radius:100px;white-space:nowrap">읽어보기 ›</span>
     </button>
-    <!-- 총대 권한 신청 배너 (마이페이지 → 공구 탭으로 이동) -->
-    <button onclick="openCaptainVerify()" class="w-full rounded-xl p-4" style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:none;cursor:pointer;text-align:left;background:linear-gradient(to right,#A855F7,#EC4899);box-shadow:0 10px 24px -10px rgba(168,85,247,.55);font-family:'M PLUS Rounded 1c',sans-serif">
-      <span style="font-size:14px;font-weight:800;color:#fff;line-height:1.35">🛡️ 나도 총대 되어 안전한 공구 열기!</span>
-      <span style="flex-shrink:0;font-size:12px;font-weight:800;color:#fff;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.4);padding:7px 12px;border-radius:100px;white-space:nowrap">총대 권한 신청 ›</span>
-    </button>
+    <!-- 총대 권한 배너 (JS 동적 렌더 — verified_host 상태별: 미인증=신청 버튼 / 인증=차분한 안내) -->
+    <div id="captainBanner"></div>
   </div>
   <div id="busList" class="px-4 pb-28 flex flex-col gap-3"></div>
 </div>
@@ -1583,7 +1580,7 @@ function go(t) {
   const loggedIn = (typeof authUser !== "undefined" && !!authUser);
   const PROTECTED = { bus:["busList","공구"], feed:["feedGrid","피드"], fav:["favList","즐겨찾기"] };
   if(t==="map")  drawMap();
-  if(t==="bus")  loggedIn ? loadBuses() : _lockTab("busList","공구");
+  if(t==="bus"){ renderCaptainBanner(); loggedIn ? loadBuses() : _lockTab("busList","공구"); }
   if(t==="feed") loggedIn ? loadFeed()  : _lockTab("feedGrid","피드");
   if(t==="fav")  loggedIn ? drawFav()   : _lockTab("favList","즐겨찾기");
   if(t==="cal")  drawCal();
@@ -1826,6 +1823,8 @@ function _mapBus(row, localId, riders){
 // 공구 탭 진입 시: buses + 장부(+ 방장/본인이면 PII) 로드 후 렌더
 async function loadBuses(){
   if(typeof renderPoints === "function") renderPoints();   // 공구 탭 헤더 포인트 칩 동기화
+  renderCaptainBanner();                                   // 캐시 기준 즉시 렌더
+  refreshVerifiedHost().then(renderCaptainBanner);         // DB(profiles.verified_host) 확인 후 갱신
   const el = document.getElementById("busList");
   if(!window.sb){ if(el) el.innerHTML = _busErrCard("공구 목록을 불러올 수 없어요"); return; }
   try{
@@ -1898,6 +1897,25 @@ async function refreshVerifiedHost(){
     isVerifiedHost = !!(data && data.verified_host);
   }catch(_){ isVerifiedHost = false; }
   return isVerifiedHost;
+}
+
+// 공구 탭 총대 배너 동적 렌더 — 인증 총대면 차분한 안내, 미인증이면 신청 버튼.
+// (비로그인은 인증 안 된 것으로 취급 → 로그아웃 시 캐시 잔재로 인증UI가 남지 않음)
+function renderCaptainBanner(){
+  const el = document.getElementById("captainBanner");
+  if(!el) return;
+  const verified = (typeof authUser !== "undefined" && !!authUser) && isVerifiedHost;
+  if(verified){
+    el.innerHTML = `<div class="w-full rounded-xl p-4" style="display:flex;align-items:center;gap:11px;background:#F3F2F5;border:1.5px solid #E2DCE0;font-family:'M PLUS Rounded 1c',sans-serif">
+      <span style="font-size:19px;flex-shrink:0">🛡️</span>
+      <p style="font-size:12.5px;font-weight:700;color:#6B5B60;line-height:1.55;margin:0">인증된 든든한 <b style="color:#3A2B30">총대님</b>입니다. 우측 하단의 <b style="color:#C41055">[➕ 공구 열기]</b> 버튼으로 버스를 출발시켜 보세요!</p>
+    </div>`;
+  } else {
+    el.innerHTML = `<button onclick="openCaptainVerify()" class="w-full rounded-xl p-4" style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:none;cursor:pointer;text-align:left;background:linear-gradient(to right,#A855F7,#EC4899);box-shadow:0 10px 24px -10px rgba(168,85,247,.55);font-family:'M PLUS Rounded 1c',sans-serif">
+      <span style="font-size:14px;font-weight:800;color:#fff;line-height:1.35">🛡️ 나도 총대 되어 안전한 공구 열기!</span>
+      <span style="flex-shrink:0;font-size:12px;font-weight:800;color:#fff;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.4);padding:7px 12px;border-radius:100px;white-space:nowrap">총대 권한 신청 ›</span>
+    </button>`;
+  }
 }
 
 /* ═══════════════════════════════════
@@ -2069,6 +2087,7 @@ async function godToggleVerified(){
     isVerifiedHost = false;   // 로컬 표시만 OFF (DB 승격은 유지)
   }
   showToast("총대 인증: " + (isVerifiedHost ? "ON ✅ (DB 승격됨)" : "OFF (로컬 캐시만)"));
+  renderCaptainBanner();   // God 토글 → 공구 탭 배너 즉시 반영
   renderGodState();
 }
 async function godAddPoints(){
@@ -2176,6 +2195,7 @@ async function capSubmit(e){
     return;
   }
   if(typeof refreshVerifiedHost === "function"){ await refreshVerifiedHost(); } else { isVerifiedHost = true; }
+  renderCaptainBanner();   // 인증 완료 → 공구 탭 배너를 '인증 총대' UI 로 갱신
   closeCaptainVerify();
   alert("축하합니다! 본인인증·계좌인증이 완료되어 총대 권한이 승인되었습니다.");
 }
