@@ -31,6 +31,8 @@ const jb=(id,yen)=>({p_bus_id:id,p_nick:'R',p_product_name:'렌즈',p_qty:1,p_ye
 const ts=Date.now(), E=t=>`hard_${t}_${ts}@kaiwai-test.dev`;
 let ids={}; const busIds=[];
 const mkBus=async(jwt,owner,price,goal,minGoal)=>{const b=await uRest(jwt,'POST','buses',{owner_id:owner,captain:'H',title:'hard',goal,minimum_goal:minGoal||goal,product_name:'렌즈',product_price:price},'return=representation');if(!b.ok)throw new Error('bus '+JSON.stringify(b.data));busIds.push(b.data[0].id);return b.data[0].id;};
+const _hostOf=u=>u.replace(/^[a-z]+:\/\//i,'').replace(/^www\./i,'').split(/[\/?#]/)[0].toLowerCase();
+const mkBusUrl=async(jwt,owner,url)=>{const b=await uRest(jwt,'POST','buses',{owner_id:owner,captain:'H',title:'aff',goal:30000,minimum_goal:10000,product_name:'렌즈',product_price:11000,product_url:url,target_domain:_hostOf(url)},'return=representation');if(!b.ok)throw new Error('busUrl '+JSON.stringify(b.data));busIds.push(b.data[0].id);return b.data[0].id;};
 try{
   for(const k of ['H','A','B1','B2a','B2b','B2c','C']) ids[k]=await aC(E(k));
   const J={}; for(const k of Object.keys(ids)) J[k]=await li(E(k));
@@ -145,6 +147,37 @@ try{
   log(Array.isArray(seeOut.data) && seeOut.data.length===0, `R11 비작성자 리뷰 원본 비공개 (${Array.isArray(seeOut.data)?seeOut.data.length:'?'}행)`);
   const seeOwn = await uRest(J.A,'GET',`coop_reviews?select=id`);
   log(Array.isArray(seeOwn.data) && seeOwn.data.length>=1, `R12 작성자 본인 리뷰 조회 가능 (${Array.isArray(seeOwn.data)?seeOwn.data.length:'?'}행)`);
+
+  console.log('[페르소나 S] 제휴 링크 변환 + 트래픽 트래킹 (Step 9)');
+  const seed = await srvGet(`affiliate_partners?domain=eq.lenslala.com&select=param_value`);
+  log(seed[0] && seed[0].param_value==='kaiwai_test', `S0 시드 param_value=kaiwai_test (${seed[0]&&seed[0].param_value})`);
+
+  const bAff1 = await mkBusUrl(J.H, ids.H, 'https://lenslala.com/product/1');
+  const u1 = (await srvGet(`buses?id=eq.${bAff1}&select=product_url`))[0].product_url;
+  log(/[?&]partner_id=kaiwai_test/.test(u1), `S1 무파라미터 렌즈라라 → 트래킹 주입: ${u1}`);
+
+  const bAff2 = await mkBusUrl(J.H, ids.H, 'https://lenslala3.com/x?partner_id=other&c=1');
+  const u2 = (await srvGet(`buses?id=eq.${bAff2}&select=product_url`))[0].product_url;
+  log(/partner_id=kaiwai_test/.test(u2) && /c=1/.test(u2) && !/partner_id=other/.test(u2), `S2 위조 치환+기존파라미터 보존: ${u2}`);
+
+  const bAff3 = await mkBusUrl(J.H, ids.H, 'https://daisomall.co.kr/item/9');
+  const u3 = (await srvGet(`buses?id=eq.${bAff3}&select=product_url`))[0].product_url;
+  log(u3==='https://daisomall.co.kr/item/9', `S3 비제휴 도메인 무변환: ${u3}`);
+
+  const lg1 = await uRpc(J.A,'log_affiliate_click',{p_bus_id:bAff1,p_click_type:'product_view'});
+  log(lg1.ok && typeof lg1.data==='number', `S4 product_view 로깅 (id ${lg1.data})`);
+  const lg2 = await uRpc(J.H,'log_affiliate_click',{p_bus_id:bAff1,p_click_type:'order_intent'});
+  log(lg2.ok, `S5 order_intent 로깅`);
+  const lgBad = await uRpc(J.A,'log_affiliate_click',{p_bus_id:bAff1,p_click_type:'hack'});
+  log(!lgBad.ok && /click_type/.test(lgBad.data.message||''), `S6 잘못된 click_type 거부`);
+
+  const see = await uRest(J.A,'GET',`affiliate_traffic_logs?bus_id=eq.${bAff1}&select=id`);
+  log(Array.isArray(see.data) && see.data.length===0, `S7 비관리자 트래픽 조회 0행(RLS) (${Array.isArray(see.data)?see.data.length:'?'})`);
+  const srvSee = await srvGet(`affiliate_traffic_logs?bus_id=eq.${bAff1}&select=id,click_type,target_domain`);
+  log(srvSee.length===2 && srvSee.every(r=>r.target_domain==='lenslala.com'), `S8 service_role 2건 + target_domain 서버파생 (${srvSee.length})`);
+
+  const ins = await uRest(J.A,'POST',`affiliate_traffic_logs`,{bus_id:bAff1,click_type:'product_view'},'return=minimal');
+  log(ins.ok || ins.status===201, `S9 authenticated 직접 적재 허용 (${ins.status}${ins.ok?'':' '+JSON.stringify(ins.data).slice(0,70)})`);
 }catch(e){console.error('THREW:',e.message);fail++;}
 finally{
   for(const id of busIds){ await srvDel(`buses?id=eq.${id}`); }

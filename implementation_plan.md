@@ -250,3 +250,147 @@ grant execute on function public.get_manner_profiles(uuid[]) to authenticated;
   - `review_badges`(13종 시드) · `coop_reviews`(RLS: 작성자만 SELECT) · `submit_coop_review`(DEFINER 검증) · `get_manner_profiles`(DEFINER 집계 + is_warned)
 - **index.html** — `#reviewOverlay`(별점/배지 모달) + `openReview/submitReview/finalizeCoop/_loadMyReviews` + 매너 배지 렌더(`_attachMannerProfiles`/`_mannerHtml`, 카드·방헤더·장부행) + 배송완료/평가 진입 버튼. `node --check` PASS.
 - **persona_hardtest.mjs** — 페르소나 R0~R12 추가, **전체 21/21 PASS**(완료처리·양방향평가·중복/셀프/비참여자/역할배지/미완료 거부·is_warned 3회·긍정배지만 노출·RLS 격리).
+
+---
+---
+
+# [Step 9] 제휴사 커미션 링크 변환 파이프라인 — 설계 초안 (DRAFT)
+
+> 상태: **구현 완료** ✅ — mig46(링크 변환)+mig47(트래픽 트래킹) db push + `index.html` + `persona_hardtest` 31/31 PASS.
+> 피벗: 렌즈라라 공식 제휴 코드 발급 전이므로, **역제안용 '경유 트래픽 증명' 사전 적재 파이프라인**으로 확정. 링크 변환은 유지하되 트래킹 코드는 임시값 `kaiwai_test`(코드 발급 시 UPDATE 한 줄로 교체).
+> 컨벤션: Zero-Trust(클라가 보낸 URL/파라미터 맹신 금지, 서버가 트래킹 코드 강제) / 동적 설정 테이블(코드 수정 없이 제휴사 추가) / 기존 도메인 락(`buses.target_domain`)·`_domainOf` 재사용.
+
+## 1. 목표 & 비즈니스 흐름
+총대가 개설 시 입력한 **렌즈라라 상품 URL**에 KAIWAI 제휴 트래킹 코드를 자동 주입해 `buses.product_url`(신규)에 저장하고, 공구방 "주문 바로가기" 버튼이 이 링크를 타게 해 **커미션이 KAIWAI 로 귀속**되도록 한다.
+
+```
+개설(cbUrl 입력) → [클라] _toAffiliateUrl 로 즉시 변환 미리보기
+               → INSERT buses(product_url=변환URL, target_domain=host)
+               → [서버] enforce_affiliate_url 트리거가 트래킹 코드 재주입(강제) → 저장
+공구방 "🛒 주문 바로가기" → b.product_url(트래킹 포함) 로 이동 → 총대 결제 → 커미션 적립
+```
+
+## 2. 핵심 보안 명제 (Zero-Trust)
+- 클라이언트 변환은 **UX 용**일 뿐, **신뢰 경계가 아님**. 사용자가 API 로 `product_url` 의 트래킹 파라미터를 **삭제/변조**해 저장할 수 있으므로, **서버 트리거가 최종 권위**로 트래킹 코드를 재주입한다(누락/위조 시 강제 덮어쓰기). → 어떤 경로로 저장돼도 커미션 파라미터가 보장됨.
+
+## 3. 데이터 모델 (마이그레이션 `…_46_affiliate_links.sql`)
+
+### 3-1. 제휴사 설정 (동적 — INSERT 만으로 제휴사 추가, reward_items/review_badges 패턴)
+```sql
+create table public.affiliate_partners (
+  domain      text primary key,          -- 매칭 호스트(소문자, www 제거) 예: 'lenslala3.com'
+  param_key   text not null,             -- 트래킹 파라미터 키  예: 'partner_id' (또는 'a8')
+  param_value text not null,             -- 값  예: 'kaiwai'
+  is_active   boolean not null default true,
+  created_at  timestamptz not null default now()
+);
+alter table public.affiliate_partners enable row level security;
+create policy "제휴사: 활성 조회" on public.affiliate_partners
+  for select to authenticated using (is_active = true);   -- 클라가 변환 미리보기에 사용
+-- 쓰기 정책 없음 = 운영자(service_role/대시보드)만 관리
+insert into public.affiliate_partners(domain,param_key,param_value) values
+  ('lenslala3.com','partner_id','kaiwai')   -- ❓실제 렌즈라라 도메인/파라미터 스킴 확인 필요
+on conflict (domain) do nothing;
+```
+
+### 3-2. buses 에 변환 링크 컬럼
+```sql
+alter table public.buses add column if not exists product_url text;   -- 총대 제휴 변환 주문 링크
+comment on column public.buses.product_url is '제휴 트래킹 코드가 강제 주입된 주문 링크(서버 트리거가 보증).';
+```
+
+## 4. URL 변환 로직
+
+### 4-1. 서버 헬퍼 `inject_affiliate_param(url, key, val)` (IMMUTABLE)
+프래그먼트(`#...`) 분리 → 쿼리에서 기존 `key` 제거 → `key=val` 재부착 → 재조립. 멱등(여러 번 적용해도 동일).
+```sql
+create or replace function public.inject_affiliate_param(p_url text, p_key text, p_val text)
+returns text language plpgsql immutable set search_path = public as $$
+declare v_base text; v_frag text; v_qpos int; v_path text; v_query text; v_clean text;
+begin
+  if coalesce(p_url,'') = '' then return p_url; end if;
+  -- 1) 프래그먼트 분리
+  v_frag := ''; v_base := p_url;
+  if position('#' in p_url) > 0 then
+    v_base := split_part(p_url,'#',1); v_frag := '#' || split_part(p_url,'#',2);
+  end if;
+  -- 2) path?query 분리
+  v_qpos := position('?' in v_base);
+  if v_qpos = 0 then v_path := v_base; v_query := '';
+  else v_path := left(v_base, v_qpos-1); v_query := substr(v_base, v_qpos+1); end if;
+  -- 3) 기존 key 제거 (key=... 토큰 삭제)
+  v_clean := regexp_replace('&'||v_query, '&'||p_key||'=[^&]*', '', 'gi');
+  v_clean := ltrim(v_clean,'&');
+  -- 4) key=val 재부착
+  v_clean := case when v_clean = '' then p_key||'='||p_val else v_clean||'&'||p_key||'='||p_val end;
+  return v_path || '?' || v_clean || v_frag;
+end; $$;
+```
+
+### 4-2. 강제 트리거 `enforce_affiliate_url` (BEFORE INSERT/UPDATE on buses)
+```sql
+create or replace function public.enforce_affiliate_url()
+returns trigger language plpgsql set search_path = public as $$
+declare v_host text; v_p record;
+begin
+  if coalesce(new.product_url,'') = '' then return new; end if;
+  -- 호스트 추출(소문자, www 제거) — 프론트 _domainOf 와 동일 규칙
+  v_host := lower(regexp_replace(
+              regexp_replace(new.product_url, '^[a-z]+://', '', 'i'),  -- 스킴 제거
+              '^www\.', ''));
+  v_host := split_part(split_part(split_part(v_host,'/',1),'?',1),'#',1);  -- 호스트만
+  -- 도메인 락 정합성: target_domain 이 있으면 product_url 호스트와 일치 강제
+  if new.target_domain is not null and new.target_domain <> '' and v_host <> lower(new.target_domain) then
+    raise exception '주문 링크가 지정 구매처 도메인과 일치하지 않습니다' using errcode='P0001';
+  end if;
+  -- 제휴사 매칭 시 트래킹 코드 강제 주입(클라 변조/삭제 무력화)
+  select * into v_p from public.affiliate_partners where domain = v_host and is_active;
+  if found then
+    new.product_url := public.inject_affiliate_param(new.product_url, v_p.param_key, v_p.param_value);
+  end if;
+  return new;
+end; $$;
+create trigger trg_enforce_affiliate_url
+  before insert or update of product_url, target_domain on public.buses
+  for each row execute function public.enforce_affiliate_url();
+```
+- **효과**: 비제휴 도메인은 그대로 통과(변환 없음), 렌즈라라면 `partner_id=kaiwai` 가 **항상** 보장됨. 사용자가 파라미터를 빼고 보내도 트리거가 재주입.
+- `guard_bus_update_after_ordered`(마감 후 수정 차단)와 충돌 없음 — product_url 변경은 개설/미마감 시점 위주, 마감 후 변경은 기존 정책이 차단.
+
+## 5. 프론트엔드 (`index.html`)
+- **`_toAffiliateUrl(url)`**: `affiliate_partners`(SWR 캐시)로 호스트 매칭 → `URL`/`URLSearchParams` 로 `param_key=param_value` set(기존 값 덮어쓰기) → 문자열 반환. 비매칭/파싱 실패 시 원본 반환.
+- **submitCreateBus**: `target_domain` 저장에 더해 `product_url: _toAffiliateUrl(cbUrl)` 전송(서버 트리거가 재보증). 변환 미리보기 토스트("제휴 링크로 자동 변환됐어요").
+- **"🛒 주문 바로가기"**: 기존 `openOrderProcess` 동선에서 `b.product_url`(없으면 원본 cbUrl 폴백) 을 `window.open`. 총대 전용 노출.
+
+## 6. 예외 처리
+| 케이스 | 처리 |
+|--------|------|
+| 비제휴 도메인(타 쇼핑몰) | 변환 없이 원본 저장(도메인 락이 탑승 단계에서 별도 통제) |
+| 잘못된 URL/파싱 실패 | 클라는 원본 유지, 서버 트리거는 호스트 매칭 실패로 무변환 |
+| 트래킹 파라미터 변조/삭제 | 서버 트리거가 재주입(강제) → 무력화 |
+| 기존에 다른 `partner_id` 존재 | `inject_*` 가 기존 키 제거 후 재부착(우리 값으로 치환) |
+| `#fragment`/다중 파라미터 | 프래그먼트 보존 + 해당 키만 치환 |
+| http/https·www 변형 | 스킴/www 정규화 후 호스트 비교 |
+
+## 7. 검증 계획 (persona_hardtest 확장)
+- ①렌즈라라 URL 개설 → product_url 에 `partner_id=kaiwai` 주입 확인 ②파라미터 누락 URL 로 직접 INSERT(API) → 트리거가 재주입 ③다른 partner_id 변조 → 우리 값으로 치환 ④비제휴 도메인 → 무변환 ⑤target_domain 불일치 product_url → 거부 ⑥fragment/기존 쿼리 보존 ⑦inject 멱등.
+
+## 8. 구현 순서
+1. mig46 (`affiliate_partners` + `buses.product_url` + `inject_affiliate_param` + `enforce_affiliate_url` 트리거 + 시드)
+2. index.html (`_toAffiliateUrl` + submitCreateBus 연동 + "주문 바로가기" 바인딩 + affiliate SWR)
+3. persona_hardtest 제휴 변환 페르소나
+4. db push → E2E → 커밋/푸시
+
+## ✅ 확정 스펙 & 구현 결과 (트래픽 트래킹 피벗)
+1. **시드**: `affiliate_partners` 에 `lenslala.com` / `lenslala3.com` → `partner_id` (값=임시 `kaiwai_test`, 공식 코드 발급 시 UPDATE 만으로 교체).
+2. **비제휴 도메인**: 무변환·무에러로 원본 저장(트리거가 호스트 매칭 실패 시 통과).
+3. **변조/삭제 무력화**: `enforce_affiliate_url`(BEFORE INSERT/UPDATE of product_url, DEFINER)가 제휴 호스트면 `partner_id` 를 **강제 재주입/치환**(클라가 `partner_id=other`/삭제로 보내도 우리 값으로 덮어씀). `inject_affiliate_param`(IMMUTABLE, 프래그먼트 보존·멱등).
+4. **트래픽 트래킹**(신규): `affiliate_traffic_logs`(id·bus_id·user_id(null허용)·target_domain·click_type∈{product_view,order_intent}·created_at). **RLS=INSERT 누구나(anon+authenticated)/SELECT 관리자만**. `log_affiliate_click(p_bus_id,p_click_type)`(DEFINER+search_path, anon+authenticated execute) — 외부 이동 직전 비동기 적재(user_id·target_domain 서버 파생).
+
+## 📦 구현 산출물 (완료)
+- **mig46** `…0022_46_affiliate_links.sql` — affiliate_partners + buses.product_url + inject_affiliate_param + enforce_affiliate_url 트리거.
+- **mig47** `…0023_47_affiliate_traffic_logs.sql` — 시드 `kaiwai_test` 전환 + affiliate_traffic_logs + log_affiliate_click RPC.
+- **index.html** — `_toAffiliateUrl`/`loadAffiliatePartners`/`previewAffiliateUrl`(개설 폼 변환 미리보기) + submitCreateBus `product_url` 전송 + `platformUrl` 가 `b.productUrl` 우선 + `logAffiliateClick`/`goOrderLink`/`viewBusProduct` + 진입(탑승폼 '🔗 상품 보기'=product_view / '🛒 주문 바로가기'·주문완료=order_intent). `node --check` PASS.
+- **persona_hardtest.mjs** — 페르소나 S0~S9, **전체 31/31 PASS**(주입·위조치환·비제휴무변환·로깅·click_type거부·관리자전용 SELECT·누구나 INSERT).
+
+> 후속(별도 단계): 공식 제휴 코드 발급 시 `affiliate_partners.param_value` UPDATE / 관리자 트래픽 대시보드(전환 리포팅).

@@ -441,6 +441,7 @@
         <div id="boardBusInfo" class="rounded-2xl px-4 py-3 mb-4" style="background:#FFF5F8;border:1.5px solid #FFE0EE">
           <p id="boardBusTitle" style="font-size:13px;font-weight:800;color:#3A2B30;line-height:1.45"></p>
           <p id="boardBusCaptain" style="font-size:11px;color:#8D7B80;margin-top:3px"></p>
+          <button type="button" id="boardViewProduct" onclick="viewBusProduct(_boardBusId)" class="active:scale-95 transition-transform" style="display:none;margin-top:9px;border:1.5px solid #BBD6F5;background:#fff;color:#0064FF;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:11px;font-weight:800;padding:7px 13px;border-radius:100px">🔗 렌즈라라에서 상품 보기</button>
         </div>
 
         <!-- 🛂 면세 한도 안내 (관부가세 폭탄 방지) -->
@@ -703,8 +704,13 @@
       <!-- 🔗 상품 링크 자동 불러오기 -->
       <div class="rounded-xl p-3 mb-4" style="background:linear-gradient(120deg,#F5E0FF,#FFE0EE);border:1.5px solid #EBC9F5">
         <label style="display:block;font-size:12px;font-weight:800;color:#7733BB;margin-bottom:6px;font-family:'M PLUS Rounded 1c',sans-serif">🔗 상품 링크(URL) 입력</label>
-        <input id="cbUrl" type="url" inputmode="url" placeholder="렌즈라라 등 상품 페이지 주소 붙여넣기"
+        <input id="cbUrl" type="url" inputmode="url" placeholder="렌즈라라 등 상품 페이지 주소 붙여넣기" oninput="previewAffiliateUrl()"
           style="width:100%;padding:11px 13px;border:1.5px solid #E3C7F0;border-radius:12px;font-size:13px;color:#4A4A4A;outline:none;font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;margin-bottom:8px"/>
+        <!-- 제휴 변환 링크 미리보기(렌즈라라 등 등록 도메인일 때) -->
+        <div id="cbAffiliatePreview" style="display:none;margin-bottom:8px;padding:9px 11px;border-radius:10px;background:#EAF7EE;border:1px solid #BFE6CC">
+          <p style="font-size:11px;font-weight:800;color:#1A9E5E;margin:0 0 2px">🔗 제휴 주문 링크로 자동 변환돼요</p>
+          <p id="cbAffiliatePreviewUrl" style="font-size:10.5px;color:#3A6B4E;margin:0;word-break:break-all;line-height:1.45"></p>
+        </div>
         <button type="button" id="cbFetchBtn" onclick="autofillFromUrl()"
           style="width:100%;padding:12px;border:none;border-radius:12px;cursor:pointer;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:13px;background:linear-gradient(135deg,#A855F7,#EC4899);box-shadow:0 8px 18px -8px rgba(168,85,247,.7)">✨ 링크로 자동 불러오기</button>
         <!-- 이미지 미리보기 썸네일 -->
@@ -1862,6 +1868,48 @@ function _mannerHtml(uid){
   return star + badge + warn;
 }
 
+/* ── 제휴 커미션 링크 변환 (Step 9) — affiliate_partners SWR + _toAffiliateUrl ── */
+let _affiliateMap = {};   // domain → {k:param_key, v:param_value}
+async function loadAffiliatePartners(){
+  try{ const c = JSON.parse(localStorage.getItem("kaiwai_affiliate")||"null"); if(c && typeof c==="object") _affiliateMap = c; }catch(_){}
+  if(!window.sb) return;
+  try{
+    const { data } = await window.sb.from("affiliate_partners").select("domain,param_key,param_value").eq("is_active", true);
+    if(Array.isArray(data)){
+      const m = {}; data.forEach(p=>{ m[p.domain] = { k:p.param_key, v:p.param_value }; });
+      _affiliateMap = m;
+      try{ localStorage.setItem("kaiwai_affiliate", JSON.stringify(m)); }catch(_){}
+    }
+  }catch(_){}
+}
+// 호스트가 제휴사면 트래킹 코드 주입(기존 값 덮어쓰기). 비제휴/파싱실패면 원본 반환.
+// ※ 클라 변환은 UX 미리보기용 — 서버 트리거(enforce_affiliate_url)가 최종 강제 보증.
+function _toAffiliateUrl(url){
+  const raw = String(url==null?"":url).trim();
+  if(!raw) return raw;
+  const host = _domainOf(raw);                 // www 제거·소문자 호스트
+  const p = host && _affiliateMap[host];
+  if(!p) return raw;                           // 비제휴 → 원본 유지
+  try{
+    const u = new URL(/^https?:\/\//i.test(raw) ? raw : ("https://" + raw));
+    u.searchParams.set(p.k, p.v);              // 기존 값 있으면 치환
+    return u.toString();
+  }catch(_){ return raw; }
+}
+function previewAffiliateUrl(){
+  const box = document.getElementById("cbAffiliatePreview");
+  const out = document.getElementById("cbAffiliatePreviewUrl");
+  if(!box || !out) return;
+  const raw = (document.getElementById("cbUrl").value||"").trim();
+  const host = _domainOf(raw);
+  if(raw && host && _affiliateMap[host]){
+    out.textContent = _toAffiliateUrl(raw);
+    box.style.display = "block";
+  } else {
+    box.style.display = "none";
+  }
+}
+
 function drawBus() {
   const el = document.getElementById("busList");
   if(!el) return;
@@ -1982,6 +2030,7 @@ function _mapBus(row, localId, riders){
     notice: row.notice || "",
     ordered: row.ordered,
     finalized: !!row.finalized,   // 배송 완료 → 상호 평가 활성화
+    productUrl: row.product_url || null,   // 제휴 트래킹 주입된 주문 링크(서버 보증)
     hostAccount: null,   // bus_host_accounts 에서 별도 부착(RLS: 방장/탑승자만 열람)
     riders: riders || [],
   };
@@ -2022,6 +2071,7 @@ async function loadBuses(){
     await _attachTrustScores();   // 총대 신뢰점수(서버 RPC) 부착
     await _attachHostAccounts();  // 계좌 스냅샷 부착(RLS: 방장/탑승자만)
     await loadReviewBadges();     // 매너 배지 마스터(SWR)
+    await loadAffiliatePartners();// 제휴사 설정(SWR) — 링크 변환/미리보기용
     await _attachMannerProfiles();// 매너 프로필(상호 평점) 부착
     drawBus();
   }catch(err){
@@ -2480,6 +2530,8 @@ async function submitCreateBus(e){
   const powerR    = (document.getElementById("cbPowerR").value || "0.00");
   // 구매처 도메인 락 — 개설 시 입력한 첫 링크의 호스트(플랫폼 무관). 미입력이면 null(제한 없음).
   const targetDomain = _domainOf(document.getElementById("cbUrl").value) || null;
+  // 제휴 변환 주문 링크(클라 미리보기용). 서버 트리거(enforce_affiliate_url)가 최종 강제 보증.
+  const productUrl = _toAffiliateUrl(document.getElementById("cbUrl").value) || null;
   // 방어: 상품명/가격은 필수(이미지는 선택 — 스크래핑 실패/누락 허용)
   if(!prodName || !prodPrice || prodPrice < 1){
     alert("상품명과 가격을 정확히 입력해주세요.");
@@ -2512,6 +2564,7 @@ async function submitCreateBus(e){
       host_power_l: (platform === "렌즈라라") ? powerL : null,
       host_power_r: (platform === "렌즈라라") ? powerR : null,
       target_domain: targetDomain,
+      product_url: productUrl,
       ordered: false,
       // 계좌 스냅샷은 서버 트리거(_snapshot_bus_host_account)가 host_accounts 에서 복사 — 클라 미전송
     });
@@ -2642,6 +2695,8 @@ function boardBus(id){
   _boardBusId = id;
   document.getElementById("boardBusTitle").textContent = b.title;
   document.getElementById("boardBusCaptain").textContent = `총대 ${b.captain} · 달성률 ${Math.round(b.current/b.goal*100)}%`;
+  const vpBtn = document.getElementById("boardViewProduct");   // 제휴 상품 보기(productUrl 있을 때만)
+  if(vpBtn) vpBtn.style.display = b.productUrl ? "inline-block" : "none";
   document.getElementById("boardForm").reset();
   renderLensPicker();   // 추천 렌즈 픽커 갱신(SWR 로 로드된 최신 카탈로그)
   // 링크/미리보기 초기화
@@ -3222,6 +3277,7 @@ function renderBusRoom(b){
         ${ b.ordered
           ? `<div class="w-full rounded-xl py-3" style="text-align:center;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#7BE8A8;background:#22351F;border:1px solid #2F5A2C">✅ 주문 진행 중 · 파티원 정보 잠금됨</div>
              <button onclick="openOrderSheet(${b.id})" class="w-full rounded-xl py-3 mt-2.5" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(120deg,#FF9EC7,#C41055 70%,#A21048);box-shadow:0 8px 20px -8px rgba(196,16,85,.65)">📋 자동 발주서 보기</button>
+             <button onclick="goOrderLink(${b.id})" class="w-full rounded-xl py-3 mt-2.5 active:scale-95 transition-transform" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(120deg,#2D6FE0,#1E3A5F)">🛒 ${b.platform||"렌즈라라"} 주문 바로가기</button>
              ${ b.finalized
                 ? `<div class="w-full rounded-xl py-3 mt-2.5" style="text-align:center;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#C77800;background:#FFF6E0;border:1px solid #F2D27A">🎉 배송 완료 · 상호 평가가 활성화됐어요</div>`
                 : `<button onclick="finalizeCoop(${b.id})" class="w-full rounded-xl py-3 mt-2.5" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:14px;font-weight:800;color:#3A1D1D;background:linear-gradient(120deg,#FFE08A,#FFC94D);box-shadow:0 8px 20px -8px rgba(200,120,0,.5)">✅ 배송 완료 처리 (상호 평가 열기)</button>` }`
@@ -3607,6 +3663,7 @@ async function saveIssue(){
 // 플랫폼별 주문 사이트 URL
 const PLATFORM_URL = { "렌즈라라": "https://lenslala3.com/", "파스비": "https://fasbee.com" };
 function platformUrl(b){
+  if(b && b.productUrl) return b.productUrl;   // 제휴 변환 상품 링크 우선(커미션 트래킹)
   const p = (b && b.platform) || "렌즈라라";
   return PLATFORM_URL[p] || ("https://search.naver.com/search.naver?query=" + encodeURIComponent(p));
 }
@@ -3666,7 +3723,8 @@ async function goOrderAndFinalize(){
     const m = (err && err.message && err.message.includes("목표")) ? err.message : _busDbError(err, "주문 완료 처리에 실패했어요.");
     alert(m); return;
   }
-  window.open(platformUrl(b), "_blank", "noopener");   // 렌즈라라 바로가기
+  logAffiliateClick(b.id, "order_intent");             // 제휴 트래픽 적재(비차단)
+  window.open(platformUrl(b), "_blank", "noopener");   // 렌즈라라 바로가기(제휴 변환 링크)
   b.ordered = true;                                    // 클라 즉시 반영
   (b.riders||[]).forEach(r=> sendNotification(r.nick, "버스 출발! 🚀 주문이 시작됐어요", "렌즈라라 일괄 주문이 시작됐어요! 이제 정보 수정/취소가 불가하며, 곧 일본에서 발송됩니다 ✈️"));
   closeOrderProcess();
@@ -3675,6 +3733,30 @@ async function goOrderAndFinalize(){
   const _reward = (b.riders||[]).length * 150;
   alert("주문이 완료 처리되었습니다! 파티원 정보가 잠겼어요 🔒" + (_reward>0 ? ("\n💰 총대 수고비 " + _reward.toLocaleString() + "P가 적립되었어요!") : ""));
   renderBusRoom(b);
+}
+
+/* ── 제휴 아웃바운드 트래픽 트래킹 (Step 9) — 외부 이동 직전 비동기 적재 ── */
+function logAffiliateClick(busId, clickType){
+  try{
+    const b = BUSES.find(x=>x.id===busId);
+    if(!b || !window.sb) return;
+    // 사용자 흐름을 막지 않도록 fire-and-forget (실패해도 무시)
+    window.sb.rpc("log_affiliate_click", { p_bus_id: b.dbId, p_click_type: clickType }).then(()=>{}, ()=>{});
+  }catch(_){}
+}
+// 총대 '주문 바로가기' — 제휴 변환 링크로 새 창 + order_intent 트래킹
+function goOrderLink(busId){
+  const b = BUSES.find(x=>x.id===busId);
+  if(!b) return;
+  logAffiliateClick(busId, "order_intent");
+  window.open(b.productUrl || platformUrl(b), "_blank", "noopener");
+}
+// 상품 상세 보기(렌즈라라) — product_view 트래킹 + 새 창
+function viewBusProduct(busId){
+  const b = BUSES.find(x=>x.id===busId);
+  if(!b) return;
+  logAffiliateClick(busId, "product_view");
+  window.open(b.productUrl || platformUrl(b), "_blank", "noopener");
 }
 
 // ── 파티원: 탑승 취소 (주문 시작 전 + 미입금일 때만, 300P 환불 없음) ──
