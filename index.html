@@ -3258,6 +3258,8 @@ function renderBusRoom(b){
         <span style="font-size:12px;font-weight:800;color:#fff">🚨 ${modReqCount}건의 정보 수정 요청이 있습니다. 확인해주세요.</span>
       </button>` : "";
 
+  const allTracked = riders.length === 0 || riders.every(r => r.trackingNumber && r.trackingNumber.trim() !== "");
+
   const adminPanel = canMng ? `
     <div class="rounded-2xl p-4 mt-5" style="background:#2B2330;border:1.5px solid #3E3447">
       <div class="flex items-center gap-2 mb-1">
@@ -3295,7 +3297,9 @@ function renderBusRoom(b){
              <button onclick="goOrderLink(${b.id})" class="w-full rounded-xl py-3 mt-2.5 active:scale-95 transition-transform" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(120deg,#2D6FE0,#1E3A5F)">🛒 ${b.platform||"렌즈라라"} 주문 바로가기</button>
              ${ b.finalized
                 ? `<div class="w-full rounded-xl py-3 mt-2.5" style="text-align:center;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#C77800;background:#FFF6E0;border:1px solid #F2D27A">🎉 배송 완료 · 상호 평가가 활성화됐어요</div>`
-                : `<button onclick="finalizeCoop(${b.id})" class="w-full rounded-xl py-3 mt-2.5" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:14px;font-weight:800;color:#3A1D1D;background:linear-gradient(120deg,#FFE08A,#FFC94D);box-shadow:0 8px 20px -8px rgba(200,120,0,.5)">✅ 배송 완료 처리 (상호 평가 열기)</button>` }`
+                : (allTracked
+                    ? `<button onclick="finalizeCoop(${b.id})" class="w-full rounded-xl py-3 mt-2.5" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:14px;font-weight:800;color:#3A1D1D;background:linear-gradient(120deg,#FFE08A,#FFC94D);box-shadow:0 8px 20px -8px rgba(200,120,0,.5)">✅ 배송 완료 처리 (상호 평가 열기)</button>`
+                    : `<button disabled class="w-full rounded-xl py-3 mt-2.5" style="border:none;cursor:not-allowed;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#9A8D93;background:#E2DCE0">🚫 모든 참여자의 운송장을 입력해야 배송완료가 가능해요</button>`) }`
           : `<button onclick="openOrderProcess(${b.id})" class="w-full rounded-xl py-3" style="border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:800;color:#fff;background:linear-gradient(120deg,#2D6FE0,#1E3A5F)">🛒 렌즈라라 연동하여 주문 진행하기</button>
              <p style="font-size:10px;color:#B6AAB0;line-height:1.5;margin-top:7px;text-align:center">주문 전 참여자 정보를 확인하세요. 이 버튼을 누르면 수정이 차단됩니다.</p>` }
       </div>
