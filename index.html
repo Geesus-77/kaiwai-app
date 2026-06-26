@@ -2019,6 +2019,7 @@ function drawBus() {
 
       <div class="flex items-center gap-1.5 mt-2.5" style="flex-wrap:wrap">
         <span style="font-size:12px;font-weight:700;color:#6B5B60">${b.captain}</span>
+        ${(_godOverride && isAdminUser())?`<button onclick="event.stopPropagation();godGrantToUserEl(this)" data-uid="${b.ownerId}" data-name="${escapeHtml(b.captain||'')}" style="border:none;background:none;cursor:pointer;font-size:12px;padding:0;line-height:1" title="방장에게 포인트">🎁</button>`:""}
         ${_trustBadgeHtml(b)}
         ${_mannerHtml(b.ownerId)}
         <span style="margin-left:auto;font-size:11px;color:#C4A8B0">👥 ${riders}명 탑승</span>
@@ -2466,6 +2467,21 @@ async function godGrantToSelected(){
   }catch(e){
     showToast("실패: " + ((typeof _busDbError==="function") ? _busDbError(e, "포인트 처리 실패") : (e.message || e)));
   }
+}
+
+/* 카드 작성자/방장 → god 패널 '유저 포인트 관리' 에 바로 프리필.
+   id·name 은 data-* 속성으로 받아 onclick 인자 이스케이프 문제를 피한다. */
+function godGrantToUserEl(el){
+  if(!el || !el.dataset) return;
+  godGrantToUser(el.dataset.uid, el.dataset.name);
+}
+function godGrantToUser(userId, displayName){
+  if(!(_godOverride && isAdminUser())) return;
+  if(!userId){ showToast("대상 유저 정보를 찾을 수 없어요"); return; }
+  openGodPanel();
+  _godSetGrantTarget(userId, displayName || "(선택한 유저)", null);
+  const box = document.getElementById("godGrantBox");
+  if(box) box.scrollIntoView({ behavior:"smooth", block:"nearest" });
 }
 
 function godRunTest(){
@@ -5232,7 +5248,9 @@ function drawFeed(){
     const name=p.author_display_name || ("@"+(p.author_username||"user"));
     const avatar=p.author_avatar_url || kawaiiAvatar(p.author_id);
     const cap=p.caption ? escapeHtml(p.caption) : "";
-    const godDel=(_godOverride && isAdminUser())?`<button onclick="event.stopPropagation();godForceDeletePost('${p.id}')" style="position:absolute;top:6px;right:6px;z-index:5;width:30px;height:30px;border-radius:50%;border:1.5px solid #E5484D;background:rgba(58,26,34,.92);color:#fff;cursor:pointer;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.4)" title="강제 삭제">🗑️</button>`:"";
+    const godAdmin=(_godOverride && isAdminUser());
+    const godDel=godAdmin?`<button onclick="event.stopPropagation();godForceDeletePost('${p.id}')" style="position:absolute;top:6px;right:6px;z-index:5;width:30px;height:30px;border-radius:50%;border:1.5px solid #E5484D;background:rgba(58,26,34,.92);color:#fff;cursor:pointer;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.4)" title="강제 삭제">🗑️</button>`:"";
+    const godPoint=godAdmin?`<button onclick="event.stopPropagation();godGrantToUserEl(this)" data-uid="${p.author_id}" data-name="${escapeHtml(name)}" style="margin-left:4px;border:none;background:none;cursor:pointer;font-size:12px;padding:0;line-height:1" title="이 유저에게 포인트">🎁</button>`:"";
     return `<div class="mitem fu" style="animation-delay:${i*.04}s">
       <div class="kawaii-card" style="overflow:hidden;cursor:pointer" onclick="openPostDetail('${p.id}')">
         <div style="position:relative;overflow:hidden;background:linear-gradient(135deg,#FFE0EC,#FFB3CC)">
@@ -5241,7 +5259,7 @@ function drawFeed(){
         <div style="padding:9px 11px">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
             <img src="${escapeHtml(avatar)}" alt="" loading="lazy" style="width:18px;height:18px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#FFF0F5"/>
-            <span style="font-size:11px;font-weight:700;color:#D6437A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(name)}</span>
+            <span style="font-size:11px;font-weight:700;color:#D6437A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(name)}</span>${godPoint}
           </div>
           ${cap?`<p class="clamp2" style="font-size:11px;color:#8D7B80;margin:0 0 5px;line-height:1.5">${cap}</p>`:""}
           ${_likeBtnHtml(p)}
