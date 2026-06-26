@@ -528,12 +528,14 @@
         <!-- 섹션 A: 상품 및 배송 방법 -->
         <p style="font-size:12px;font-weight:800;color:#3A2B30;margin:0 0 10px;font-family:'Jua','Gowun Dodum',sans-serif">🛍️ 상품 · 배송 방법</p>
 
+        <div id="boardLinkWrap">
         <label style="display:block;font-size:12px;font-weight:800;color:#D6437A;margin-bottom:6px;font-family:'Jua','Gowun Dodum',sans-serif">🔗 구매할 렌즈 링크 입력 <span style="color:#8D7B80;font-weight:600">(선택)</span></label>
         <input id="boardUrl" placeholder="렌즈 상품 페이지 주소를 붙여넣으세요" oninput="checkBoardDomain()"
           style="width:100%;padding:13px 14px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Gowun Dodum',sans-serif;box-sizing:border-box;margin-bottom:8px;background:#fff"/>
         <p id="boardDomainWarn" style="display:none;font-size:11px;font-weight:700;color:#E5484D;line-height:1.5;margin:0 0 8px"></p>
         <button type="button" id="boardFetchBtn" onclick="autofillBoardFromUrl()"
           style="width:100%;padding:12px;border:none;border-radius:12px;cursor:pointer;color:#fff;font-family:'Jua','Gowun Dodum',sans-serif;font-weight:800;font-size:13px;background:linear-gradient(135deg,#A855F7,#EC4899);box-shadow:0 8px 18px -8px rgba(168,85,247,.7);margin-bottom:10px">✨ 내 렌즈 불러오기</button>
+        </div>
 
         <!-- 추천 렌즈 빠른 담기 (lens_catalog SWR) -->
         <div id="boardCuratedWrap" style="margin-bottom:12px">
@@ -548,7 +550,7 @@
 
         <!-- 상품 정보 (자동/수동) -->
         <div style="background:#FFF6FB;border:1.5px dashed #F2B8DC;border-radius:16px;padding:14px;margin-bottom:16px">
-          <p style="font-size:11px;font-weight:800;color:#D6437A;margin:0 0 10px;font-family:'Jua','Gowun Dodum',sans-serif">📝 렌즈 정보 (직접 입력 / 수정 가능)</p>
+          <p id="boardInfoTitle" style="font-size:11px;font-weight:800;color:#D6437A;margin:0 0 10px;font-family:'Jua','Gowun Dodum',sans-serif">📝 렌즈 정보 (직접 입력 / 수정 가능)</p>
           <label style="display:block;font-size:11px;font-weight:700;color:#8D7B80;margin-bottom:4px">상품명 *</label>
           <input id="boardProdName" maxlength="60" oninput="updateBoardBtn()" placeholder="예) Bambi Series 원데이 (아몬드)"
             style="width:100%;padding:11px 12px;border:1.5px solid #FFD6E8;border-radius:12px;font-size:13px;color:#4A4A4A;outline:none;font-family:'Gowun Dodum',sans-serif;box-sizing:border-box;margin-bottom:10px;background:#fff"/>
@@ -571,6 +573,7 @@
         </div>
         <p id="boardLimitWarn" style="display:none;font-size:11px;font-weight:800;color:#E5484D;line-height:1.5;margin:-8px 0 16px"></p>
 
+        <div id="boardPowerWrap">
         <label style="display:block;font-size:12px;font-weight:800;color:#D6437A;margin-bottom:6px;font-family:'Jua','Gowun Dodum',sans-serif">도수 선택 * <span style="color:#8D7B80;font-weight:600">(무도수는 0.00)</span></label>
         <div class="flex gap-2" style="margin-bottom:16px">
           <div style="flex:1">
@@ -583,6 +586,7 @@
             <select id="boardPowerR" onchange="updateBoardBtn()"
               style="width:100%;padding:12px 12px;border:1.5px solid #FFD6E8;border-radius:14px;font-size:14px;color:#4A4A4A;outline:none;font-family:'Gowun Dodum',sans-serif;box-sizing:border-box;background:#fff"></select>
           </div>
+        </div>
         </div>
 
         <label style="display:block;font-size:12px;font-weight:800;color:#D6437A;margin-bottom:8px;font-family:'Jua','Gowun Dodum',sans-serif">수령 방법 *</label>
@@ -2915,6 +2919,19 @@ function boardBus(id){
   document.getElementById("boardPowerR").innerHTML = opts;
   document.getElementById("boardPowerL").value = "0.00";
   document.getElementById("boardPowerR").value = "0.00";
+  // [플랫폼별 폼] 렌즈라라가 아닌 일반 상품이면 렌즈 전용 UI(링크/추천/도수)를 숨기고
+  //   정보 타이틀을 '상품 정보'로 변경. 렌즈라라면 모두 보이도록 복구(매 호출 양방향 설정).
+  const isLenra = (b.platform || "렌즈라라") === "렌즈라라";
+  const _toggleBoard = (elId, on)=>{ const el=document.getElementById(elId); if(el) el.style.display = on ? "" : "none"; };
+  _toggleBoard("boardLinkWrap",    isLenra);
+  _toggleBoard("boardCuratedWrap", isLenra);
+  _toggleBoard("boardPowerWrap",   isLenra);
+  const _infoTitle = document.getElementById("boardInfoTitle");
+  if(_infoTitle) _infoTitle.textContent = isLenra
+    ? "📝 렌즈 정보 (직접 입력 / 수정 가능)"
+    : "📝 상품 정보 (직접 입력 / 수정 가능)";
+  // 일반 상품은 도수 개념이 없음 → 값 비움(제출 시 빈 문자열로 전송, 서버 검증 통과)
+  if(!isLenra){ document.getElementById("boardPowerL").value = ""; document.getElementById("boardPowerR").value = ""; }
   updateReceipt();
   document.getElementById("boardOverlay").style.display = "flex";
   document.getElementById("boardSheet").scrollTop = 0;
@@ -3178,7 +3195,9 @@ async function submitBoard(e){
       p_product_name: prodName,
       p_qty:          qty,
       p_yen:          yen,
-      p_power:        `좌 ${document.getElementById("boardPowerL").value} / 우 ${document.getElementById("boardPowerR").value}`,
+      p_power:        ((bus.platform || "렌즈라라") === "렌즈라라")
+                        ? `좌 ${document.getElementById("boardPowerL").value} / 우 ${document.getElementById("boardPowerR").value}`
+                        : "",
       p_method:       method,
       p_amount:       goods + fee,
       p_real_name:    document.getElementById("bName").value.trim(),
