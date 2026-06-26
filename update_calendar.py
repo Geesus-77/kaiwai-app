@@ -218,11 +218,19 @@ def fetch_twitter(apify: ApifyClient, handle: str) -> list[str]:
             "maxItems": 5,
             "sort": "Latest",
         })
-        return [
-            item.get("text") or item.get("full_text") or ""
-            for item in apify.dataset(run.default_dataset_id).iterate_items()
-            if not (item.get("text") or "").startswith("RT ")
-        ]
+        items = list(apify.dataset(run.default_dataset_id).iterate_items())
+        # 진단: 이 액터의 출력 필드명이 버전마다 달라(text/fullText/rawContent…) 본문이
+        # 빈 문자열로 잡혀 트위터 이벤트가 0개가 되는 문제를 잡기 위해 첫 아이템 키를 1회 출력.
+        if items:
+            print(f"    TW 진단 키: {list(items[0].keys())[:14]}")
+        out = []
+        for item in items:
+            # 여러 후보 필드명을 순서대로 시도(액터 스키마 불일치 방어)
+            txt = (item.get("text") or item.get("fullText") or item.get("full_text")
+                   or item.get("rawContent") or item.get("content") or item.get("tweetText") or "")
+            if txt and not str(txt).startswith("RT "):
+                out.append(str(txt))
+        return out
     except Exception as e:
         print(f"    TW 오류 ({handle}): {e}")
         return []
