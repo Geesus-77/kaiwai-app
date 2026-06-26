@@ -214,7 +214,9 @@ def fetch_twitter(apify: ApifyClient, handle: str) -> list[str]:
     # (이 액터는 자체 프록시·인증을 써서 TW_COOKIE 불필요)
     try:
         run = apify.actor(ACTOR_TW).call(run_input={
-            "twitterHandles": [handle.lstrip("@")],
+            # twitterHandles 만 주면 '검색어'가 없어 noResults 가 반환된다(진단으로 확인).
+            # 액터 문서상 계정별 트윗은 'from:핸들' searchTerms 로 직접 검색해야 한다.
+            "searchTerms": [f"from:{handle.lstrip('@')}"],
             "maxItems": 5,
             "sort": "Latest",
         })
