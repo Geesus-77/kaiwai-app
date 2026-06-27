@@ -290,12 +290,20 @@
     // 유저 이메일 (더미 이메일이면 '비공개 이메일'로 대체)
     if (els.email) els.email.textContent = displayEmail(user.email);
 
-    // 보유 포인트 (index.html 과 동일한 localStorage 키 kaiwai_points_<uid>)
+    // 보유 포인트 — 서버 지갑(user_wallets.balance) 기준. (index.html 이 포인트를 서버로 이관해
+    // localStorage 는 더 이상 권위 소스가 아님 → 마이페이지가 0 으로 뜨던 버그 수정)
     const ptsEl = document.getElementById("profPoints");
     if (ptsEl) {
-      let pts = 0;
-      try { pts = (JSON.parse(localStorage.getItem("kaiwai_points_" + user.id) || "{}").points) || 0; } catch (_) {}
-      ptsEl.textContent = pts.toLocaleString();
+      // 1) localStorage 캐시로 즉시 표시(깜빡임 방지)
+      let cached = 0;
+      try { cached = (JSON.parse(localStorage.getItem("kaiwai_points_" + user.id) || "{}").points) || 0; } catch (_) {}
+      ptsEl.textContent = cached.toLocaleString();
+      // 2) 서버 지갑 잔액으로 갱신(RLS: 본인 지갑만 조회 가능)
+      sb.from("user_wallets").select("balance").eq("user_id", user.id).maybeSingle()
+        .then(({ data, error }) => {
+          if (!error && data && typeof data.balance === "number") ptsEl.textContent = data.balance.toLocaleString();
+        })
+        .catch(() => {});
     }
   }
 
