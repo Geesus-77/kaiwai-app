@@ -1,61 +1,72 @@
-﻿"id","브랜드명","카테고리","면세","일본사이트","해외사이트","트위터","인스타","어필리에이트","오프라인매장"
-"1","LIZ LISA","양산형","O","https://tokyokawaiilife.jp","https://tokyokawaiilife.com","@lizlisaofficial","@lizlisa_official_japan","","도쿄 시부야 109 6F | 도쿄 라포레 하라주쿠 5F | 오사카 우메다 EST B1F"
-"2","Ank Rouge","양산형","O","https://ailand-store.jp/ankrouge/","","@AnkRouge","@ankrouge_official","https://google.com","도쿄 라포레 하라주쿠 4F | 오사카 우메다 HEP FIVE 3F"
-"3","Honey Cinnamon","양산형","O","http://honeycinnamon.jp/","https://bunnyapartment.com/honeycinnamon/","@honeyc0214","","",""
-"4","Secret Honey","양산형","O","https://www.rakuten.ne.jp/gold/secrethoney/","","@SecretHoney_HB","","","도쿄 시부야 109 3F | 도쿄 라포레 하라주쿠 5F | 도쿄 이케부쿠로 선샤인 파르코 B1F | 오사카 우메다 HEP FIVE 4F"
-"5","evelyn","양산형","O","https://evelyn.tokyo.jp/","","@evelyn_tokyo","@evelyn.official","","도쿄 시부야 109 3F | 도쿄 라포레 하라주쿠 5F | 오사카 우메다 HEP FIVE 1F"
-"6","Swankiss","양산형","O","https://swankiss.net/","","@Swankiss","","","도쿄 시부야 109 5F | 도쿄 라포레 하라주쿠 4F"
-"7","meltie","양산형","X","https://meltie.jp/","","","","",""
-"8","ROJITA","지뢰계","O","https://rlab-store.jp","","@ROJITA__jp","@rojita__official","https://google.com","도쿄 시부야 109 7F | 도쿄 라포레 하라주쿠 4F | 도쿄 이케부쿠로 파르코 B2F | 오사카 우메다 EST B1F"
-"9","NOEMIE","지뢰계","X","https://palemoba.com/noemie/","","@Noemie_shop","@noemie_official_","","오사카 우메다 HEP FIVE 3F"
-"10","Jamie エーエヌケー","지뢰계","O","https://ailand-store.jp/jamieank/","","@Jamie_ank","@jamieank_official","","도쿄 라포레 하라주쿠 4F | 오사카 우메다 EST 2F"
-"11","MA*RS","지뢰계","O","https://lilimpark.jp/","","@mars_amoebamars","@marsofficialjapan","","도쿄 시부야 109 6F"
-"12","EATME","지뢰계","O","https://runway-webstore.com/eatme/","","@EATME_tweet","@eatme_japan","","오사카 우메다 EST 3F"
-"13","DearMyLove","지뢰계","X","https://dreamvs.jp/collections/dearmylove","","@dearmylove_yume","@dearmylove_official","",""
-"14","pium","스나계","X","https://piumofficial.com/","","@pium__official","","",""
-"15","SNIDEL","스나계","O","https://snidel.com/","","@snidelOfficial","@snidel_official","","도쿄 루미네 신주쿠 2F | 오사카 루쿠아 오사카 3F"
-"16","REDYAZEL","스나계","O","https://online.burnedestrose.com/bstr/shop/brand/redyazel","https://www.burnedestrose.com/shop/e/eRAfeat/","@redyazel","","","도쿄 루미네 신주쿠 3F"
-"17","titty&Co.","스나계","O","https://zozo.jp/brand/tittyandco/","","@tittyandco_","@tittyandco_com","","도쿄 시부야 109 5F"
-"18","GRL","스나계","X","https://www.grail.bz/","","@GRL_official","@grl_official","",""
-"19","DimMoire","지뢰계","X","https://www.dimmoire.jp","https://acrotokyo-global.com","@_DimMoire_","","","도쿄 라포레 하라주쿠 B1F (아크로도쿄)"
-"20","Amilige","지뢰계","O","","","@OfficialAmilige","@amilige_official","","도쿄 라포레 하라주쿠 B1F | 오사카 우메다 EST 2F"
-"21","KRY clothing","서브컬쳐","X","https://www.kry.tokyo/","","@KRY_official_","@kry231","",""
-"22","REFLEM","서브컬쳐","O","","https://acrotokyo-global.com","@_REFLEM","","","도쿄 라포레 하라주쿠 B1F (아크로도쿄) | 오사카 우메다 HEP FIVE 6F"
-"23","TRAVAS TOKYO","서브컬쳐","O","https://www.acrotokyo.com/c/travas","https://acrotokyo-global.com","@travas_tokyo","@travas_tokyo","","도쿄 라포레 하라주쿠 B1F (아크로도쿄)"
-"24","ililil","서브컬쳐","O","https://www.ililil.jp/","","","","","도쿄 마그넷 바이 시부야 109 4F"
-"25","anonenone","서브컬쳐","X","https://www.anonenone.net/","","@anonenone_jp","","",""
-"26","ACDC RAG","서브컬쳐","O","https://acdcrag.com/","https://acdcrag.com/en","@acdcrag","@acdcrag_harajuku","","도쿄 하라주쿠 캣스트리트 로드샵"
-"27","LISTEN FLAVOR","서브컬쳐","X","https://listenflavor.com/","","@listenflavor","@listenflavor_official","",""
-"28","NieR Clothing","서브컬쳐","X","https://shop.nier.tokyo/","","@NieR_tokyo","","",""
-"29","Drug Honey","서브컬쳐","X","","","","","","도쿄 하라주쿠 다케시타 로드샵"
-"30","HEIHEI","서브컬쳐","O","https://heihei.thebase.in/","","@heihei_official","","","도쿄 라포레 하라주쿠 B1F"
-"31","OY","서브컬쳐","O","","","","","","도쿄 라포레 하라주쿠 B1F"
-"32","BACKSTAGE PASS","서브컬쳐","O","","","","","","도쿄 라포레 하라주쿠 B1F | 오사카 우메다 HEP FIVE 6F"
-"33","CIVARIZE","비쥬얼계 고스·펑크","O","https://acrotokyo.com","","@civarize_store","","","도쿄 시부야 로드샵"
-"34","h.NAOTO","비쥬얼계 고스·펑크","O","https://hnaoto.com/","","@hnaoto_official","","","도쿄 라포레 하라주쿠 B1F"
-"35","SEX POT ReVeNGe","비쥬얼계 고스·펑크","O","https://www.sexpot.jp/","","@sexpot_web","","","도쿄 하라주쿠 로드샵"
-"36","ALGONQUINS","비쥬얼계 고스·펑크","X","","","","","",""
-"37","FUGA","비쥬얼계 고스·펑크","O","","","","","","도쿄 하라주쿠 로드샵"
-"38","QOOZA","비쥬얼계 고스·펑크","X","https://qooza.jp/","","","@qooza_official","","도쿄 라포레 하라주쿠 B1.5F"
-"39","BABY THE STARS SHINE BRIGHT","로리타","O","https://www.babyssb.co.jp/","","@BABY_THE_STARS","@babythessbofficial","","도쿄 이케부쿠로 P'PARCO 2F"
-"40","Angelic Pretty","로리타","O","https://angelicpretty.com/","","","@angelicpretty_official","","도쿄 라포레 하라주쿠 B1.5F"
-"41","Moi-même-Moitié","로리타","O","https://moi-meme-moitie.com/","","@moitie_official","","","도쿄 라포레 하라주쿠 B1.5F"
-"42","Alice and the Pirates","로리타","O","https://store.babyssb.co.jp/en/collections/alice-and-the-pirates","","","@alice_and_the_pirates","","도쿄 라포레 하라주쿠 B1.5F"
-"43","Atelier Pierrot","로리타","O","https://atelier-pierrot.jp/ko","","@atelier_pierrot","","","도쿄 라포레 하라주쿠 B1F"
-"44","Sheglit","로리타","X","https://sheglit.com/","","@SheglitOfficial","","",""
-"45","Atelier BOZ","로리타","O","","","","","",""
-"46","Metamorphose temps de fille","로리타","O","https://metamorphose.gr.jp/","","@metamor_official","","","도쿄 하라주쿠 로드샵 | 도쿄 신주쿠 로드샵"
-"47","Innocent World","로리타","O","https://innocent-w.jp/","","@innocentworld_","","",""
-"48","Victorian Maiden","로리타","O","https://victorianmaiden.com/","","@victorian_maiden","","",""
-"49","Juliette et Justine","로리타","O","https://juliette-et-justine.com/","","","","",""
-"50","Amavel","로리타","O","https://www.amavel.jp/","","@_amavel_","@amavel_official","","도쿄 시부야 109 7F | 오사카 우메다 HEP FIVE 3F"
-"51","To Alice","로리타","O","https://www.toalice.co.jp/","","@toalicejapan","@toalicejapan","","도쿄 이케부쿠로 선샤인 파르코 B1F"
-"52","BUBBLES","잡화(가방,신발,악세)","O","https://sparklingmall.jp/","","@bubbles_tokyo","@bubbles_tokyo","","도쿄 시부야 109 6F"
-"53","YOSUKE","잡화(가방,신발,악세)","O","https://yosuke-idocorp.com/","","","@yosuke_usa","","도쿄 이케부쿠로 파르코 B2F"
-"54","NEW ROCK","잡화(가방,신발,악세)","X","https://www.newrock.com/","","","","","도쿄 시부야 109 7F"
-"55","Maison de FLEUR","잡화(가방,신발,악세)","O","https://stripe-club.com/maisondefleur/","","@Maison_de_FLEUR","@maisondefleur_press","","도쿄 라포레 하라주쿠 2F | 도쿄 이케부쿠로 선샤인 파르코 B1F | 오사카 우메다 EST 2F"
-"56","MCM","잡화(가방,신발,악세)","O","https://kr.mcmworldwide.com/","","","","","도쿄 루미네 신주쿠 2F | 오사카 루쿠아 오사카 1F"
-"57","Samantha Vega","잡화(가방,신발,악세)","O","https://www.samantha.co.jp/shop/c/cSV/","","@samantha_PR_ST","@samantha.vega_official","","도쿄 시부야 109 1F | 오사카 우메다 EST 1F"
-"58","Vivienne Westwood","잡화(가방,신발,악세)","O","https://viviennewestwood.kr/shop/main","","@VW_JAPAN","","","도쿄 라포레 하라주쿠 1F"
-"59","Lafary","잡화(가방,신발,악세)","X","https://www.lafary.shop/","","@lafary_jp","@lafary_jp","","오사카 우메다 HEP FIVE 4F"
-"60","michellMacaron","양산형","X","https://mycolor.jp/michellmacaron","","@michellMacar0n","@michellmacaron_official","",""
+﻿id,브랜드명,카테고리,면세,일본사이트(공홈),해외사이트(직구 자사몰),"조조타운, 라쿠텐",트위터,인스타,어필리에이트,오프라인매장(도쿄),오프라인매장(오사카/기타),2026비고
+1,LIZ LISA,양산형/걸리,O,https://tokyokawaiilife.jp,https://tokyokawaiilife.com,,@lizlisaofficial,@lizlisa_official_japan,,Shibuya 109 6F,Tennoji MIO 6F,⚠️신주쿠 ALTA 폐관으로 알타 매장 삭제 (109 위주 운영)
+2,Ank Rouge,양산형/지뢰계,O,https://ailand-store.jp/ankrouge/,,https://zozo.jp/shop/ailand/,@AnkRouge,@ankrouge_official,"월드쇼핑, 조조타운",오프라인 매장 없음 (영업 종료),오프라인 매장 없음 (영업 종료),
+3,Honey Cinnamon,양산형/걸리,O,http://honeycinnamon.jp/,https://bunnyapartment.com/honeycinnamon/,https://zozo.jp/brand/honeycinnamon/,@honeyc0214,https://www.instagram.com/honey_cinnamon_jp/,조조타운,오프라인 매장 없음 (영업 종료),오프라인 매장 없음 (영업 종료),
+4,Secret Honey,양산형/걸리,O,https://www.est-s.co.jp/,,https://www.rakuten.co.jp/secrethoney/,@SecretHoney_HB,https://www.instagram.com/secrethoney_official/,라쿠텐,"Shibuya 109 6F, Lumine Est Shinjuku B1F",Umeda EST 1F,정상 영업 중
+5,evelyn,양산형/스나계/걸리,O,https://evelyn.tokyo.jp/,,,@evelyn_tokyo,@evelyn.official,월드쇼핑,"Shibuya 109 6F, Lumine Est Shinjuku 4F, Laforet Harajuku",Umeda HEP FIVE 3F,정상 영업 중
+6,Swankiss,양산형/걸리,O,https://zozo.jp/brand/swankiss/,,,https://x.com/Swankiss_JP,https://www.instagram.com/swankiss_official/,조조타운,오프라인 매장 없음 (영업 종료),오프라인 매장 없음,🚨브랜드 운영 종료 (중고 메루카리 위주 거래)
+7,meltie,양산형/걸리,X,https://meltie.feellie.jp/,,,https://x.com/meltie_official,https://www.instagram.com/meltie_official/,,오프라인 상설 매장 없음 (온라인 전용),오프라인 상설 매장 없음,온라인 전용 (간헐적 팝업만 진행)
+8,ROJITA,지뢰계/양산형,O,https://rlab-store.jp,,https://zozo.jp/brand/rojita/,@ROJITA__jp,@rojita__official,"월드쇼핑, 조조타운","Shibuya 109 6F, Lumine Est Shinjuku B1F, Sunshine City Ikebukuro",Umeda EST 1F,정상 영업 중
+9,NOEMIE,지뢰계,X,https://palemoba.com/noemie/,,https://zozo.jp/brand/noemie/,@Noemie_shop,@noemie_official_,"buyee, 조조타운",Harajuku Takeshita-dori (플래그십 스토어),Umeda HEP FIVE 6F,하라주쿠 다케시타도리 대형 매장 운영 중
+10,Jamie エーエヌケー,지뢰계/서브컬쳐,O,https://ailand-store.jp/jamieank/,,https://zozo.jp/brand/jamieank/,@Jamie_ank,@jamieank_official,"월드쇼핑, 조조타운",Shibuya 109 6F (Ank Rouge 내 숍인숍),Umeda HEP FIVE 3F (Ank Rouge 내),단독 매장 축소 (앙크루즈 매장 내 입점 형태)
+11,MA*RS,지뢰계/양산형,O,https://lilimpark.jp/,,https://zozo.jp/brand/ma-rs/,@mars_amoebamars,@marsofficialjapan,"월드쇼핑, 조조타운",Shibuya 109 7F,Umeda HEP FIVE 3F,정상 영업 중
+12,EATME,스나계/지뢰계,O,https://runway-webstore.com/eatme/,,https://zozo.jp/women-brand/eatme/,@EATME_tweet,@eatme_japan,"월드쇼핑, 조조타운",Harajuku 본점 (6-6-9 Jingumae),Umeda EST 1F,정상 영업 중
+13,DearMyLove,양산형/지뢰계,X,https://dreamvs.jp/collections/dearmylove,,"https://zozo.jp/women-brand/dearmylove/, https://www.rakuten.ne.jp/gold/dreamv/dml.html",@dearmylove_yume,@dearmylove_official,"젠마켓, 조조타운, 라쿠텐(유메텐보)",오프라인 상설 매장 없음 (온라인 전용),오프라인 상설 매장 없음,⚠️오프라인 매장 없음 (유명세에 비해 공홈 판매 위주)
+14,pium,스나계/걸리,X,https://piumofficial.com/,,,@pium__official,https://www.instagram.com/piumofficial/,,Shibuya 109 6F,-,정상 영업 중
+15,SNIDEL,스나계,O,https://snidel.com/,,"https://zozo.jp/women-brand/snidel/, https://zozo.jp/women-shop/snidel/tops/, https://brandavenue.rakuten.co.jp/ba/shop-snidel/",@snidelOfficial,@snidel_official,"조조타운, 라쿠텐","Lumine Shinjuku 2, Omotesando Hills, Shibuya Parco","Hankyu Umeda, LUCUA Osaka",대형 백화점 및 몰 대부분 입점
+16,REDYAZEL,스나계,O,https://www.burnedestrose.com/shop/default.aspx,,"https://zozo.jp/women-brand/redyazel/, https://brandavenue.rakuten.co.jp/brand-REDYAZEL/",@redyazel,https://www.instagram.com/redyazel/,"월드쇼핑, 조조타운, 라쿠텐","Lumine Est Shinjuku, Shibuya 109",Umeda EST,정상 영업 중
+17,titty&Co.,스나계/걸리,O,https://zozo.jp/brand/tittyandco/,,,@tittyandco_,@tittyandco_com,조조타운,오프라인 상설 매장 없음 (온라인 위주 개편),오프라인 상설 매장 없음,오프라인 매장 철수 후 온라인 브랜드로 전환
+18,GRL,스나계/걸리,X,https://www.grail.bz/,,https://fril.jp/brand/1081?srsltid=AfmBOorNzBFSceTN_yi2uaoG0Do7gPyB9q76DlktMh3nyy67Tq2HR6ns,@GRL_official,@grl_official,"프롬재팬, 라쿠텐 라쿠마",오프라인 매장 없음 (온라인 전용),오프라인 매장 없음,완전 온라인 전용 SPA
+19,DimMoire,지뢰계/서브컬쳐,X,https://www.acrotokyo.com/c/dimmoire,https://www.acrotokyo.com/c/dimmoire,,@_DimMoire_,https://www.instagram.com/dimmoire_official/,월드쇼핑,Laforet Harajuku B1F (Acro Tokyo 내),Umeda HEP FIVE 6F (Acro Tokyo 내),Acro Tokyo 편집숍 내 입점 위주
+20,Amilige,지뢰계/서브컬쳐,O,https://a-am-studio.jp/pages/amilige-top,,https://zozo.jp/women-brand/amilige/,@OfficialAmilige,@amilige_official,"월드쇼핑, 조조타운",Laforet Harajuku B1F,-,정상 영업 중
+21,KRY clothing,서브컬쳐/고스·펑크,X,https://www.kry.tokyo/,,,@KRY_official_,@kry231,월드쇼핑,Shibuya 109 8F,-,정상 영업 중
+22,REFLEM,서브컬쳐/고스·펑크,O,https://www.acrotokyo.com/c/reflem,https://www.acrotokyo.com/c/reflem,,@_REFLEM,https://www.instagram.com/reflem_official/,월드쇼핑,"MAGNET by SHIBUYA109 4F, Lumine Est Shinjuku 5F",Umeda HEP FIVE 6F,정상 영업 중
+23,TRAVAS TOKYO,서브컬쳐/고스·펑크,O,https://www.acrotokyo.com/c/travas,https://acrotokyo-global.com/index_en_JPY_2-7.html,,@travas_tokyo,@travas_tokyo,월드쇼핑,"MAGNET by SHIBUYA109 4F, Lumine Est Shinjuku 5F",Umeda HEP FIVE 6F,정상 영업 중
+24,ililil,서브컬쳐,O,https://www.ililil.jp/,,,https://x.com/ililil_jp,https://www.instagram.com/ililil_jp/,월드쇼핑,MAGNET by SHIBUYA109 4F (REFLEM/TRAVAS 매장 내),Umeda HEP FIVE 6F,동일 계열사 매장 내 입점
+25,anonenone,서브컬쳐,X,https://www.anonenone.net/,,,@anonenone_jp,https://www.instagram.com/anonenone_jp/,buyee,오프라인 상설 매장 없음 (온라인 전용),오프라인 상설 매장 없음,하라주쿠 등에서 단기 팝업스토어만 진행
+26,ACDC RAG,서브컬쳐/고스·펑크,O,https://acdcrag.com/,https://acdcrag.com/en,https://www.rakuten.co.jp/acdcrag/,@acdcrag,@acdcrag_harajuku,라쿠텐,Harajuku Takeshita-dori (본점),-,하라주쿠 다케시타도리에 위치
+27,LISTEN FLAVOR,서브컬쳐/고스·펑크,X,https://listenflavor.com/,https://www.cdjapan.co.jp/brand/100000104,,@listenflavor,@listenflavor_official,월드쇼핑,Harajuku 본점 (Jingumae 1-7-5),-,정상 영업 중
+28,NieR Clothing,서브컬쳐/고스·펑크,X,https://shop.nier.tokyo/,,,@NieR_tokyo,https://www.instagram.com/nier_tokyo/,젠마켓,오프라인 상설 매장 없음 (온라인 전용),오프라인 상설 매장 없음,전국 순회 팝업스토어 위주로 오프라인 진행
+29,Drug Honey,서브컬쳐/고스·펑크,X,https://www.drughoney.jp/,,,https://x.com/DrugHoneyShop,https://www.instagram.com/drughoney_official/,,오프라인 매장 없음 (영업 종료),오프라인 매장 없음,🚨브랜드 운영 종료
+30,HEIHEI,서브컬쳐/고스·펑크,O,https://heihei.thebase.in/,,"https://zozo.jp/women-brand/hei/, https://search.rakuten.co.jp/search/mall/heihei/",@heihei_official,https://x.com/heihei_official,"조조타운, 라쿠텐",Laforet Harajuku B1F,-,정상 영업 중
+32,BACKSTAGE PASS,서브컬쳐,O,https://www.backstagepass.co.jp/,,,https://x.com/ShibuyaZy,없음,,Shinjuku Marui Men 6F,-,마루이 백화점 텍스프리 이용
+33,CIVARIZE,서브컬쳐/고스·펑크,O,https://www.acrotokyo.com/c/civarize,,,@civarize_store,https://www.instagram.com/civarize_official/,월드쇼핑,MAGNET by SHIBUYA109 4F,-,정상 영업 중
+34,h.NAOTO,서브컬쳐/고스·펑크,O,https://hnaoto.com/,,,@hnaoto_official,https://www.instagram.com/h.naoto_official/,,Tokyo Atelier (사전 예약제 스튜디오),-,사전 예약제 아뜰리에 및 온라인 위주
+35,SEX POT ReVeNGe,서브컬쳐/고스·펑크,O,https://www.sexpot.jp/,,,@sexpot_web,https://www.instagram.com/sexpot_designer/,월드쇼핑,Harajuku (일부 편집숍 입점),-,플래그십 철수 후 딜러 숍 위주 판매
+36,ALGONQUINS,서브컬쳐/고스·펑크,X,https://algonquins.official.ec/,,,https://x.com/algonquins_jp,https://www.instagram.com/algonquins.jp/,,오프라인 매장 없음 (영업 종료),오프라인 매장 없음,🚨오프라인 철수 (온라인도 사실상 중단 상태)
+38,QOOZA,서브컬쳐/고스·펑크,X,https://qooza.jp/,,,https://x.com/QOOZA_JP,@qooza_official,buyee,Harajuku 플래그십 스토어 (Jingumae 1-15-1),-,하라주쿠 펑크/고스 전문 편집숍
+39,BABY THE STARS SHINE BRIGHT,로리타,O,https://store.babyssb.co.jp/en,https://search.rakuten.co.jp/search/mall/baby+the+stars+shine+bright/,,@BABY_THE_STARS,@babythessbofficial,,"Omotesando 본점, Shinjuku Marui Annex 7F, 도쿄 이케부쿠로 P'PARCO 2F","Sinsaibashi OPA 4F, Sannomiya (Kobe)",정상 영업 중
+40,Angelic Pretty,로리타,O,https://angelicpretty.com/,,https://search.rakuten.co.jp/search/mall/Angelic+pretty/,https://x.com/AP_onlineshop,@angelicpretty_official,라쿠텐,"Harajuku 본점, Shinjuku Marui Annex 7F","Sinsaibashi (Osaka 본점), Nagoya",정상 영업 중
+41,Moi-même-Moitié,로리타/고스·펑크,O,https://www.wunderwelt.jp/collections/moi-meme-moitie,,https://search.rakuten.co.jp/search/mall/moi+meme+moitie/,@moitie_official,https://www.instagram.com/moimememoitie_official/,라쿠텐,오프라인 상설 매장 없음 (온라인 전용),오프라인 상설 매장 없음,Wunderwelt 온라인 숍을 통한 판매 위주
+42,Alice and the Pirates,로리타/고스·펑크,O,https://store.babyssb.co.jp/en/collections/alice-and-the-pirates,,,https://x.com/BABY_THE_STARS,@alice_and_the_pirates,,"Harajuku 본점, Shinjuku Marui Annex 7F",Sannomiya (Kobe),BABY THE STARS와 동일 계열
+43,Atelier Pierrot,로리타,O,https://atelier-pierrot.jp/ko,,,@atelier_pierrot,https://www.instagram.com/atelier_pierrot_english/,,"Laforet Harajuku B1.5F, Shinjuku Marui Annex 7F",Osaka (Chuo-ku Nishi-Shinsaibashi),고딕 로리타 편집숍
+44,Sheglit,로리타/고스·펑크,X,https://sheglit-midiom.com/,,,@SheglitOfficial,https://www.instagram.com/sheglit_official/,,Shinjuku Marui Annex 7F,-,정상 영업 중
+45,Atelier BOZO,로리타/고스·펑크,O,https://alpstola.theshop.jp/,,,https://x.com/atelierboz,https://www.instagram.com/alpstola/,,오프라인 매장 없음 (영업 종료 후 Alpaca 인수),-,🚨구 매장 폐업 (온라인 수주 생산 위주로 변경)
+46,Metamorphose temps de fille,로리타,O,https://metamorphose.gr.jp/,,https://www.rakuten.co.jp/metamoonline/,@metamor_official,https://www.instagram.com/metamorphosetempsdefille/,라쿠텐,Shinjuku Marui Annex 7F,Osaka (Nishi-Shinsaibashi),정상 영업 중
+47,Innocent World,로리타,O,https://innocent-w.jp/,,https://search.rakuten.co.jp/search/mall/innocent+world/,@innocentworld_,https://www.instagram.com/innocentworldofficial/,라쿠텐,Shinjuku (사전 예약제 살롱),Osaka 본점 (사전 예약제),100% 사전 예약제 오프라인 숍으로 전환
+48,Victorian Maiden,로리타,O,https://victorianmaiden.com/,,,@victorian_maiden,https://www.instagram.com/victorian_maiden/,,오프라인 프레스룸 (사전 예약제),-,온라인 및 팝업 위주
+49,Juliette et Justine,로리타/고스·펑크,O,https://juliette-et-justine.com/,,,@J_et_J?lang=ko,https://www.instagram.com/juliette_et_justine/,,오프라인 상설 매장 없음 (온라인 전용),오프라인 상설 매장 없음,온라인 수주 한정 판매
+50,Amavel,로리타/걸리,O,https://www.amavel.jp/,,https://zozo.jp/women-brand/amavel/,@_amavel_,@amavel_official,"월드쇼핑, 조조타운","Shinjuku Marui Annex 6F, Ikebukuro Parco",Umeda HEP FIVE,정상 영업 중
+51,To Alice,로리타/양산형,O,https://www.toalice.co.jp/,https://www.devilinspired.com/to-alice?srsltid=AfmBOooH_T3JoIfK2thFo8J9sfp8qpnIZPTtDC0ADItIk7KIbrwNU2-,,@toalicejapan,@toalicejapan,,Harajuku Takeshita-dori,-,하라주쿠 대형 매장 영업 중
+52,BUBBLES,스나계/잡화,O,https://www.sparklingmall.jp/c/bubbles,https://bubblestokyo.com/,,@bubbles_tokyo,https://www.instagram.com/bubblestokyo_global/,월드쇼핑,Harajuku 본점 (Jingumae 4-32-12),-,정상 영업 중
+53,YOSUKE,"잡화(가방,신발,악세)",O,https://yosuke-idocorp.com/,,https://zozo.jp/women-shop/yosuke/,https://x.com/yosuke_usa,@yosuke_usa,"월드쇼핑, 조조타운",Shinjuku Marui Annex (구두/잡화 코너),Umeda HEP FIVE (구두 코너),단독 매장보다는 대형 몰 슈즈 코너 위주 입점
+54,NEW ROCK,"잡화(가방,신발,악세)",X,https://www.newrock.com/,https://newrock.kr/,,https://x.com/newrock,https://www.instagram.com/newrock/,,Harajuku (QOOZA 등 편집숍 입점),-,글로벌 브랜드 (큐자 등에서 취급)
+55,Maison de FLEUR,"잡화(가방,신발,악세)",O,https://stripe-club.com/brand/maisondefleur/,,"https://zozo.jp/women-brand/maisondefleur/, https://brandavenue.rakuten.co.jp/ba/shop-maisondefleur/",@Maison_de_FLEUR,@maisondefleur_press,"조조타운, 라쿠텐","Lumine Shinjuku 2, Shibuya Hikarie",LUCUA Osaka,정상 영업 중
+56,MCM,"잡화(가방,신발,악세)",O,https://kr.mcmworldwide.com/,,,https://x.com/MCMtweets,https://www.instagram.com/mcmworldwide/,,"Ginza HAUS 1 (본점), Omotesando Hills",-,명품 면세 적용
+57,Samantha Vega,"잡화(가방,신발,악세)",O,https://www.samantha.co.jp/shop/c/cSV/,,"https://zozo.jp/women-shop/samanthavega/, https://brandavenue.rakuten.co.jp/ba/shop-samanthavega/",@samantha_PR_ST,@samantha.vega_official,"월드쇼핑, 조조타운, 라쿠텐","Shibuya 109, Lumine Est Shinjuku",Umeda EST,정상 영업 중
+58,Vivienne Westwood,서브컬쳐/잡화,O,https://viviennewestwood.kr/shop/main,,,@VW_JAPAN,https://www.instagram.com/viviennewestwood/,,"Harajuku, Aoyama, Shinjuku Isetan",Hankyu Umeda,대형 플래그십 및 백화점 입점
+59,Lafary,양산형/걸리,X,https://www.lafary.shop/,,https://zozo.jp/women-brand/lafary/,@lafary_jp,@lafary_jp,"buyee, 조조타운",Shibuya 109 6F,Umeda HEP FIVE 3F,산리오 등 굿즈 잡화 숍
+60,michellMacaron,스나계,X,https://mycolor.jp/michellmacaron,,,@michellMacar0n,@michellmacaron_official,월드쇼핑,오프라인 상설 매장 없음 (온라인 전용),오프라인 상설 매장 없음,MyColor 온라인 몰 위주
+61,Pal elfy,양산형/지뢰계/걸리,X,https://zozo.jp/women-shop/palelfy/,,,@palpalnyan_,https://www.instagram.com/palelfy_official/,조조타운,오프라인 매장 없음 (온라인 전용),오프라인 매장 없음,온라인 전용
+62,avenchumu,지뢰계/서브컬쳐,O,https://avenchumu.com/,,https://zozo.jp/women-brand/avenchumu/,https://x.com/AVENCHUMU?lang=ja,https://www.instagram.com/avenchumu/,조조타운,오프라인 매장 없음 (온라인 전용),오프라인 매장 없음,온라인 전용
+63,mellfymemory,걸리,X,https://mellfymemory.com/,,https://zozo.jp/women-brand/mellfymemory/,https://x.com/mellfymemory?lang=ko,https://www.instagram.com/mellfymemory/,조조타운,Shinjuku Marui Annex (기간 한정 팝업 위주),-,온라인 전용 (팝업 간헐적 진행)
+64,mine by LAFARY,서브컬쳐/지뢰계,X,https://www.lafary.shop/collections/mine,,https://zozo.jp/women-brand/minebylafary/,https://x.com/_mine_official_,https://www.instagram.com/lafary_mine/,"buyee, 조조타운",오프라인 상설 매장 없음 (온라인 전용),오프라인 상설 매장 없음,온라인 위주
+65,majoretty,지뢰계,X,https://www.shop-shimamura.com/disp/itemlist/?popular_tag=majoretty,,,https://x.com/majoretty,https://www.instagram.com/majoretty.official/?hl=ko,월드쇼핑,INGNI 오프라인 매장 내 일부 취급,INGNI 매장 내,INGNI의 지뢰계/양산형 파생 라인
+66,cs t&p,"잡화(가방,신발,악세)",X,https://zozo.jp/women-brand/cstandp/,,https://search.rakuten.co.jp/search/mall/cs+t%26p+%E3%82%B9%E3%83%8B%E3%83%BC%E3%82%AB%E3%83%BC/,,https://www.instagram.com/cstandp_official/,"조조타운, 라쿠텐",Shibuya 109 (슈즈 숍),-,양산형/지뢰계 슈즈 취급점
+67,imval,지뢰계,X,https://imval.store/,https://qooza.jp/products/list?category_id=1000,,https://x.com/QOOZA_JP,https://www.instagram.com/imperfect_valkyrie/,buyee,오프라인 매장 없음 (온라인 전용),오프라인 매장 없음,온라인 전용
+68,hauls,서브컬쳐,X,https://www.hauls.tokyo/,,https://zozo.jp/women-brand/hauls/,https://x.com/Hauls_official,https://www.instagram.com/hauls_official/,조조타운,오프라인 매장 없음 (온라인 전용),오프라인 매장 없음,온라인 전용
+69,maron de bijou,"잡화(가방,신발,악세)",X,https://marondebijou.com/,,,@maron_de_bijou,https://www.instagram.com/maron_de_bijou/,buyee,오프라인 매장 없음 (온라인 전용),오프라인 매장 없음,액세서리 온라인 숍
+70,darich,걸리/스나계,X,https://www.darich.shop/,,https://zozo.jp/women-brand/darich/,https://x.com/Darich_official,https://www.instagram.com/darich_official/,조조타운,"Lumine Est Shinjuku B1F, Shibuya 109 4F",Umeda EST,정상 영업 중
+71,nyan Me,양산형/지뢰계/서브컬쳐,X,https://www.nyanme.tokyo/,,https://zozo.jp/women-brand/nyanme/,https://x.com/nyanMe_info,https://www.instagram.com/nyanme_official/,조조타운,오프라인 매장 없음 (온라인 전용),오프라인 매장 없음,온라인 전용
+72,BODYLINE,로리타,X,https://bodylinetokyo.co.jp/,,,https://x.com/BODYLINE_Tokyo,https://www.instagram.com/bodyline_tokyo/,,Harajuku Takeshita-dori (2F),Osaka (Shinsaibashi),가성비 코스프레/양산형 숍
+73,grrr the lipper,서브컬쳐/고스·펑크,X,https://acrotokyo-global.com/index_en_USD_2-4.html,,https://zozo.jp/women-brand/grrthelipper/,https://x.com/Grrr_the_Lipper,https://www.instagram.com/official_grrr/,조조타운,오프라인 매장 없음 (온라인 전용),오프라인 매장 없음,온라인 전용
