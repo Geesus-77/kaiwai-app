@@ -3743,8 +3743,11 @@ async function godDeleteBus(busId){
   const b = BUSES.find(x=>x.id===busId);
   if(!b){ return; }
   if(!window.sb){ showToast("연결 오류로 삭제하지 못했어요."); return; }
-  // 주문 진행 중인 공구만 삭제 전 경고 1회 (그 외엔 바로 삭제)
-  if(b.ordered && !confirm("⚠️ 이미 주문이 진행 중인 공구방이에요.\n강제 삭제하면 진행 중인 주문이 취소되고, 탑승자 보증금(300P)은 자동 환불됩니다.\n정말 삭제할까요?")) return;
+  // 모든 삭제에 확인 1회 — 주문 진행 중이면 더 강한 경고
+  const _delMsg = b.ordered
+    ? "⚠️ 이미 주문이 진행 중인 공구방이에요.\n강제 삭제하면 진행 중인 주문이 취소되고, 탑승자 보증금(300P)은 자동 환불됩니다.\n정말 삭제할까요?"
+    : "이 공구방을 강제 삭제할까요?\n탑승자 보증금(300P)은 자동 환불됩니다.";
+  if(!confirm(_delMsg)) return;
   try{
     const { data, error } = await window.sb.rpc("god_force_delete_bus", { p_bus_id: b.dbId });
     if(error) throw error;
