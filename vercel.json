@@ -4,6 +4,12 @@
   "installCommand": null,
   "buildCommand": null,
   "outputDirectory": ".",
+  "rewrites": [
+    {
+      "source": "/o/:code",
+      "destination": "https://iwrkpwmpfhlyfvutlnuy.supabase.co/functions/v1/o/:code"
+    }
+  ],
   "headers": [
     {
       "source": "/",

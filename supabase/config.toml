@@ -29,3 +29,7 @@ verify_jwt = false
 # send-external-notification 은 Database Webhook(JWT 없음)이 호출 → x-webhook-secret 으로 자체 인증.
 [functions.send-external-notification]
 verify_jwt = false
+
+# o 는 브라우저 최상위 네비게이션(kaiwai.kr/o/<코드>, vercel rewrite 프록시)이라 apikey 헤더가 없음 → JWT 검증 비활성화 필수.
+[functions.o]
+verify_jwt = false
