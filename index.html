@@ -5485,8 +5485,22 @@ function drawRanking(){
 /* ═══════════════════════════════════
    쇼핑맵
 ═══════════════════════════════════ */
-const MALLS_T=["시부야 109","라포레 하라주쿠","이케부쿠로","마그넷 시부야109","루미네 신주쿠","하라주쿠"];
-const MALLS_O=["우메다 EST","우메다 HEP FIVE","루쿠아 오사카"];
+/* 쇼핑몰 필터 — 표시는 한글(ko), 매칭은 실제 매장 데이터(영문) 부분일치 키(key).
+   매장 st[].mall 이 영문 표기라 한글 칩으로는 includes 매칭이 안 되던 버그 수정. */
+const MALLS_T=[
+  {ko:"시부야 109",     key:"Shibuya 109"},
+  {ko:"마그넷",         key:"MAGNET"},
+  {ko:"라포레 하라주쿠", key:"Laforet"},
+  {ko:"루미네 신주쿠",   key:"Lumine"},
+  {ko:"이케부쿠로",      key:"Ikebukuro"},
+  {ko:"하라주쿠",        key:"Harajuku"},
+];
+const MALLS_O=[
+  {ko:"우메다 EST",      key:"Umeda EST"},
+  {ko:"우메다 HEP FIVE", key:"Umeda HEP FIVE"},
+  {ko:"루쿠아 오사카",   key:"LUCUA"},
+  {ko:"신사이바시",      key:"Sinsaibashi"},
+];
 
 function drawRegionRow(){
   const row=document.getElementById("regionRow");
@@ -5500,9 +5514,10 @@ function drawRegionRow(){
 function drawMallRow(){
   const malls=reg==="오사카"?MALLS_O:reg==="도쿄"?MALLS_T:[...MALLS_T,...MALLS_O];
   const row=document.getElementById("mallRow");
-  row.innerHTML=["전체",...malls].map(m=>{
-    const act=m===mall;
-    return `<button onclick="setMall('${m}')" style="flex-shrink:0;padding:5px 11px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;background:${act?"#FFE0EE":"transparent"};color:${act?"#D6437A":"#C4A8B0"};border:1px solid ${act?"#FFB3CC":"#FFD6E8"}">${m}</button>`;
+  const items=[{ko:"전체",key:"전체"},...malls];
+  row.innerHTML=items.map(m=>{
+    const act=m.key===mall;
+    return `<button onclick="setMall('${m.key}')" style="flex-shrink:0;padding:5px 11px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;background:${act?"#FFE0EE":"transparent"};color:${act?"#D6437A":"#C4A8B0"};border:1px solid ${act?"#FFB3CC":"#FFD6E8"}">${m.ko}</button>`;
   }).join("");
   drag(row);
 }
@@ -5515,7 +5530,7 @@ function drawMap(){
   B.forEach(b=>{
     b.st.forEach(s=>{
       if(reg!=="전체"&&s.city!==reg)return;
-      if(mall!=="전체"&&!s.mall.includes(mall.split(" ")[0]))return;
+      if(mall!=="전체"&&!s.mall.includes(mall))return;
       pairs.push({b,s});
     });
   });
